@@ -3,6 +3,7 @@
 	import { greetingFor, shortDate, clockTime } from '#lib/utils/time';
 	import { now } from '#lib/clock';
 	import { weather } from '#lib/weather';
+	import { screenPanelOpen } from '#lib/screen';
 
 	let { names }: { names: string } = $props();
 
@@ -18,5 +19,9 @@
 		<Emoji code={isDay ? '1f31e' : '1f319'} size={32} alt="" shadow="2px 2px 0px rgba(0,0,0,0.15)" class="header-sun" />
 		{shortDate($now)}
 	</div>
-	<div class="header-right">{clockTime($now)}</div>
+	<!-- the clock doubles as the brightness button -->
+	<button class="header-right pressable" onclick={() => screenPanelOpen.set(true)} aria-label="Screen brightness">
+		<Emoji code="1f506" size={20} alt="" shadow="none" />
+		{clockTime($now)}
+	</button>
 </header>

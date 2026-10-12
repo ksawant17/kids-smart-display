@@ -7,10 +7,15 @@
  * never takes the kiosk down.
  */
 
+import { BUDDY_COLORS, isBuddy } from './buddies';
+
 export interface Kid {
 	name: string;
-	/** twemoji code for the kid's avatar, e.g. "1f467-1f3fd" */
+	/** an animal buddy ("bear", "monkey", "fox", "bunny", "panda", "cat", "dino")
+	 *  dressed in the day's outfit, or a twemoji code (e.g. "1f467-1f3fd") */
 	avatar: string;
+	/** the buddy's clothes colour, e.g. "#3b82f6" */
+	color: string;
 }
 
 export interface DashboardConfig {
@@ -20,7 +25,7 @@ export interface DashboardConfig {
 		/** iCal feed of school key dates (no-school days, early releases...) */
 		icsUrl: string;
 		refreshHours: number;
-		/** school-day window (local hours) used for the outfit + "after school" logic */
+		/** school-day window (local hours): the outfit uses the weather in this window */
 		startHour: number;
 		endHour: number;
 	};
@@ -32,17 +37,29 @@ export interface DashboardConfig {
 		mildUpToF: number;
 		/** rain gear when the school-hours rain chance is above this */
 		rainChancePct: number;
+		/** from this hour (24h) on, "What to Wear" shows tomorrow's outfit */
+		switchToTomorrowHour: number;
 	};
 	kiosk: {
 		/** return to the TODAY tab after this long without a touch (0 = never) */
 		idleReturnSeconds: number;
-		/** dim the screen overnight ("HH:MM" local; opacity of the dark overlay) */
-		nightDim: { from: string; to: string; opacity: number } | null;
+	};
+	screen: {
+		/** brightness (%) until someone sets their own with the slider */
+		brightness: number;
+		/** lowest brightness the slider allows, so nobody can "lose" the screen */
+		minBrightness: number;
+		/** dim after this many idle minutes (0 = never) ... */
+		dimAfterMinutes: number;
+		/** ... to this brightness (%) */
+		dimBrightness: number;
+		/** backlight off after this many idle minutes (0 = never); a touch wakes it */
+		offAfterMinutes: number;
 	};
 }
 
 export const DEFAULT_CONFIG: DashboardConfig = {
-	kids: [{ name: 'Kids', avatar: '1f9d2' }],
+	kids: [{ name: 'Kids', avatar: 'bear', color: BUDDY_COLORS[0] }],
 	location: { name: 'Fairfax, VA', latitude: 38.85, longitude: -77.31 },
 	school: {
 		icsUrl:
@@ -52,15 +69,13 @@ export const DEFAULT_CONFIG: DashboardConfig = {
 		endHour: 15
 	},
 	weather: { refreshMinutes: 10 },
-	wardrobe: { coldBelowF: 45, coolUpToF: 60, mildUpToF: 72, rainChancePct: 40 },
-	kiosk: {
-		idleReturnSeconds: 120,
-		nightDim: { from: '20:30', to: '06:30', opacity: 0.55 }
-	}
+	wardrobe: { coldBelowF: 45, coolUpToF: 60, mildUpToF: 72, rainChancePct: 40, switchToTomorrowHour: 18 },
+	kiosk: { idleReturnSeconds: 120 },
+	screen: { brightness: 100, minBrightness: 10, dimAfterMinutes: 10, dimBrightness: 10, offAfterMinutes: 60 }
 };
 
 const EMOJI_CODE = /^[0-9a-f]{4,5}(-[0-9a-f]{4,5})*$/;
-const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
 	typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -77,27 +92,23 @@ export function resolveConfig(raw: unknown): DashboardConfig {
 	const weather = isObj(r.weather) ? r.weather : {};
 	const wr = isObj(r.wardrobe) ? r.wardrobe : {};
 	const kiosk = isObj(r.kiosk) ? r.kiosk : {};
+	const screen = isObj(r.screen) ? r.screen : {};
 
 	const kids = Array.isArray(r.kids)
 		? r.kids
 				.filter(isObj)
-				.map((k) => ({
+				.filter((k) => str(k.name, ''))
+				.map((k, i) => ({
 					name: str(k.name, ''),
-					avatar: typeof k.avatar === 'string' && EMOJI_CODE.test(k.avatar) ? k.avatar : '1f9d2'
+					avatar:
+						isBuddy(k.avatar) || (typeof k.avatar === 'string' && EMOJI_CODE.test(k.avatar))
+							? (k.avatar as string)
+							: 'bear',
+					color: typeof k.color === 'string' && HEX_COLOR.test(k.color) ? k.color : BUDDY_COLORS[i % BUDDY_COLORS.length]
 				}))
-				.filter((k) => k.name)
 		: [];
 
-	let nightDim: DashboardConfig['kiosk']['nightDim'] = d.kiosk.nightDim;
-	if (kiosk.nightDim === null || kiosk.nightDim === false) nightDim = null;
-	else if (isObj(kiosk.nightDim)) {
-		const n = kiosk.nightDim;
-		nightDim = {
-			from: typeof n.from === 'string' && HHMM.test(n.from) ? n.from : d.kiosk.nightDim!.from,
-			to: typeof n.to === 'string' && HHMM.test(n.to) ? n.to : d.kiosk.nightDim!.to,
-			opacity: num(n.opacity, d.kiosk.nightDim!.opacity, 0, 0.9)
-		};
-	}
+	const minBrightness = num(screen.minBrightness, d.screen.minBrightness, 1, 100);
 
 	return {
 		kids: kids.length ? kids : d.kids,
@@ -117,11 +128,18 @@ export function resolveConfig(raw: unknown): DashboardConfig {
 			coldBelowF: num(wr.coldBelowF, d.wardrobe.coldBelowF),
 			coolUpToF: num(wr.coolUpToF, d.wardrobe.coolUpToF),
 			mildUpToF: num(wr.mildUpToF, d.wardrobe.mildUpToF),
-			rainChancePct: num(wr.rainChancePct, d.wardrobe.rainChancePct, 0, 100)
+			rainChancePct: num(wr.rainChancePct, d.wardrobe.rainChancePct, 0, 100),
+			switchToTomorrowHour: num(wr.switchToTomorrowHour, d.wardrobe.switchToTomorrowHour, 0, 24)
 		},
 		kiosk: {
-			idleReturnSeconds: num(kiosk.idleReturnSeconds, d.kiosk.idleReturnSeconds, 0),
-			nightDim
+			idleReturnSeconds: num(kiosk.idleReturnSeconds, d.kiosk.idleReturnSeconds, 0)
+		},
+		screen: {
+			brightness: num(screen.brightness, d.screen.brightness, minBrightness, 100),
+			minBrightness,
+			dimAfterMinutes: num(screen.dimAfterMinutes, d.screen.dimAfterMinutes, 0),
+			dimBrightness: num(screen.dimBrightness, d.screen.dimBrightness, 1, 100),
+			offAfterMinutes: num(screen.offAfterMinutes, d.screen.offAfterMinutes, 0)
 		}
 	};
 }
@@ -131,14 +149,4 @@ export function kidNames(kids: Kid[]): string {
 	const names = kids.map((k) => k.name);
 	if (names.length <= 1) return names[0] ?? '';
 	return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
-}
-
-/** Is "now" inside a [from, to) "HH:MM" window that may wrap past midnight? */
-export function inTimeWindow(now: Date, from: string, to: string): boolean {
-	const mins = now.getHours() * 60 + now.getMinutes();
-	const [fh, fm] = from.split(':').map(Number);
-	const [th, tm] = to.split(':').map(Number);
-	const a = fh * 60 + fm;
-	const b = th * 60 + tm;
-	return a <= b ? mins >= a && mins < b : mins >= a || mins < b;
 }

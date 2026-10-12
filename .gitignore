@@ -22,8 +22,9 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# runtime: last downloaded school calendar
+# runtime state: last downloaded school calendar, saved screen brightness
 /data/school-calendar.ics
+/data/screen.json
 
 # family-specific settings (names, location) stay on the device;
 # copy config/dashboard.example.json to create it

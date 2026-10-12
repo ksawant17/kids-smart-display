@@ -1,7 +1,7 @@
 {
 	"kids": [
-		{ "name": "Alex", "avatar": "1f467-1f3fd" },
-		{ "name": "Sam", "avatar": "1f466-1f3fd" }
+		{ "name": "Alex", "avatar": "bunny", "color": "#f472b6" },
+		{ "name": "Sam", "avatar": "monkey", "color": "#3b82f6" }
 	],
 	"location": {
 		"name": "Fairfax, VA",
@@ -21,10 +21,17 @@
 		"coldBelowF": 45,
 		"coolUpToF": 60,
 		"mildUpToF": 72,
-		"rainChancePct": 40
+		"rainChancePct": 40,
+		"switchToTomorrowHour": 18
 	},
 	"kiosk": {
-		"idleReturnSeconds": 120,
-		"nightDim": { "from": "20:30", "to": "06:30", "opacity": 0.55 }
+		"idleReturnSeconds": 120
+	},
+	"screen": {
+		"brightness": 100,
+		"minBrightness": 10,
+		"dimAfterMinutes": 10,
+		"dimBrightness": 10,
+		"offAfterMinutes": 60
 	}
 }

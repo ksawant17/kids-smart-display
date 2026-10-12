@@ -1,37 +1,72 @@
 <script lang="ts">
+	/**
+	 * The full weather report: a slide-down card over the whole screen.
+	 * A kid's buddy "reports" the day (dressed for it), then the hours as a
+	 * temperature hill with rain chances, then fun tiles for rain, wind,
+	 * the sun's arc and sunscreen. Today / Tomorrow via the pills or a
+	 * left/right swipe; swipe up, ✕ or a tap outside closes it.
+	 */
 	import Emoji from '#lib/components/Emoji.svelte';
-	import SectionTitle from '#lib/components/SectionTitle.svelte';
+	import KidAvatar from '#lib/components/KidAvatar.svelte';
 	import { reportState, closeReport } from '#lib/report';
 	import { weather, loadWeather } from '#lib/weather';
-	import { weatherEmoji } from '#lib/utils/weatherCodes';
+	import { now } from '#lib/clock';
+	import { weatherEmoji, weatherLabel } from '#lib/utils/weatherCodes';
 	import { clockTime, hourLabel } from '#lib/utils/time';
+	import { outfitForDay, type WardrobeThresholds } from '#lib/utils/wardrobe';
+	import { daylight, skyStory, sunProgress, tempColor, uvInfo, windWord } from '#lib/utils/forecastStory';
+	import type { Kid } from '#lib/config';
+
+	let { kids, wardrobe }: { kids: Kid[]; wardrobe: WardrobeThresholds } = $props();
 
 	// Live, shared forecast (refreshed in the background by the root layout).
 	const data = $derived($weather.data);
 	let selected = $state(0); // 0 = today, 1 = tomorrow
 
-	const day = $derived(data ? data.days[selected] : null);
-
-	// When the report is opened: honour the requested day.
 	$effect(() => {
 		if ($reportState.open) selected = $reportState.day;
 	});
 
-	/* ---------- gestures: swipe up on the card closes ---------- */
-	let startY: number | null = null;
+	const day = $derived(data?.days[selected] ?? null);
+	// today: the coming hours; tomorrow: its waking day (6 AM - 10 PM)
+	const hours = $derived(data && day ? (selected === 0 ? data.hourly.slice(0, 9) : day.hours) : []);
+	const story = $derived(day ? skyStory(day, selected === 0 ? data!.hourly.slice(0, 9) : day.hours) : '');
+
+	// the reporter: kids take turns (today / tomorrow), dressed for that day
+	const kid = $derived(kids[selected % kids.length]);
+	const outfitNames = $derived(day ? outfitForDay(day, wardrobe).items.map((i) => i.name) : []);
+
+	// temperature hill: dot height within the shown range
+	const temps = $derived(hours.map((h) => h.temp_f));
+	const tMin = $derived(Math.min(...temps));
+	const tMax = $derived(Math.max(...temps));
+	const yPct = (t: number) => 18 + (1 - (t - tMin) / (tMax - tMin || 1)) * 64;
+	const xPct = (i: number) => ((i + 0.5) / hours.length) * 100;
+	const hillPath = $derived(hours.map((h, i) => `${i ? 'L' : 'M'}${xPct(i)} ${yPct(h.temp_f)}`).join(' '));
+
+	const wind = $derived(windWord(day?.wind_mph ?? 0));
+	const uv = $derived(uvInfo(day?.uv_max ?? null));
+	const sunAt = $derived(
+		selected === 0 && day?.sunrise && day?.sunset ? sunProgress($now, day.sunrise, day.sunset) : null
+	);
+	// point on the sun arc (semicircle, centre 40,40, radius 32)
+	const sunPos = $derived(
+		sunAt === null ? null : { x: 40 - 32 * Math.cos(Math.PI * sunAt), y: 40 - 32 * Math.sin(Math.PI * sunAt) }
+	);
+
+	/* ---------- gestures: swipe up closes, left/right switches day ---------- */
+	let start: { x: number; y: number } | null = null;
 	function onDown(e: PointerEvent) {
-		startY = e.clientY;
+		start = { x: e.clientX, y: e.clientY };
 	}
 	function onUp(e: PointerEvent) {
-		if (startY === null) return;
-		const dy = e.clientY - startY;
-		startY = null;
-		if (dy < -40) closeReport();
+		if (!start) return;
+		const dx = e.clientX - start.x;
+		const dy = e.clientY - start.y;
+		start = null;
+		if (Math.abs(dy) > Math.abs(dx) && dy < -40) closeReport();
+		else if (Math.abs(dx) > 50 && data && data.days.length > 1) selected = dx < 0 ? 1 : 0;
 	}
-	function onLeave() {
-		startY = null;
-	}
-	// Tapping the darkened scrim (outside the card) closes the panel.
 	function onScrimDown(e: PointerEvent) {
 		if (e.target === e.currentTarget) closeReport();
 	}
@@ -51,8 +86,30 @@
 				onDown(e);
 			}}
 			onpointerup={onUp}
-			onpointerleave={onLeave}
+			onpointerleave={() => (start = null)}
 		>
+			<div class="report-head">
+				<div class="section-title">Weather Report</div>
+				<div class="day-pills" role="tablist">
+					{#each ['Today', 'Tomorrow'] as label, i (label)}
+						{#if !data || data.days[i]}
+							<button
+								class="day-pill pressable"
+								class:on={selected === i}
+								role="tab"
+								aria-selected={selected === i}
+								onclick={() => (selected = i)}
+							>
+								{label}
+							</button>
+						{/if}
+					{/each}
+				</div>
+				<button class="close-btn pressable" onclick={closeReport} aria-label="Close weather report">
+					<Emoji code="274c" size={20} alt="Close" shadow="none" />
+				</button>
+			</div>
+
 			{#if !data && !$weather.error}
 				<div class="loading">
 					<Emoji code="2601" size={54} alt="" class="anim-float" />
@@ -63,95 +120,108 @@
 					<Emoji code="26c5" size={54} alt="" />
 					<div class="loading-text">Could not load the weather.</div>
 					<button class="retry pressable" onclick={loadWeather}>Try again</button>
-					<button class="retry pressable" onclick={closeReport}>Close</button>
 				</div>
 			{:else}
-				<div class="report-head">
-					<div class="title-wrap">
-						<SectionTitle>Full Weather Report</SectionTitle>
-						<div class="report-sub">
-							{data.location}
-							{#if data.stale || $weather.error} · updated {clockTime(new Date(data.fetched_at))}
-							{:else if selected === 0} · today
-							{:else} · tomorrow
-							{/if}
+				<!-- hero: the day at a glance + the buddy's report -->
+				<div class="hero">
+					<div class="hero-wx">
+						{#key selected}
+							<Emoji code={weatherEmoji(day.code, true)} size={78} alt="" class="anim-pop" />
+						{/key}
+						<div class="hero-text">
+							<div class="hero-label">{weatherLabel(day.code, true)}</div>
+							<div class="hero-temps">
+								<span style="color:{tempColor(day.temp_max_f)}">{Math.round(day.temp_max_f)}°</span>
+								<span class="lo">/ {Math.round(day.temp_min_f)}°</span>
+							</div>
+							<div class="hero-loc">
+								{data.location}{#if data.stale || $weather.error}&nbsp;· updated {clockTime(new Date(data.fetched_at))}{/if}
+							</div>
 						</div>
 					</div>
-					<button class="close-btn pressable" onclick={closeReport} aria-label="Close weather report">
-						<Emoji code="274c" size={22} alt="Close" shadow="none" />
-					</button>
+
+					<div class="bubble">
+						<div class="bubble-who">{kid.name} says:</div>
+						{#key story}<div class="bubble-text anim-pop">{story}</div>{/key}
+					</div>
+
+					<div class="reporter">
+						<KidAvatar {kid} items={outfitNames} size={128} />
+					</div>
 				</div>
 
-				<!-- full-width hourly strip -->
-				<div class="hourly-section">
-					<div class="hourly-label">Next 24 Hours</div>
-					<div class="hourly-strip">
-						{#each data.hourly as h, i (h.time)}
-							<div class="hour-box">
-								<div class="hour-time">{i === 0 ? 'Now' : hourLabel(h.time)}</div>
-								<Emoji code={weatherEmoji(h.weather_code, h.is_day === 1)} size={26} alt="" />
-								<div class="hour-temp">{Math.round(h.temp_f)}°</div>
-								<div class="hour-pop {h.pop >= 40 ? 'wet' : ''}">
-									<Emoji code="1f4a7" size={10} alt="" shadow="none" />{h.pop}%
-								</div>
+				<!-- hours: icons, temperature hill, rain chances -->
+				<div class="hours" style="--n:{hours.length}">
+					<div class="hours-row">
+						{#each hours as h, i (h.time)}
+							<div class="hour" class:night={!h.is_day}>
+								<span class="hour-time">{selected === 0 && i === 0 ? 'Now' : hourLabel(h.time)}</span>
+								<Emoji code={weatherEmoji(h.weather_code, h.is_day === 1)} size={30} alt="" />
+							</div>
+						{/each}
+					</div>
+					<div class="hill">
+						<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+							<path d={hillPath} fill="none" stroke="var(--border-dark)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+						</svg>
+						{#each hours as h, i (h.time)}
+							<div class="dot" style="left:{xPct(i)}%; top:{yPct(h.temp_f)}%; background:{tempColor(h.temp_f)}"></div>
+							<div class="dot-temp" style="left:{xPct(i)}%; top:{yPct(h.temp_f)}%">{Math.round(h.temp_f)}°</div>
+						{/each}
+					</div>
+					<div class="hours-row">
+						{#each hours as h (h.time)}
+							<div class="rain" class:wet={h.pop >= 40}>
+								<Emoji code="1f4a7" size={11} alt="" shadow="none" />{h.pop}%
 							</div>
 						{/each}
 					</div>
 				</div>
 
-				<!-- day details -->
-				<div class="day-section">
-					<div class="day-pills" role="tablist">
-						<button
-							class="day-pill pressable {selected === 0 ? 'on' : ''}"
-							role="tab"
-							aria-selected={selected === 0}
-							onclick={() => (selected = 0)}
-						>
-							Today
-						</button>
-						{#if data.days[1]}
-							<button
-								class="day-pill pressable {selected === 1 ? 'on' : ''}"
-								role="tab"
-								aria-selected={selected === 1}
-								onclick={() => (selected = 1)}
-							>
-								Tomorrow
-							</button>
-						{/if}
+				<!-- fun tiles -->
+				<div class="tiles">
+					<div class="tile rain-tile">
+						<Emoji code="2614" size={30} alt="" />
+						<div class="tile-body">
+							<div class="tile-big">Rain {Math.round(day.rain_max)}%</div>
+							<div class="meter"><div class="meter-fill" style="width:{day.rain_max}%"></div></div>
+						</div>
 					</div>
-
-					<div class="detail-grid">
-						<div class="detail">
-							<Emoji code="1f321" size={20} alt="" />
-							<span>High {Math.round(day.temp_max_f)}° · Low {Math.round(day.temp_min_f)}°</span>
+					<div class="tile">
+						<Emoji code={wind.emoji} size={30} alt="" />
+						<div class="tile-body">
+							<div class="tile-big">{wind.word}</div>
+							<div class="tile-small">wind {Math.round(day.wind_mph)} mph</div>
 						</div>
-						<div class="detail">
-							<Emoji code="1f4a7" size={20} alt="" />
-							<span>Rain chance {Math.round(day.rain_max)}%</span>
+					</div>
+					<div class="tile sun-tile">
+						<svg viewBox="0 0 80 44" width="52" height="29" aria-hidden="true">
+							<path d="M8 40 A32 32 0 0 1 72 40" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4 5" stroke-linecap="round" />
+							<line x1="2" y1="40" x2="78" y2="40" stroke="var(--border-dark)" stroke-width="3" stroke-linecap="round" />
+							{#if sunPos}
+								<circle cx={sunPos.x} cy={sunPos.y} r="7" fill="#facc15" stroke="var(--border-dark)" stroke-width="2.5" />
+							{/if}
+						</svg>
+						<div class="tile-body">
+							{#if day.sunrise && day.sunset}
+								<div class="tile-big">Sun up {clockTime(new Date(day.sunrise))}</div>
+								<div class="tile-small">down {clockTime(new Date(day.sunset))} · {daylight(day.sunrise, day.sunset)}</div>
+							{:else}
+								<div class="tile-big">Sun times —</div>
+							{/if}
 						</div>
-						<div class="detail">
-							<Emoji code="1f32c" size={20} alt="" />
-							<span>Wind {Math.round(day.wind_mph)} mph</span>
-						</div>
-						<div class="detail">
-							<Emoji code="1f4a7" size={20} alt="" />
-							<span>Humidity {day.humidity == null ? '—' : Math.round(day.humidity) + '%'}</span>
-						</div>
-						<div class="detail">
-							<Emoji code="1f305" size={20} alt="" />
-							<span>Sunrise {day.sunrise ? clockTime(new Date(day.sunrise)) : '—'}</span>
-						</div>
-						<div class="detail">
-							<Emoji code="1f306" size={20} alt="" />
-							<span>Sunset {day.sunset ? clockTime(new Date(day.sunset)) : '—'}</span>
+					</div>
+					<div class="tile uv-{uv.level}">
+						<Emoji code={uv.emoji} size={30} alt="" />
+						<div class="tile-body">
+							<div class="tile-big">{uv.word}</div>
+							<div class="tile-small">UV {day.uv_max == null ? '—' : Math.round(day.uv_max)}</div>
 						</div>
 					</div>
 				</div>
 
 				<div class="swipe-hint">
-					<Emoji code="2b06" size={14} alt="" shadow="none" /> swipe up or tap ✕ to close
+					<Emoji code="2b06" size={13} alt="" shadow="none" /> swipe up to close · swipe sideways for {selected === 0 ? 'tomorrow' : 'today'}
 				</div>
 			{/if}
 		</div>
@@ -169,12 +239,53 @@
 
 	.report {
 		flex: 1;
-		margin: 10px;
-		animation: slide-down 0.22s ease-out both;
+		margin: 8px;
+		padding: 10px 14px 6px;
+		gap: 8px;
 		overflow: hidden;
-		padding: 12px 14px 8px;
+		background: linear-gradient(180deg, #e0f2fe 0%, #ffffff 55%);
+		animation: slide-down 0.22s ease-out both;
+		touch-action: none;
+	}
+
+	/* --- header --- */
+	.report-head {
 		display: flex;
-		flex-direction: column;
+		align-items: center;
+		gap: 12px;
+	}
+	.report-head .section-title {
+		margin: 0;
+		font-size: 17px;
+	}
+	.day-pills {
+		display: flex;
+		gap: 8px;
+		margin-left: auto;
+	}
+	.day-pill {
+		height: 36px;
+		padding: 0 18px;
+		font: 900 16px 'Nunito', sans-serif;
+		border: 2.5px solid var(--border-dark);
+		border-radius: 999px;
+		background: var(--card-white);
+		box-shadow: var(--sticker-shadow-sm);
+	}
+	.day-pill.on {
+		background: var(--yellow-banner);
+	}
+	.close-btn {
+		width: 38px;
+		height: 38px;
+		border: 3px solid var(--border-dark);
+		border-radius: 50%;
+		background: var(--tab-red);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: var(--sticker-shadow-sm);
+		flex: 0 0 auto;
 	}
 
 	.loading {
@@ -199,147 +310,219 @@
 		box-shadow: var(--sticker-shadow-sm);
 	}
 
-	.report-head {
+	/* --- hero --- */
+	.hero {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 10px;
+		gap: 12px;
+		min-height: 0;
 	}
-	.title-wrap {
+	.hero-wx {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		min-width: 0;
+		gap: 8px;
+		flex: 0 0 auto;
 	}
-	.report-sub {
-		font-size: 13px;
+	.hero-label {
+		font-size: 18px;
+		font-weight: 900;
+		line-height: 1.1;
+	}
+	.hero-temps {
+		font-size: 40px;
+		font-weight: 900;
+		line-height: 1;
+		-webkit-text-stroke: 1.5px var(--border-dark);
+	}
+	.hero-temps .lo {
+		font-size: 24px;
+		color: #475569;
+		-webkit-text-stroke: 0;
+	}
+	.hero-loc {
+		font-size: 12px;
 		font-weight: 800;
 		opacity: 0.6;
 		white-space: nowrap;
 	}
 
-	.close-btn {
-		width: 36px;
-		height: 36px;
+	/* speech bubble, tail pointing at the buddy */
+	.bubble {
+		flex: 1;
+		position: relative;
+		background: var(--card-white);
 		border: 3px solid var(--border-dark);
+		border-radius: 18px;
+		padding: 8px 12px;
+		box-shadow: var(--sticker-shadow-sm);
+		min-width: 0;
+	}
+	.bubble::after {
+		content: '';
+		position: absolute;
+		right: -13px;
+		top: 50%;
+		width: 18px;
+		height: 18px;
+		background: var(--card-white);
+		border-right: 3px solid var(--border-dark);
+		border-top: 3px solid var(--border-dark);
+		transform: translateY(-50%) rotate(45deg) skew(10deg, 10deg);
+	}
+	.bubble-who {
+		font-size: 12px;
+		font-weight: 900;
+		color: #7c3aed;
+	}
+	.bubble-text {
+		font-size: 17px;
+		font-weight: 900;
+		line-height: 1.25;
+	}
+	.reporter {
+		flex: 0 0 auto;
+		margin: -6px 0 -8px;
+	}
+
+	/* --- hours strip --- */
+	.hours {
+		background: var(--card-white);
+		border: 3px solid var(--border-dark);
+		border-radius: 14px;
+		box-shadow: var(--sticker-shadow-sm);
+		overflow: hidden;
+	}
+	.hours-row {
+		display: grid;
+		grid-template-columns: repeat(var(--n), 1fr);
+	}
+	.hour {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1px;
+		padding: 4px 0 2px;
+	}
+	.hour.night {
+		background: #dbeafe;
+	}
+	.hour-time {
+		font-size: 13px;
+		font-weight: 900;
+	}
+	.hill {
+		position: relative;
+		height: 76px;
+		background: linear-gradient(180deg, #fff7ed, #f0f9ff);
+		border-top: 2px dashed #cbd5e1;
+		border-bottom: 2px dashed #cbd5e1;
+	}
+	.hill svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.dot {
+		position: absolute;
+		width: 12px;
+		height: 12px;
 		border-radius: 50%;
-		background: var(--tab-red);
+		border: 2.5px solid var(--border-dark);
+		transform: translate(-50%, -50%);
+	}
+	.dot-temp {
+		position: absolute;
+		transform: translate(-50%, -135%);
+		font-size: 13px;
+		font-weight: 900;
+		white-space: nowrap;
+	}
+	.rain {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: var(--sticker-shadow-sm);
-		flex: 0 0 auto;
-	}
-
-	/* --- hourly strip: 13 equal boxes across the full width --- */
-	.hourly-section {
-		margin-top: 10px;
-	}
-	.hourly-label {
-		font-size: 14px;
-		font-weight: 900;
-		margin-bottom: 6px;
-	}
-	.hourly-strip {
-		display: flex;
-		gap: 7px;
-	}
-	.hour-box {
-		flex: 1 1 0;
-		min-width: 0;
-		background: var(--bg-light-blue);
-		border: 2.5px solid var(--border-dark);
-		border-radius: 12px;
-		padding: 6px 2px 7px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
 		gap: 2px;
-		box-shadow: var(--sticker-shadow-sm);
-	}
-	.hour-time {
 		font-size: 11.5px;
-		font-weight: 900;
-	}
-	.hour-temp {
-		font-size: 16px;
-		font-weight: 900;
-		line-height: 1.1;
-	}
-	.hour-pop {
-		font-size: 11px;
 		font-weight: 800;
-		color: var(--border-dark);
-		opacity: 0.55;
-		display: flex;
-		align-items: center;
-		gap: 2px;
+		color: #64748b;
+		padding: 3px 0;
 	}
-	.hour-pop.wet {
-		opacity: 1;
-		background: #bfdbfe;
-		border-radius: 8px;
-		padding: 0 4px;
+	.rain.wet {
+		color: #1d4ed8;
+		background: #dbeafe;
 	}
 
-	/* --- day details --- */
-	.day-section {
-		margin-top: 12px;
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-	}
-	.day-pills {
-		display: flex;
-		gap: 10px;
-	}
-	.day-pill {
-		flex: 1;
-		padding: 7px 0;
-		font: 900 15px 'Nunito', sans-serif;
-		border: 2.5px solid var(--border-dark);
-		border-radius: 999px;
-		background: var(--bg-light-blue);
-		box-shadow: var(--sticker-shadow-sm);
-	}
-	.day-pill.on {
-		background: var(--yellow-banner);
-	}
-
-	.detail-grid {
+	/* --- fun tiles --- */
+	.tiles {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 8px 12px;
+		grid-template-columns: 1fr 1fr 1.35fr 1fr;
+		gap: 10px;
 	}
-	.detail {
+	.tile {
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		font-size: 15px;
-		font-weight: 800;
 		background: var(--bg-light-blue);
-		border: 2.5px solid var(--border-dark);
-		border-radius: 12px;
-		padding: 9px 12px;
-		min-width: 0;
+		border: 3px solid var(--border-dark);
+		border-radius: 14px;
+		padding: 10px;
 		box-shadow: var(--sticker-shadow-sm);
+		min-width: 0;
 	}
-	.detail span {
+	.tile-body {
+		min-width: 0;
+		flex: 1;
+	}
+	.tile-big {
+		font-size: 16px;
+		font-weight: 900;
+		line-height: 1.15;
 		white-space: nowrap;
+	}
+	.tile-small {
+		font-size: 11.5px;
+		font-weight: 800;
+		color: #475569;
+		white-space: nowrap;
+	}
+	.meter {
+		margin-top: 4px;
+		height: 10px;
+		border: 2px solid var(--border-dark);
+		border-radius: 999px;
+		background: var(--card-white);
+		overflow: hidden;
+	}
+	.meter-fill {
+		height: 100%;
+		background: #3b82f6;
+	}
+	.sun-tile {
+		background: #fef9c3;
+		gap: 4px;
+	}
+	.sun-tile .tile-small {
+		font-size: 11px;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+	.uv-high {
+		background: #fee2e2;
+	}
+	.uv-mid {
+		background: #fef3c7;
 	}
 
 	.swipe-hint {
 		margin-top: auto;
 		text-align: center;
-		font-size: 11.5px;
+		font-size: 11px;
 		font-weight: 800;
 		opacity: 0.55;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 4px;
-		padding-top: 4px;
 	}
 </style>

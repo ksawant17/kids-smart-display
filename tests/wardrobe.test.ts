@@ -58,7 +58,9 @@ describe('outfitForDay', () => {
 		temp_min_f: 48,
 		rain_max: 80,
 		wind_mph: 5,
+		uv_max: 3,
 		humidity: 50,
+		hours: [],
 		sunrise: null,
 		sunset: null,
 		school

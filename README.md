@@ -48,10 +48,17 @@ config is used. To run it full-screen on the Pi at boot, see
 | **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
 | **FUN**    | Dino of the Day (name, how to say it, diet, size in school buses / kids) + a dino fact + a fact of the day |
 
-The **full weather report** (on TODAY) is a slide-down overlay: Today/Tomorrow
-toggle, high/low, rain chance, wind, humidity, sunrise/sunset, and the next 24
-hours in 2-hour steps. Open by swiping down on the hero or tapping the hero /
-tomorrow card; close by swiping up, tapping ✕, or tapping outside the card.
+The **full weather report** (on TODAY) is a slide-down card. A kid's animal
+buddy (the kids take turns) "reports" the day, dressed for it, with a speech
+bubble in kid language ("Chilly morning, warm afternoon. Rain likely after
+lunch. Grab your umbrella!"). Below that, the hours appear as a **temperature
+hill**: coloured dots from blue (cold) to red (hot), night hours shaded, and the
+rain chance under each hour. Today shows the coming hours, Tomorrow 6 AM to 10 PM.
+Fun tiles show a rain meter, wind in words (Calm / Breezy / Windy), the sun's arc
+with sunrise, sunset and daylight, and sun safety from the UV index. Open it by
+swiping down on the hero or tapping the hero or tomorrow card. Switch days with
+the pills or a sideways swipe; close by swiping up, tapping ✕, or tapping
+outside the card.
 (URL shortcut for debugging: `http://<pi>:3000/?wx`, `?wx&d=1` for tomorrow.)
 
 ### Kiosk behaviour

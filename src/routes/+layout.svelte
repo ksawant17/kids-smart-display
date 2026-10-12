@@ -122,7 +122,7 @@
 	</main>
 	<BottomNav />
 	<!-- Full-frame weather report panel (opened from the TODAY tab) -->
-	<WeatherReport />
+	<WeatherReport kids={data.kids} wardrobe={data.wardrobe} />
 	<ScreenControl
 		{brightness}
 		min={data.screenConfig.minBrightness}

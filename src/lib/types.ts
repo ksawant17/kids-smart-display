@@ -24,9 +24,13 @@ export interface DaySummary {
 	temp_min_f: number;
 	rain_max: number;
 	wind_mph: number;
+	/** UV index (daily max); null when unavailable */
+	uv_max: number | null;
 	humidity: number | null;
 	sunrise: string | null;
 	sunset: string | null;
+	/** 6 AM - 10 PM in 2-hour steps */
+	hours: HourEntry[];
 	/** conditions during school hours (config.school.startHour..endHour) */
 	school: { feels_min_f: number; feels_max_f: number; pop_max: number } | null;
 }

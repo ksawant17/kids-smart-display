@@ -36,6 +36,7 @@ interface OpenMeteoResponse {
 		temperature_2m_min: number[];
 		precipitation_probability_max: (number | null)[];
 		wind_speed_10m_max: (number | null)[];
+		uv_index_max: (number | null)[];
 		sunrise: string[];
 		sunset: string[];
 	};
@@ -62,7 +63,7 @@ async function fetchWeather(): Promise<WeatherData> {
 		hourly:
 			'temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day,relative_humidity_2m',
 		daily:
-			'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset',
+			'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset',
 		timezone: 'auto',
 		forecast_days: '7', // the WARDROBE tab can plan the week
 		temperature_unit: 'fahrenheit',
@@ -101,6 +102,10 @@ async function fetchWeather(): Promise<WeatherData> {
 		const hourOf = (x: { local: string }) => Number(x.local.slice(11, 13));
 		const schoolHours = ofDay.filter((x) => hourOf(x) >= school.startHour && hourOf(x) < school.endHour);
 		const humid = ofDay.map((x) => x.humidity).filter((v): v is number => typeof v === 'number');
+		// the waking day in 2-hour steps (6 AM - 10 PM), for the full report
+		const hours = ofDay
+			.filter((x) => hourOf(x) >= 6 && hourOf(x) <= 22 && hourOf(x) % 2 === 0)
+			.map(({ time, temp_f, pop, weather_code, is_day }) => ({ time, temp_f, pop, weather_code, is_day }));
 		return {
 			date: d,
 			code: raw.daily.weather_code[i],
@@ -108,9 +113,11 @@ async function fetchWeather(): Promise<WeatherData> {
 			temp_min_f: raw.daily.temperature_2m_min[i],
 			rain_max: raw.daily.precipitation_probability_max[i] ?? 0,
 			wind_mph: raw.daily.wind_speed_10m_max[i] ?? 0,
+			uv_max: raw.daily.uv_index_max[i] ?? null,
 			humidity: avg(humid),
 			sunrise: raw.daily.sunrise[i] ? withOffset(raw.daily.sunrise[i], off) : null,
 			sunset: raw.daily.sunset[i] ? withOffset(raw.daily.sunset[i], off) : null,
+			hours,
 			// what it feels like while the kids are out (bus stop -> pickup)
 			school: schoolHours.length
 				? {

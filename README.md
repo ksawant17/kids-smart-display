@@ -1,2 +1,262 @@
-# kids-smart-display
-kids-smart-display using raspberrry pi and official 7inch screen
+# Kids Smart Display
+
+A full-screen, touch-first dashboard for kids, built for a **Raspberry Pi 5**
+and the **official 7" touchscreen (800×480)**. Each morning it answers what the
+kids want to know: *What's the weather? Is there school today? What should I
+wear?* It also has a quote, a dinosaur and a fun fact for the day.
+
+It's a **SvelteKit** app shown in **Chromium kiosk mode** inside the **cage**
+Wayland compositor, so no desktop environment is needed. Everything is big,
+colourful, sticker-styled and works with fat fingers; no mouse or keyboard.
+
+| | |
+|---|---|
+| ![TODAY tab](docs/screenshots/today.png) | ![CALENDAR tab](docs/screenshots/calendar.png) |
+| ![Full weather report](docs/screenshots/weather-report.png) | ![WARDROBE tab](docs/screenshots/wardrobe.png) |
+| ![FUN tab](docs/screenshots/fun.png) | ![QUOTE tab](docs/screenshots/quote.png) |
+
+## Hardware
+
+- Raspberry Pi 5 (a Pi 4 should work too) running Raspberry Pi OS Lite (64-bit)
+- Official Raspberry Pi 7" DSI touchscreen (800×480)
+- Network access for weather and the school calendar (it keeps working
+  offline on the last data it downloaded)
+
+## Quick start
+
+```sh
+git clone https://github.com/ksawant17/kids-smart-display.git kids-smart-dashboard
+cd kids-smart-dashboard
+npm ci
+cp config/dashboard.example.json config/dashboard.json   # then edit: kids, location, school feed
+npm run build
+PORT=3000 node build/index.js                             # open http://<pi>:3000
+```
+
+Requires **Node.js 22+**. `config/dashboard.json` is git-ignored, so your
+kids' names and location never end up in the repo. Without it, the example
+config is used. To run it full-screen on the Pi at boot, see
+[Running on the Pi](#running-on-the-pi).
+
+## The five tabs
+
+| Tab        | What it does |
+|------------|--------------|
+| **TODAY**  | Current weather hero (tap or **swipe down** for the full report), next few hours, tomorrow, school-day banner (school day / no school / early release / weekend / summer), quote of the day, "what to wear" with outfit icons (switches to **tomorrow** once school is out) |
+| **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back, plus "Up Next at School" (breaks that are under way stay listed until they end) |
+| **QUOTE**  | Message of the day: one encouraging, correctly attributed quote, rotates at midnight |
+| **WARDROBE** | The weather to dress for + a tap-to-check outfit checklist **per kid** (remembered for the day) |
+| **FUN**    | Dino of the Day (name, how to say it, diet, size in school buses / kids) + a dino fact + a fact of the day |
+
+The **full weather report** (on TODAY) is a slide-down overlay: Today/Tomorrow
+toggle, high/low, rain chance, wind, humidity, sunrise/sunset, and the next 24
+hours in 2-hour steps. Open by swiping down on the hero or tapping the hero /
+tomorrow card; close by swiping up, tapping ✕, or tapping outside the card.
+(URL shortcut for debugging: `http://<pi>:3000/?wx`, `?wx&d=1` for tomorrow.)
+
+### Kiosk behaviour
+
+- **Always fresh, never reloaded:** weather refreshes every
+  `weather.refreshMinutes`; the date, quote, fact, dino, school banner and
+  calendar roll over at midnight; config and the school calendar are re-read
+  every hour.
+- **Weather outages:** if Open-Meteo is unreachable the last good forecast is
+  shown ("updated 7:40 AM") and the kiosk keeps retrying every minute.
+- **Idle return:** after `kiosk.idleReturnSeconds` without a touch, the screen
+  closes the weather report and goes back to TODAY.
+- **Night dim:** between `kiosk.nightDim.from` and `.to` the screen is dimmed;
+  a tap brightens it for 2 minutes (that tap only wakes the screen).
+- **Works offline:** fonts and every icon are served locally.
+
+## Configuration: `config/dashboard.json`
+
+Everything specific to your family lives in one git-ignored file, created from
+`config/dashboard.example.json` (override its path with `DASHBOARD_CONFIG`). Invalid or missing values fall back to safe defaults, so
+a typo never takes the kiosk down. The kiosk picks up edits within the hour;
+`sudo systemctl restart kids-smart-kiosk` applies them immediately.
+
+| Key | Meaning |
+|-----|---------|
+| `kids[]` | `{ "name", "avatar" }` per kid. Avatar is a Twemoji code, e.g. `1f467-1f3fd` (girl, medium skin tone) or `1f466-1f3fb` (boy, light skin tone). Names drive the greeting, wardrobe tabs and page title. After picking a new avatar code, run `npm run emoji`. |
+| `location` | `name`, `latitude`, `longitude` for the weather. Two decimals (~1 km) is plenty; there's no need for your exact address. |
+| `school.icsUrl` | District "key dates" iCal feed (see below) |
+| `school.refreshHours` | How often to re-download the feed (default 12) |
+| `school.startHour` / `endHour` | School-day window (24h). The outfit uses the feels-like temperature and rain chance **inside** this window; after `endHour` it shows tomorrow's outfit. |
+| `weather.refreshMinutes` | Kiosk weather refresh (default 10) |
+| `wardrobe` | `coldBelowF` (45), `coolUpToF` (60), `mildUpToF` (72), `rainChancePct` (40) |
+| `kiosk.idleReturnSeconds` | Return to TODAY after this idle time; `0` = never |
+| `kiosk.nightDim` | `{ "from": "20:30", "to": "06:30", "opacity": 0.55 }`, or `null` to disable |
+
+Environment variables: only `PORT` (default 3000), `DASHBOARD_CONFIG` and
+`DASHBOARD_DATA` (where the downloaded school calendar is saved, default `data/`).
+
+### School calendar
+
+The calendar comes from the school district's iCal "key dates" feed. The
+example config uses Fairfax County Public Schools' official feed on Tandem:
+
+```
+https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?type=export&action=ical&export_type=key_dates&year=2026&page=2
+```
+
+(The `…&year=2026` link *without* `&page=2` is the "Subscribe" web page, not
+the feed itself.) The server downloads it every `school.refreshHours`, saves the
+last good copy to `data/school-calendar.ics`, and falls back to that copy, then
+to the bundled snapshot `src/lib/data/school-calendar.seed.ics`, when offline.
+Feed entries are mapped to kid-friendly events in
+`src/lib/utils/schoolCalendar.ts` (`fromIcs`): holidays, breaks, teacher
+workdays and staff-development days are **No School**, "…Early Release" is
+**Early Release**, and so on.
+
+**Another district?** Point `school.icsUrl` at its iCal feed (look for
+"Subscribe" / "Add to calendar" / "iCal export" on the district calendar). The
+mapping in `fromIcs` is keyword-based (holiday, break, workday, early release,
+first/last day of school), so it works for most feeds; add a test to
+`tests/schoolCalendar.test.ts` for any wording it gets wrong.
+
+**Each new school year:** if Tandem publishes a new feed URL (e.g. `year=2027`),
+update `school.icsUrl`. To refresh the offline snapshot, download the feed over
+`src/lib/data/school-calendar.seed.ics` and rebuild. The TODAY banner says
+"Summer Break!" between the last day of school and the next first day it knows about.
+
+## Content
+
+| File | What |
+|------|------|
+| `src/lib/data/quotes.json` | `{ text, author, emoji }`: real, sourced quotes only |
+| `src/lib/data/facts.json` | `{ text, emoji: [1-2 codes] }`: fact-checked, kid-friendly |
+| `src/lib/data/dinos.json` | `{ name, say, means, lengthFt, diet, period, fact }` |
+
+Each rotates once a day (`pickDaily`: days since 1970 % length, so the order
+continues across New Year). Add entries freely; if you use a new emoji code,
+run `npm run emoji` (see below).
+
+## Icons
+
+Every icon is an `<img>` from `static/emoji/<code>.svg` (`Emoji.svelte`),
+never a text emoji, and nothing is loaded from the internet. Weather
+sun/cloud icons are custom comic stickers (`sun.svg`, `cloud.svg`, …); the rest
+are vendored [Twemoji 14](https://github.com/twitter/twemoji) SVGs
+(© Twitter, Inc and other contributors, CC-BY 4.0).
+
+`npm run emoji` scans `src/` and `config/` for emoji codes and downloads any
+missing SVG; `tests/emoji.test.ts` fails if one is missing.
+
+## Tech stack
+
+- **SvelteKit 3** (Svelte 5 runes, TypeScript) + **Vite** + `@sveltejs/adapter-node`
+- **Pure hand-written CSS** (no Tailwind): the "sticker" theme with hard
+  drop-shadows, thick dark borders and the bundled Nunito font
+- **Weather:** Open-Meteo (imperial units, `/api/weather`, 5-minute server cache)
+- **School calendar:** district iCal feed, parsed by a small built-in reader
+
+## Layout
+
+```
+#pi-screen  — fixed 800×480 frame (cyan background)
+├── Header      greeting + date (left), live clock pill (right)
+├── main        the active page
+└── nav.tabs    five flush "file-folder" tabs; active tab is coloured,
+                the rest are slate
+```
+
+## Running on the Pi
+
+Two systemd **system** services (in `systemd/`):
+
+- `kids-smart-server.service`: `node build/index.js` on port **3000**
+  (the units assume user `pi`, the app in `/home/pi/kids-smart-dashboard` and
+  Node at `~/.local/share/pi-node/current/bin/node`; adjust `User=`,
+  `WorkingDirectory=` and `ExecStart=` if yours differ)
+- `kids-smart-kiosk.service`: `seatd`-aware `cage` compositor running
+  Chromium in `--kiosk --ozone-platform=wayland` mode pointed at
+  `http://localhost:3000`
+
+Deploy steps (as root / with sudo):
+
+```sh
+cd /home/pi/kids-smart-dashboard
+npm ci
+cp -n config/dashboard.example.json config/dashboard.json   # first time only; then edit it
+npm run build
+sudo apt install cage seatd chromium        # if not already installed
+sudo systemctl enable --now seatd
+sudo cp systemd/*.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now kids-smart-server kids-smart-kiosk
+```
+
+After a code change: `npm run build && sudo systemctl restart kids-smart-server kids-smart-kiosk`.
+
+`seatd` must be running for cage to grab the panel (cage's built-in seatd
+can't open `/dev/tty0|1` on this Pi). The kiosk unit sets
+`SEATD_SOCKET=unix:path=/run/seatd.sock`, `XDG_RUNTIME_DIR=/run/user/1000`,
+and launches `cage -s` (the `-s` flag keeps a VT escape hatch).
+
+`start-dashboard.sh` starts the same server + kiosk by hand (same flags as the
+units) for when the services are not installed.
+
+Useful operations:
+
+```sh
+sudo systemctl status kids-smart-server kids-smart-kiosk
+sudo journalctl -u kids-smart-server -f     # [weather] / [school] / [config] warnings show up here
+sudo systemctl restart kids-smart-server kids-smart-kiosk
+```
+
+## Development
+
+```sh
+npm install
+npm run dev       # dev server on http://localhost:5173
+npm run check     # svelte-check (should report 0 errors, 0 warnings)
+npm run test      # vitest: calendar/feed, wardrobe, weather codes, config, time, dinos, icons
+npm run build     # production build → build/index.js
+npm run emoji     # vendor any newly referenced Twemoji SVGs
+```
+
+Headless screenshots for layout checks (the panel framebuffer is owned by
+cage/DRM, so check against a second server instead). Set `nightDim` to
+`null` in a scratch config if you are testing in the evening:
+
+```sh
+PORT=3001 nohup ~/.local/share/pi-node/current/bin/node build/index.js &
+chromium --headless=new --no-sandbox --disable-gpu \
+  --window-size=800,480 --force-device-scale-factor=1 --hide-scrollbars \
+  --virtual-time-budget=8000 --screenshot=/tmp/today.png http://localhost:3001/
+```
+
+## Source map
+
+```
+config/
+├── dashboard.example.json   template settings (committed)
+└── dashboard.json           your settings (git-ignored)
+docs/screenshots/            README screenshots (taken with the example config)
+src/
+├── app.css                  the whole sticker theme (frame, header, cards, tabs)
+├── lib/
+│   ├── config.ts            config shape, defaults, validation
+│   ├── clock.ts             shared ticking clock + todayKey (midnight rollover)
+│   ├── weather.ts           shared self-refreshing weather store
+│   ├── report.ts            open/close state of the full weather report
+│   ├── components/          Emoji, Header, BottomNav, SectionTitle, WeatherReport
+│   ├── data/                quotes, facts, dinos, school-calendar.seed.ics
+│   ├── server/              config loader, TTL cache, school feed (fetch + fallbacks)
+│   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino
+└── routes/
+    ├── +layout.server.ts    config + school events for every page
+    ├── +layout.svelte       frame, header, nav, polling, idle return, night dim
+    ├── +page.svelte         TODAY
+    ├── calendar/ quote/ wardrobe/ fun/
+    └── api/weather/         Open-Meteo proxy (typed, cached, stale fallback)
+scripts/                     emoji vendoring
+tests/                       vitest suites
+systemd/                     kids-smart-server.service, kids-smart-kiosk.service
+sample-pages/                the original HTML mockups (design reference)
+```
+
+## License
+
+[Apache License 2.0](LICENSE). Twemoji graphics in `static/emoji` are
+© Twitter, Inc and other contributors, licensed CC-BY 4.0.

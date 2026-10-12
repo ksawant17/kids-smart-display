@@ -1,0 +1,342 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Intand Corporation//Tandem//EN
+X-WR-CALNAME:Fairfax County Public Schools 2026-2028 Calendar
+METHOD:PUBLISH
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20260824
+DTEND;VALUE=DATE:20260825
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:First Day of School
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146778
+CREATED:20260612T154033Z
+LAST-MODIFIED:20260612T154033Z
+UID:keydate-11146778-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20260904
+DTEND;VALUE=DATE:20260908
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Labor Day Break (Holiday)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146779
+CREATED:20260612T154153Z
+LAST-MODIFIED:20260724T163227Z
+UID:keydate-11146779-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20260921
+DTEND;VALUE=DATE:20260922
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holiday (Yom Kippur)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146780
+CREATED:20260612T154853Z
+LAST-MODIFIED:20260612T154853Z
+UID:keydate-11146780-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20261012
+DTEND;VALUE=DATE:20261013
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Student Holiday (Staff Development Day)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146781
+CREATED:20260612T155343Z
+LAST-MODIFIED:20260612T155343Z
+UID:keydate-11146781-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20261030
+DTEND;VALUE=DATE:20261031
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:End of First Quarter - Two-Hour Early Release
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146782
+CREATED:20260612T155343Z
+LAST-MODIFIED:20260612T155343Z
+UID:keydate-11146782-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20261102
+DTEND;VALUE=DATE:20261103
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Student Holiday (School Planning Day)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146783
+CREATED:20260612T155344Z
+LAST-MODIFIED:20261005T144029Z
+UID:keydate-11146783-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20261103
+DTEND;VALUE=DATE:20261104
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Student Holiday (Teacher Workday)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146784
+CREATED:20260612T155527Z
+LAST-MODIFIED:20260811T190427Z
+UID:keydate-11146784-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20261125
+DTEND;VALUE=DATE:20261128
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holidays (Thanksgiving Break)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=178761
+CREATED:20250804T203333Z
+LAST-MODIFIED:20260612T154853Z
+UID:keydate-178761-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20270102
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holidays (Winter Break)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=178762
+CREATED:20250804T203333Z
+LAST-MODIFIED:20260612T184129Z
+UID:keydate-178762-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270118
+DTEND;VALUE=DATE:20270119
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holiday (Martin Luther King Day)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=178764
+CREATED:20250804T203333Z
+LAST-MODIFIED:20260612T154413Z
+UID:keydate-178764-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270128
+DTEND;VALUE=DATE:20270129
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:End of Second Quarter - Two-Hour Early Release
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146798
+CREATED:20260612T185849Z
+LAST-MODIFIED:20260612T185849Z
+UID:keydate-11146798-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270129
+DTEND;VALUE=DATE:20270130
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Student Holiday (Teacher Workday)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146785
+CREATED:20260612T155941Z
+LAST-MODIFIED:20260612T155941Z
+UID:keydate-11146785-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270201
+DTEND;VALUE=DATE:20270202
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Student Holiday (Staff Development Day)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146786
+CREATED:20260612T155941Z
+LAST-MODIFIED:20260612T155941Z
+UID:keydate-11146786-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270215
+DTEND;VALUE=DATE:20270216
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holiday (Washington’s Birthday and Presidents’ Day)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146787
+CREATED:20260612T160505Z
+LAST-MODIFIED:20260612T160505Z
+UID:keydate-11146787-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270309
+DTEND;VALUE=DATE:20270310
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holiday (Eid al-Fitr)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146788
+CREATED:20260612T160505Z
+LAST-MODIFIED:20260929T130644Z
+UID:keydate-11146788-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270322
+DTEND;VALUE=DATE:20270327
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holidays (Spring Break)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146789
+CREATED:20260612T160505Z
+LAST-MODIFIED:20260612T160505Z
+UID:keydate-11146789-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270416
+DTEND;VALUE=DATE:20270417
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:End of Third Quarter - Two-Hour Early Release
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11153412
+CREATED:20260612T190639Z
+LAST-MODIFIED:20260612T190639Z
+UID:keydate-11153412-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270419
+DTEND;VALUE=DATE:20270420
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Student Holiday (Teacher Workday)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146790
+CREATED:20260612T160505Z
+LAST-MODIFIED:20260612T160505Z
+UID:keydate-11146790-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270420
+DTEND;VALUE=DATE:20270421
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Student Holiday (Staff Development Day)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146791
+CREATED:20260612T160505Z
+LAST-MODIFIED:20260612T160505Z
+UID:keydate-11146791-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270517
+DTEND;VALUE=DATE:20270518
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holiday (Eid al-Adha)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146792
+CREATED:20260612T160505Z
+LAST-MODIFIED:20260612T160505Z
+UID:keydate-11146792-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270531
+DTEND;VALUE=DATE:20270601
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holiday (Memorial Day)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146793
+CREATED:20260612T160505Z
+LAST-MODIFIED:20260612T160505Z
+UID:keydate-11146793-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270616
+DTEND;VALUE=DATE:20270617
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Last Day of School (Early Release)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11146797
+CREATED:20260612T185413Z
+LAST-MODIFIED:20260612T185413Z
+UID:keydate-11146797-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270618
+DTEND;VALUE=DATE:20270619
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Holiday (Juneteenth\, Observed)
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11153413
+CREATED:20260612T191022Z
+LAST-MODIFIED:20260612T191022Z
+UID:keydate-11153413-fairfaxcountypublics@intand.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP:20261011T144110Z
+DTSTART;VALUE=DATE:20270621
+DTEND;VALUE=DATE:20270622
+TRANSP:TRANSPARENT
+PRIORITY:0
+SUMMARY:Teacher Workday
+DESCRIPTION:Key Date\n\nSchools:\nAll Schools\n\n
+URL;VALUE=URI:https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?t
+ ype=key_date&action=details&id=11153414
+CREATED:20260612T191022Z
+LAST-MODIFIED:20260612T191022Z
+UID:keydate-11153414-fairfaxcountypublics@intand.com
+END:VEVENT
+END:VCALENDAR

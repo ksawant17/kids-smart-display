@@ -1,0 +1,20 @@
+[Unit]
+Description=Kids Smart Dashboard — SvelteKit server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/kids-smart-dashboard
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# Names, location, school calendar feed, wardrobe and kiosk settings live in
+# config/dashboard.json (relative to WorkingDirectory); the kiosk picks up
+# edits within the hour (restart kids-smart-kiosk to apply immediately).
+ExecStart=/home/pi/.local/share/pi-node/current/bin/node /home/pi/kids-smart-dashboard/build/index.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

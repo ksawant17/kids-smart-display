@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Kids Dashboard - Calendar Tab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,700;0,800;0,900;1,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cyan: #4bd8f6; 
+            --card-white: #ffffff;
+            --border-dark: #111827;
+            --text-dark: #111827;
+            --yellow-banner: #ffde3a; 
+            --bg-light-blue: #f0f9ff;
+            
+            /* Tab Colors */
+            --tab-orange: #ffab3b;
+            --tab-red: #ff6b6b;
+            --tab-green: #5ad570;
+            --tab-purple: #b388ff;
+            --tab-pink: #e06ced;
+
+            /* Event Colors based on FCPS Calendar */
+            --event-holiday: #ff6b6b;
+            --event-early: #ffde3a;
+
+            --sticker-shadow: 4px 4px 0px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Nunito', sans-serif; 
+            color: var(--text-dark);
+        }
+
+        body {
+            background-color: #1e293b;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #pi-screen {
+            width: 800px;
+            height: 480px;
+            background-color: var(--bg-cyan);
+            border: 5px solid var(--border-dark);
+            display: flex;
+            flex-direction: column;
+            padding: 14px 16px 0 16px; 
+            gap: 14px;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 38px;
+        }
+
+        .header-left {
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-sun {
+            width: 32px;
+            height: 32px;
+            margin: 0 10px;
+            filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.15));
+        }
+
+        .header-right {
+            font-size: 22px;
+            font-weight: 900;
+            background-color: var(--card-white);
+            padding: 4px 16px;
+            border: 3px solid var(--border-dark);
+            border-radius: 20px;
+            box-shadow: 3px 3px 0 var(--border-dark);
+        }
+
+        /* --- Main Layout Grid (Calendar View) --- */
+        main {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr; /* Left side wider for the calendar grid */
+            gap: 14px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .card {
+            background-color: var(--card-white);
+            border: 3px solid var(--border-dark);
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--sticker-shadow);
+            position: relative;
+            min-height: 0; 
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 900;
+            text-align: center;
+            background: var(--yellow-banner);
+            border: 2.5px solid var(--border-dark);
+            border-radius: 20px;
+            padding: 4px 16px;
+            display: inline-block;
+            margin: 0 auto 12px auto;
+            white-space: nowrap;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        /* --- Left Column: Interactive Month Grid --- */
+        .month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 0 10px;
+        }
+
+        .month-title {
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .nav-arrow {
+            background: var(--bg-light-blue);
+            border: 2.5px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 2px 10px;
+            font-weight: 900;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        .nav-arrow:active { transform: translate(2px, 2px); box-shadow: 0 0 0; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            flex: 1;
+        }
+
+        .day-name {
+            text-align: center;
+            font-weight: 900;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .day-cell {
+            background: var(--bg-light-blue);
+            border: 2.5px solid var(--border-dark);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            position: relative;
+        }
+
+        .day-cell.empty { background: transparent; border: none; }
+        
+        .day-cell.today {
+            background: var(--tab-orange);
+            color: white;
+            font-size: 20px;
+            font-weight: 900;
+            border: 3px solid var(--border-dark);
+        }
+
+        .day-cell.holiday { background: var(--event-holiday); color: white; }
+        .day-cell.early { background: var(--event-early); }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .legend span { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border-dark); }
+        .dot.red { background: var(--event-holiday); }
+        .dot.yellow { background: var(--event-early); }
+
+        /* --- Right Column: Upcoming School Events --- */
+        .agenda-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-top: 4px;
+        }
+
+        .agenda-item {
+            display: flex;
+            align-items: center;
+            background: var(--bg-light-blue);
+            border: 2.5px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 10px;
+            gap: 12px;
+        }
+
+        .agenda-date {
+            background: var(--card-white);
+            border: 2px solid var(--border-dark);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 55px;
+            height: 55px;
+        }
+
+        .agenda-date .month { font-size: 12px; font-weight: 900; text-transform: uppercase; color: #ef4444; }
+        .agenda-date .day { font-size: 22px; font-weight: 900; line-height: 1; }
+
+        .agenda-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .agenda-title { font-size: 16px; font-weight: 900; line-height: 1.2; }
+        .agenda-sub { font-size: 14px; font-weight: 800; color: #475569; margin-top: 2px; }
+
+        /* --- Bottom Navigation Tabs (Flush Folders) --- */
+        nav {
+            display: flex;
+            gap: 8px; 
+            height: 80px;
+            margin-top: auto;
+        }
+
+        .tab {
+            flex: 1;
+            border: 3.5px solid var(--border-dark);
+            border-bottom: none; 
+            border-radius: 16px 16px 0 0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding-top: 4px; 
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            opacity: 0.5; /* Inactive tabs are dimmed */
+            transform: translateY(6px); /* Inactive tabs sit slightly lower */
+        }
+
+        .tab.active {
+            opacity: 1;
+            transform: translateY(0);
+            background-color: var(--tab-red) !important; /* Forces active color */
+        }
+
+        .tab span {
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .tab img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+
+        .tab-today { background-color: #94a3b8; }
+        .tab-calendar { background-color: var(--tab-red); }
+        .tab-quote { background-color: #94a3b8; } 
+        .tab-wardrobe { background-color: #94a3b8; }
+        .tab-fun { background-color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <div id="pi-screen">
+        
+        <!-- Header -->
+        <header>
+            <div class="header-left">
+                Good Morning, Alex & Sam! 
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f31e.svg" class="header-sun" alt="sun">
+                Wed, Oct 7
+            </div>
+            <div class="header-right">
+                8:30 AM 
+            </div>
+        </header>
+
+        <!-- Main Grid (Calendar View) -->
+        <main>
+            
+            <!-- Left Column: Calendar Grid -->
+            <div class="card">
+                <div class="month-header">
+                    <div class="nav-arrow">&lt;</div>
+                    <div class="month-title">October 2026</div>
+                    <div class="nav-arrow">&gt;</div>
+                </div>
+
+                <div class="calendar-grid">
+                    <div class="day-name">S</div>
+                    <div class="day-name">M</div>
+                    <div class="day-name">T</div>
+                    <div class="day-name">W</div>
+                    <div class="day-name">T</div>
+                    <div class="day-name">F</div>
+                    <div class="day-name">S</div>
+                    
+                    <!-- Oct 1 starts on Thursday -->
+                    <div class="day-cell empty"></div>
+                    <div class="day-cell empty"></div>
+                    <div class="day-cell empty"></div>
+                    <div class="day-cell empty"></div>
+                    <div class="day-cell">1</div>
+                    <div class="day-cell">2</div>
+                    <div class="day-cell">3</div>
+                    <div class="day-cell">4</div>
+                    <div class="day-cell">5</div>
+                    <div class="day-cell">6</div>
+                    <div class="day-cell today">7</div> <!-- Today -->
+                    <div class="day-cell">8</div>
+                    <div class="day-cell">9</div>
+                    <div class="day-cell">10</div>
+                    <div class="day-cell">11</div>
+                    <div class="day-cell holiday">12</div> <!-- Indigenous Peoples' Day -->
+                    <div class="day-cell">13</div>
+                    <div class="day-cell">14</div>
+                    <div class="day-cell">15</div>
+                    <div class="day-cell">16</div>
+                    <div class="day-cell">17</div>
+                    <div class="day-cell">18</div>
+                    <div class="day-cell">19</div>
+                    <div class="day-cell">20</div>
+                    <div class="day-cell">21</div>
+                    <div class="day-cell">22</div>
+                    <div class="day-cell">23</div>
+                    <div class="day-cell">24</div>
+                    <div class="day-cell">25</div>
+                    <div class="day-cell">26</div>
+                    <div class="day-cell">27</div>
+                    <div class="day-cell">28</div>
+                    <div class="day-cell">29</div>
+                    <div class="day-cell early">30</div> <!-- End of Quarter -->
+                    <div class="day-cell">31</div>
+                </div>
+
+                <div class="legend">
+                    <span><div class="dot red"></div> No School</span>
+                    <span><div class="dot yellow"></div> Early Release</span>
+                </div>
+            </div>
+
+            <!-- Right Column: Upcoming School Schedule -->
+            <div class="card">
+                <div class="section-title">Up Next at School</div>
+                
+                <div class="agenda-list">
+                    <!-- Event 1: Oct 12 -->
+                    <div class="agenda-item" style="background: #fee2e2; border-color: var(--event-holiday);">
+                        <div class="agenda-date">
+                            <span class="month">Oct</span>
+                            <span class="day">12</span>
+                        </div>
+                        <div class="agenda-details">
+                            <span class="agenda-title">No School</span>
+                            <span class="agenda-sub">Indigenous Peoples' Day</span>
+                        </div>
+                    </div>
+
+                    <!-- Event 2: Oct 30 -->
+                    <div class="agenda-item" style="background: #fef9c3; border-color: #ca8a04;">
+                        <div class="agenda-date">
+                            <span class="month">Oct</span>
+                            <span class="day">30</span>
+                        </div>
+                        <div class="agenda-details">
+                            <span class="agenda-title">2-Hour Early Release</span>
+                            <span class="agenda-sub">End of 1st Quarter</span>
+                        </div>
+                    </div>
+
+                    <!-- Event 3: Nov 3 -->
+                    <div class="agenda-item" style="background: #fee2e2; border-color: var(--event-holiday);">
+                        <div class="agenda-date">
+                            <span class="month">Nov</span>
+                            <span class="day">3</span>
+                        </div>
+                        <div class="agenda-details">
+                            <span class="agenda-title">No School</span>
+                            <span class="agenda-sub">Election Day</span>
+                        </div>
+                    </div>
+
+                    <!-- Event 4: Nov 25-27 -->
+                    <div class="agenda-item" style="background: var(--bg-light-blue);">
+                        <div class="agenda-date">
+                            <span class="month">Nov</span>
+                            <span class="day">25</span>
+                        </div>
+                        <div class="agenda-details">
+                            <span class="agenda-title">Thanksgiving Break</span>
+                            <span class="agenda-sub">Nov 25 - Nov 27</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </main>
+
+        <!-- Bottom Tabs (Calendar is Active) -->
+        <nav>
+            <div class="tab tab-today">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f60e.svg" alt="today">
+                <span>TODAY</span>
+            </div>
+            <!-- ACTIVE TAB -->
+            <div class="tab tab-calendar active">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f4c5.svg" alt="calendar">
+                <span>CALENDAR</span>
+            </div>
+            <div class="tab tab-quote">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f3c6.svg" alt="quote">
+                <span>QUOTE</span>
+            </div>
+            <div class="tab tab-wardrobe">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f9e5.svg" alt="wardrobe">
+                <span>WARDROBE</span>
+            </div>
+            <div class="tab tab-fun">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f996.svg" alt="fun">
+                <span>FUN</span>
+            </div>
+        </nav>
+
+    </div>
+
+</body>
+</html>

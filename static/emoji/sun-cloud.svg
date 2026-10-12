@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- sun (behind) -->
+  <g stroke="#334155" stroke-linecap="round" fill="none">
+    <line x1="30" y1="14" x2="30" y2="6" stroke-width="8"/>
+    <line x1="30" y1="46" x2="30" y2="54" stroke-width="8"/>
+    <line x1="46" y1="30" x2="54" y2="30" stroke-width="8"/>
+    <line x1="14" y1="30" x2="6" y2="30" stroke-width="8"/>
+    <line x1="41" y1="19" x2="47" y2="13" stroke-width="8"/>
+    <line x1="19" y1="19" x2="13" y2="13" stroke-width="8"/>
+    <line x1="41" y1="41" x2="47" y2="47" stroke-width="8"/>
+    <line x1="19" y1="41" x2="13" y2="47" stroke-width="8"/>
+    <circle cx="30" cy="30" r="11" fill="#FFC53D" stroke-width="9"/>
+  </g>
+  <g stroke="#FFC53D" stroke-linecap="round" fill="none">
+    <line x1="30" y1="14" x2="30" y2="6" stroke-width="4.5"/>
+    <line x1="30" y1="46" x2="30" y2="54" stroke-width="4.5"/>
+    <line x1="46" y1="30" x2="54" y2="30" stroke-width="4.5"/>
+    <line x1="14" y1="30" x2="6" y2="30" stroke-width="4.5"/>
+    <line x1="41" y1="19" x2="47" y2="13" stroke-width="4.5"/>
+    <line x1="19" y1="19" x2="13" y2="13" stroke-width="4.5"/>
+    <line x1="41" y1="41" x2="47" y2="47" stroke-width="4.5"/>
+    <line x1="19" y1="41" x2="13" y2="47" stroke-width="4.5"/>
+  </g>
+  <!-- cloud (front) -->
+  <g fill="#8CA3BF" stroke="#334155" stroke-width="8" stroke-linejoin="round">
+    <circle cx="48" cy="62" r="14"/>
+    <circle cx="65" cy="54" r="18"/>
+    <circle cx="79" cy="64" r="12"/>
+    <rect x="40" y="60" width="48" height="16" rx="8"/>
+  </g>
+  <g fill="#8CA3BF">
+    <circle cx="48" cy="62" r="14"/>
+    <circle cx="65" cy="54" r="18"/>
+    <circle cx="79" cy="64" r="12"/>
+    <rect x="40" y="60" width="48" height="16" rx="8"/>
+  </g>
+</svg>

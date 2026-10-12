@@ -1,0 +1,240 @@
+[
+  {
+    "date": "2026-08-18",
+    "title": "First Day of School",
+    "subtitle": "Welcome Back!",
+    "type": "first_day"
+  },
+  {
+    "date": "2026-08-28",
+    "title": "Student Holiday",
+    "subtitle": "No School",
+    "type": "holiday"
+  },
+  {
+    "date": "2026-09-04",
+    "endDate": "2026-09-07",
+    "title": "Labor Day Break",
+    "subtitle": "No School",
+    "type": "holiday"
+  },
+  {
+    "date": "2026-09-12",
+    "title": "Rosh Hashanah",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2026-09-21",
+    "title": "Yom Kippur",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2026-10-12",
+    "title": "Indigenous Peoples' Day",
+    "subtitle": "School Planning Day / Student Holiday",
+    "type": "teacher_workday"
+  },
+  {
+    "date": "2026-10-30",
+    "title": "2-Hour Early Release",
+    "subtitle": "End of 1st Quarter",
+    "type": "early_release"
+  },
+  {
+    "date": "2026-11-02",
+    "title": "Teacher Workday",
+    "subtitle": "Student Holiday",
+    "type": "teacher_workday"
+  },
+  {
+    "date": "2026-11-03",
+    "title": "Election Day",
+    "subtitle": "Teacher Workday / Student Holiday",
+    "type": "teacher_workday"
+  },
+  {
+    "date": "2026-11-08",
+    "title": "Diwali",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2026-11-11",
+    "title": "Veterans Day",
+    "subtitle": "Student Holiday",
+    "type": "holiday"
+  },
+  {
+    "date": "2026-11-25",
+    "endDate": "2026-11-27",
+    "title": "Thanksgiving Break",
+    "subtitle": "No School",
+    "type": "holiday"
+  },
+  {
+    "date": "2026-12-08",
+    "title": "Bodhi Day",
+    "subtitle": "Cultural Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2026-12-21",
+    "endDate": "2027-01-03",
+    "title": "Winter Break",
+    "subtitle": "No School",
+    "type": "holiday"
+  },
+  {
+    "date": "2027-01-06",
+    "title": "Three Kings Day / Epiphany",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-01-07",
+    "title": "Orthodox Christmas",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-01-18",
+    "title": "Martin Luther King, Jr.'s Birthday",
+    "subtitle": "Student Holiday",
+    "type": "holiday"
+  },
+  {
+    "date": "2027-01-19",
+    "title": "Orthodox Epiphany",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-01-28",
+    "title": "2-Hour Early Release",
+    "subtitle": "End of 2nd Quarter",
+    "type": "early_release"
+  },
+  {
+    "date": "2027-01-29",
+    "title": "Teacher Workday",
+    "subtitle": "Student Holiday",
+    "type": "teacher_workday"
+  },
+  {
+    "date": "2027-02-06",
+    "title": "Lunar New Year",
+    "subtitle": "Cultural Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-02-10",
+    "title": "Ash Wednesday",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-02-15",
+    "title": "Washington's Birthday & Presidents Day",
+    "subtitle": "Student Holiday",
+    "type": "holiday"
+  },
+  {
+    "date": "2027-03-09",
+    "title": "Eid al-Fitr",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-03-20",
+    "title": "Nowruz",
+    "subtitle": "Cultural Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-03-22",
+    "endDate": "2027-03-26",
+    "title": "Spring Break",
+    "subtitle": "No School",
+    "type": "holiday"
+  },
+  {
+    "date": "2027-03-26",
+    "title": "Good Friday",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-03-28",
+    "title": "Easter",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-04-01",
+    "title": "Teacher Workday",
+    "subtitle": "Student Holiday",
+    "type": "teacher_workday"
+  },
+  {
+    "date": "2027-04-02",
+    "title": "Staff Development Day",
+    "subtitle": "Student Holiday",
+    "type": "teacher_workday"
+  },
+  {
+    "date": "2027-04-16",
+    "title": "2-Hour Early Release",
+    "subtitle": "End of 3rd Quarter",
+    "type": "early_release"
+  },
+  {
+    "date": "2027-04-20",
+    "title": "Theravada New Year",
+    "subtitle": "Cultural Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-04-30",
+    "title": "Orthodox Good Friday",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-05-02",
+    "title": "Orthodox Easter",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-05-17",
+    "title": "Eid al-Adha",
+    "subtitle": "Religious Observance",
+    "type": "observance"
+  },
+  {
+    "date": "2027-05-31",
+    "title": "Memorial Day",
+    "subtitle": "Student Holiday",
+    "type": "holiday"
+  },
+  {
+    "date": "2027-06-16",
+    "title": "Last Day of School",
+    "subtitle": "Early Release / End of 4th Quarter",
+    "type": "last_day"
+  },
+  {
+    "date": "2027-06-17",
+    "title": "Teacher Workday",
+    "subtitle": "Student Holiday",
+    "type": "teacher_workday"
+  },
+  {
+    "date": "2027-06-18",
+    "title": "Juneteenth",
+    "subtitle": "Holiday Observed",
+    "type": "holiday"
+  }
+]

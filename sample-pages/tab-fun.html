@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kids Dashboard - Fun Tab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,700;0,800;0,900;1,800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-cyan: #4bd8f6; --card-white: #ffffff; --border-dark: #111827; --text-dark: #111827; --yellow-banner: #ffde3a; --bg-light-blue: #f0f9ff; --tab-orange: #ffab3b; --tab-red: #ff6b6b; --tab-green: #5ad570; --tab-purple: #b388ff; --tab-pink: #e06ced; --sticker-shadow: 4px 4px 0px rgba(0, 0, 0, 0.12); }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Nunito', sans-serif; color: var(--text-dark); }
+        body { background-color: #1e293b; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #pi-screen { width: 800px; height: 480px; background-color: var(--bg-cyan); border: 5px solid var(--border-dark); display: flex; flex-direction: column; padding: 14px 16px 0 16px; gap: 14px; overflow: hidden; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); }
+        header { display: flex; justify-content: space-between; align-items: center; height: 38px; }
+        .header-left { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; }
+        .header-sun { width: 32px; height: 32px; margin: 0 10px; filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.15)); }
+        .header-right { font-size: 22px; font-weight: 900; background-color: var(--card-white); padding: 4px 16px; border: 3px solid var(--border-dark); border-radius: 20px; box-shadow: 3px 3px 0 var(--border-dark); }
+        .card { background-color: var(--card-white); border: 3px solid var(--border-dark); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; box-shadow: var(--sticker-shadow); position: relative; min-height: 0; }
+        .section-title { font-size: 18px; font-weight: 900; text-align: center; background: var(--yellow-banner); border: 2.5px solid var(--border-dark); border-radius: 20px; padding: 6px 20px; display: inline-block; margin: 0 auto 12px auto; white-space: nowrap; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); }
+        
+        nav { display: flex; gap: 8px; height: 80px; margin-top: auto; }
+        .tab { flex: 1; border: 3.5px solid var(--border-dark); border-bottom: none; border-radius: 16px 16px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding-top: 4px; transition: opacity 0.2s ease, transform 0.2s ease; opacity: 0.5; transform: translateY(6px); }
+        .tab.active { opacity: 1; transform: translateY(0); }
+        .tab span { color: #ffffff; font-weight: 900; font-size: 15px; letter-spacing: 0.5px; margin-top: 2px; }
+        .tab img { width: 30px; height: 30px; object-fit: contain; }
+        .tab-today { background-color: #94a3b8; } .tab-calendar { background-color: #94a3b8; } .tab-quote { background-color: #94a3b8; } .tab-wardrobe { background-color: #94a3b8; } .tab-fun { background-color: var(--tab-pink); }
+    </style>
+</head>
+<body>
+    <div id="pi-screen">
+        <header>
+            <div class="header-left">Good Morning, Alex & Sam! <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f31e.svg" class="header-sun" alt="sun"> Wed, Oct 7</div>
+            <div class="header-right">8:30 AM</div>
+        </header>
+
+        <!-- Fun Main Area -->
+        <main style="display: flex; flex: 1; min-height: 0;">
+            <div class="card" style="flex: 1; background-color: #dcfce7; flex-direction: row; align-items: center; padding: 24px; gap: 24px;">
+                
+                <!-- Left: Image & Title -->
+                <div style="flex: 0.8; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div class="section-title" style="background: var(--card-white);">Dino of the Day!</div>
+                    <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f996.svg" style="width: 160px; height: 160px; filter: drop-shadow(4px 5px 0px rgba(0,0,0,0.15)); margin: 10px 0;">
+                    <div style="font-size: 26px; font-weight: 900; text-align: center; line-height: 1;">Tyrannosaurus Rex</div>
+                </div>
+
+                <!-- Right: Fun Fact -->
+                <div style="flex: 1.2; font-size: 20px; font-weight: 800; line-height: 1.45; padding: 24px; background: var(--card-white); border-radius: 16px; border: 3px solid var(--border-dark); box-shadow: inset 0 4px 6px rgba(0,0,0,0.05);">
+                    <div style="font-size: 22px; font-weight: 900; color: #ef4444; margin-bottom: 8px;">Did you know?</div>
+                    A T-Rex's jaw was so powerful it could crush a small car! And their teeth were the size of giant bananas! 
+                    <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f34c.svg" style="width: 28px; vertical-align: middle; margin-left: 4px;">
+                </div>
+
+            </div>
+        </main>
+
+        <nav>
+            <div class="tab tab-today"><img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f60e.svg"><span>TODAY</span></div>
+            <div class="tab tab-calendar"><img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f4c5.svg"><span>CALENDAR</span></div>
+            <div class="tab tab-quote"><img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f3c6.svg"><span>QUOTE</span></div>
+            <div class="tab tab-wardrobe"><img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f9e5.svg"><span>WARDROBE</span></div>
+            <!-- ACTIVE TAB -->
+            <div class="tab tab-fun active"><img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f996.svg"><span>FUN</span></div>
+        </nav>
+    </div>
+</body>
+</html>

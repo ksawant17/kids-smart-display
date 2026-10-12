@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Kids Dashboard - Layout Fixed</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,700;0,800;0,900;1,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cyan: #4bd8f6; 
+            --card-white: #ffffff;
+            --border-dark: #111827;
+            --text-dark: #111827;
+            --yellow-banner: #ffde3a; 
+            --bg-light-blue: #f0f9ff;
+            
+            /* Tab Colors */
+            --tab-orange: #ffab3b;
+            --tab-red: #ff6b6b;
+            --tab-green: #5ad570;
+            --tab-purple: #b388ff;
+            --tab-pink: #e06ced;
+
+            /* Playful solid shadow for cards */
+            --sticker-shadow: 4px 4px 0px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Nunito', sans-serif; 
+            color: var(--text-dark);
+        }
+
+        body {
+            background-color: #1e293b;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* 800x480 Hardware Constraint */
+        #pi-screen {
+            width: 800px;
+            height: 480px;
+            background-color: var(--bg-cyan);
+            border: 5px solid var(--border-dark);
+            display: flex;
+            flex-direction: column;
+            padding: 14px 16px 0 16px; 
+            gap: 14px;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 38px;
+        }
+
+        .header-left {
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-sun {
+            width: 32px;
+            height: 32px;
+            margin: 0 10px;
+            filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.15));
+        }
+
+        .header-right {
+            font-size: 22px;
+            font-weight: 900;
+            background-color: var(--card-white);
+            padding: 4px 16px;
+            border: 3px solid var(--border-dark);
+            border-radius: 20px;
+            box-shadow: 3px 3px 0 var(--border-dark);
+        }
+
+        /* --- Main Layout Grid --- */
+        main {
+            display: grid;
+            grid-template-columns: 1.15fr 0.95fr 0.9fr;
+            gap: 14px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .card {
+            background-color: var(--card-white);
+            border: 3px solid var(--border-dark);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--sticker-shadow);
+            position: relative;
+            min-height: 0; 
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 900;
+            text-align: center;
+            background: var(--yellow-banner);
+            border: 2.5px solid var(--border-dark);
+            border-radius: 20px;
+            padding: 3px 14px;
+            display: inline-block;
+            margin: 0 auto 8px auto;
+            white-space: nowrap;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        /* --- Column 1: Left --- */
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 0;
+        }
+
+        .hero-card {
+            flex: 1.1;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hero-top {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .hero-temp {
+            font-size: 80px; 
+            font-weight: 900;
+            line-height: 0.8;
+            letter-spacing: -3px;
+        }
+
+        .hero-icon {
+            width: 80px; 
+            height: 80px;
+            margin-top: -5px;
+            margin-right: -5px;
+            filter: drop-shadow(3px 4px 0px rgba(0,0,0,0.12));
+        }
+
+        .hero-desc {
+            font-size: 19px;
+            font-weight: 900;
+            margin-top: auto;
+        }
+
+        .hourly-row {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            align-items: center;
+            flex: 0.7;
+        }
+
+        .hourly-row::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 5px;
+            right: 5px;
+            height: 3px;
+            background-color: var(--border-dark);
+            z-index: 0;
+            transform: translateY(-50%);
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        .hour-box {
+            background-color: var(--card-white);
+            border: 3px solid var(--border-dark);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 0;
+            width: 62px;
+            z-index: 1;
+            box-shadow: var(--sticker-shadow);
+        }
+
+        .hour-box span:first-child { font-size: 13px; font-weight: 800; }
+        .hour-box img { width: 28px; height: 28px; margin: 3px 0; filter: drop-shadow(1px 2px 0px rgba(0,0,0,0.1)); }
+        .hour-box span:last-child { font-size: 15px; font-weight: 900; }
+
+        .school-banner {
+            background-color: var(--yellow-banner);
+            border: 3px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-weight: 800;
+            font-size: 14.5px;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.35;
+            flex: 0.6;
+            justify-content: center;
+            box-shadow: var(--sticker-shadow);
+        }
+
+        .banner-row { display: flex; align-items: center; gap: 8px; }
+        .banner-row img { width: 16px; height: 16px; }
+
+        /* --- Column 2: Middle (Tomorrow & Quote) --- */
+        .mid-col {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 0;
+        }
+
+        .tomorrow-card {
+            flex: 0.95; /* Increased flex to give more vertical room */
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-light-blue);
+            padding: 10px; /* Slightly tighter padding to protect inner content */
+        }
+        
+        .tomorrow-card .section-title {
+            margin-bottom: 4px; /* Pulled the title closer to the icon to save space */
+        }
+
+        .tomorrow-card img {
+            width: 50px; /* Scaled down slightly to fit */
+            height: 50px;
+            filter: drop-shadow(3px 4px 0px rgba(0,0,0,0.12));
+            margin: 0 0 4px 0;
+        }
+        
+        .tomorrow-desc { font-size: 16px; font-weight: 900; }
+        .tomorrow-highlow { font-size: 14px; font-weight: 800; color: #475569; margin-top: 0; }
+
+        .quote-card {
+            flex: 1.05; /* Adjusted to balance with tomorrow card */
+            padding: 12px;
+            justify-content: center; 
+        }
+
+        .quote-text {
+            font-size: 14.5px; 
+            font-weight: 800;
+            font-style: italic;
+            text-align: center;
+            line-height: 1.3;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            color: #334155;
+            padding: 0 2px;
+        }
+
+        .quote-author {
+            font-size: 13.5px;
+            font-weight: 900;
+            text-align: right;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+        .quote-author img { width: 16px; height: 16px; }
+
+        /* --- Column 3: Right (Wardrobe) --- */
+        .wardrobe-card {
+            align-items: center;
+            background-color: var(--bg-light-blue);
+            padding: 12px 12px 0 12px; 
+            overflow: hidden; 
+        }
+
+        .avatar-boy {
+            width: 105px; 
+            height: 105px;
+            margin: auto 0;
+            filter: drop-shadow(3px 4px 0px rgba(0,0,0,0.15));
+        }
+
+        .wardrobe-footer {
+            background: #dbeafe; 
+            border-top: 3px solid var(--border-dark);
+            width: calc(100% + 24px);
+            margin-left: -12px;
+            margin-right: -12px;
+            padding: 10px 12px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .wardrobe-footer img { width: 18px; height: 18px; }
+
+        /* --- Bottom Navigation Tabs --- */
+        nav {
+            display: flex;
+            gap: 8px; 
+            height: 80px;
+            margin-top: auto;
+        }
+
+        .tab {
+            flex: 1;
+            border: 3.5px solid var(--border-dark);
+            border-bottom: none; 
+            border-radius: 16px 16px 0 0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding-top: 4px; 
+            transition: opacity 0.1s ease;
+        }
+
+        .tab span {
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .tab img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+
+        .tab:active {
+            opacity: 0.8;
+        }
+
+        .tab-today { background-color: var(--tab-orange); }
+        .tab-calendar { background-color: var(--tab-red); }
+        .tab-quote { background-color: var(--tab-green); } 
+        .tab-wardrobe { background-color: var(--tab-purple); }
+        .tab-fun { background-color: var(--tab-pink); }
+    </style>
+</head>
+<body>
+
+    <div id="pi-screen">
+        
+        <!-- Header -->
+        <header>
+            <div class="header-left">
+                Good Morning, Alex & Sam! 
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f31e.svg" class="header-sun" alt="sun">
+                Wed, Oct 7
+            </div>
+            <div class="header-right">
+                8:30 AM 
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <main>
+            
+            <!-- Left Column: Current Weather -->
+            <div class="left-col">
+                <div class="card hero-card">
+                    <div class="hero-top">
+                        <div class="hero-temp">68&deg;</div>
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/26c5.svg" class="hero-icon" alt="weather">
+                    </div>
+                    <div class="hero-desc">Partly Sunny</div>
+                </div>
+
+                <div class="hourly-row">
+                    <div class="hour-box">
+                        <span>10 AM</span>
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2601.svg" alt="cloud">
+                        <span>62&deg;</span>
+                    </div>
+                    <div class="hour-box">
+                        <span>12 PM</span>
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/26c5.svg" alt="partly cloudy">
+                        <span>67&deg;</span>
+                    </div>
+                    <div class="hour-box">
+                        <span>2 PM</span>
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2600.svg" alt="sun">
+                        <span>68&deg;</span>
+                    </div>
+                    <div class="hour-box">
+                        <span>4 PM</span>
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/26c5.svg" alt="partly cloudy">
+                        <span>65&deg;</span>
+                    </div>
+                </div>
+
+                <div class="school-banner">
+                    <div class="banner-row">
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2b50.svg" alt="star">
+                        School: Pajama Day!
+                    </div>
+                    <div class="banner-row">
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f355.svg" alt="pizza">
+                        Pizza Lunch
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column: Tomorrow & Quote -->
+            <div class="mid-col">
+                <div class="card tomorrow-card">
+                    <div class="section-title">Tomorrow</div>
+                    <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/26c5.svg" alt="tomorrow weather">
+                    <div class="tomorrow-desc">Mostly Cloudy</div>
+                    <div class="tomorrow-highlow">H: 72&deg; &nbsp; L: 54&deg;</div>
+                </div>
+
+                <div class="card quote-card">
+                    <div class="section-title">Quote of the Day</div>
+                    <div class="quote-text">
+                        "You are braver than you believe, stronger than you seem, and smarter than you think."
+                    </div>
+                    <div class="quote-author">
+                        - Winnie the Pooh 
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f43b.svg" alt="bear">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Wardrobe -->
+            <div class="card wardrobe-card">
+                <div class="section-title">What to Wear</div>
+                
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f466-1f3fd.svg" class="avatar-boy" alt="boy avatar">
+
+                <div class="wardrobe-footer">
+                    <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f342.svg" alt="leaf">
+                    Hoodie & Sneakers today!
+                </div>
+            </div>
+            
+        </main>
+
+        <!-- Bottom Tabs (Flush Folders) -->
+        <nav>
+            <div class="tab tab-today">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f60e.svg" alt="today">
+                <span>TODAY</span>
+            </div>
+            <div class="tab tab-calendar">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f4c5.svg" alt="calendar">
+                <span>CALENDAR</span>
+            </div>
+            <div class="tab tab-quote">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f3c6.svg" alt="quote">
+                <span>QUOTE</span>
+            </div>
+            <div class="tab tab-wardrobe">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f9e5.svg" alt="wardrobe">
+                <span>WARDROBE</span>
+            </div>
+            <div class="tab tab-fun">
+                <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f996.svg" alt="fun">
+                <span>FUN</span>
+            </div>
+        </nav>
+
+    </div>
+
+</body>
+</html>

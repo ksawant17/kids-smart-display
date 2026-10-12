@@ -1,0 +1,282 @@
+/* ==========================================================================
+   Kids Smart Dashboard — "sticker" comic-book theme (800x480 kiosk)
+   Flat colors, thick dark borders, hard offset shadows, Nunito.
+   Icons: local <img> stickers (see Emoji.svelte). No text emojis in the UI.
+   ========================================================================== */
+
+@import '@fontsource/nunito/700.css';
+@import '@fontsource/nunito/800.css';
+@import '@fontsource/nunito/900.css';
+@import '@fontsource/nunito/800-italic.css';
+
+:root {
+	--bg-cyan: #4bd8f6;
+	--card-white: #ffffff;
+	--border-dark: #334155;
+	--text-dark: #111827;
+	--yellow-banner: #ffde3a;
+	--bg-light-blue: #f0f9ff;
+
+	/* Tab colors */
+	--tab-orange: #ffab3b;
+	--tab-red: #ff6b6b;
+	--tab-green: #5ad570;
+	--tab-purple: #b388ff;
+	--tab-pink: #e06ced;
+	--tab-gray: #64748b;
+
+	/* School-event colors (FCPS) */
+	--event-holiday: #ff6b6b;
+	--event-early: #ffde3a;
+
+	/* Playful solid (non-blurred) "sticker" shadows */
+	--sticker-shadow: 3px 4px 0px rgba(15, 23, 42, 0.22);
+	--sticker-shadow-sm: 2px 2.5px 0px rgba(15, 23, 42, 0.18);
+}
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	font-family: 'Nunito', sans-serif;
+	font-weight: 800;
+	color: var(--text-dark);
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	cursor: default;
+	overscroll-behavior: none;
+	touch-action: manipulation;
+}
+
+body {
+	background-color: #1e293b;
+}
+
+img {
+	-webkit-user-drag: none;
+	user-drag: none;
+	pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   The 800x480 screen frame.
+   In the kiosk the viewport IS 800x480, so this fills it exactly. In a
+   bigger dev browser it fills the width and is capped at 480px tall
+   (resize the window to ~800px wide to preview the real layout).
+   -------------------------------------------------------------------------- */
+#pi-screen {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	margin: auto;
+	width: 100vw;
+	height: 100vh;
+	max-height: 480px;
+	background-color: var(--bg-cyan);
+	display: flex;
+	flex-direction: column;
+	padding: 10px 12px 0 12px;
+	gap: 10px;
+	overflow: hidden;
+}
+
+/* --- Header ------------------------------------------------------------- */
+header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 38px;
+	flex: 0 0 auto;
+}
+
+.header-left {
+	font-size: 26px;
+	font-weight: 900;
+	letter-spacing: -0.5px;
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+}
+
+.header-sun {
+	width: 32px;
+	height: 32px;
+	margin: 0 10px;
+	filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.15));
+}
+
+.header-right {
+	font-size: 22px;
+	font-weight: 900;
+	background-color: var(--card-white);
+	padding: 4px 16px;
+	border: 3px solid var(--border-dark);
+	border-radius: 20px;
+	box-shadow: 3px 3px 0 var(--border-dark);
+	white-space: nowrap;
+}
+
+/* --- Main layout --------------------------------------------------------- */
+main {
+	flex: 1;
+	min-height: 0;
+	display: grid;
+	gap: 14px;
+	position: relative;
+	overflow: hidden;
+}
+
+.card {
+	background-color: var(--card-white);
+	border: 3px solid var(--border-dark);
+	border-radius: 16px;
+	padding: 8px 10px;
+	display: flex;
+	flex-direction: column;
+	box-shadow: var(--sticker-shadow);
+	position: relative;
+	min-height: 0;
+}
+
+.section-title {
+	font-size: 15px;
+	font-weight: 900;
+	text-align: center;
+	background: var(--yellow-banner);
+	border: 2.5px solid var(--border-dark);
+	border-radius: 20px;
+	padding: 3px 14px;
+	display: block;
+	width: 100%;
+	margin: 0 0 8px 0;
+	white-space: nowrap;
+	box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.section-title.white {
+	background: var(--card-white);
+}
+
+/* --- Bottom navigation: "flush file folders" ------------------------------ */
+nav.tabs {
+	display: flex;
+	gap: 8px;
+	height: 80px;
+	flex: 0 0 auto;
+	margin-top: auto;
+	margin-left: -12px;
+	margin-right: -12px;
+	padding: 0 10px;
+}
+
+.tab {
+	flex: 1;
+	border: 3.5px solid var(--border-dark);
+	border-bottom: none;
+	border-radius: 16px 16px 0 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	padding-top: 4px;
+	transition: transform 0.2s ease;
+	text-decoration: none;
+	/* inactive: solid slate, white text + icons (no opacity — it bled into the cyan) */
+	color: #ffffff;
+	background-color: var(--tab-gray);
+}
+
+.tab.active {
+	color: var(--text-dark);
+}
+
+.tab span {
+	color: inherit;
+	font-weight: 900;
+	font-size: 15px;
+	letter-spacing: 0.5px;
+	margin-top: 2px;
+}
+
+.tab img {
+	width: 30px;
+	height: 30px;
+	object-fit: contain;
+}
+
+.tab:not(.active) img {
+	filter: brightness(0) invert(1);
+}
+.tab.active img {
+	filter: drop-shadow(1px 2px 0 rgba(15, 23, 42, 0.25));
+}
+
+.tab:active {
+	transform: translateY(2px);
+}
+
+.tab-today.active { background-color: var(--tab-orange); }
+.tab-calendar.active { background-color: var(--tab-red); }
+.tab-quote.active { background-color: var(--tab-green); }
+.tab-wardrobe.active { background-color: var(--tab-purple); }
+.tab-fun.active { background-color: var(--tab-pink); }
+
+/* Strict comic-book borders: thick + dark, no exceptions (4px per spec) */
+.card,
+.tab,
+.section-title,
+.hour-box,
+.school-banner {
+	border: 4px solid var(--border-dark) !important;
+}
+
+
+/* --- Generic tap targets -------------------------------------------------- */
+.pressable {
+	cursor: pointer;
+	transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.pressable:active {
+	transform: translate(2px, 2px);
+	box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+/* --- Animations ------------------------------------------------------------ */
+@keyframes pop-in {
+	0% { transform: scale(0.6); opacity: 0; }
+	70% { transform: scale(1.06); }
+	100% { transform: scale(1); opacity: 1; }
+}
+@keyframes slide-down {
+	from { transform: translateY(-105%); }
+	to { transform: translateY(0); }
+}
+@keyframes wiggle {
+	0%, 100% { transform: rotate(0deg); }
+	25% { transform: rotate(-8deg) scale(1.05); }
+	75% { transform: rotate(8deg) scale(1.05); }
+}
+@keyframes float {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-6px); }
+}
+
+.anim-pop { animation: pop-in 0.35s ease-out both; }
+.anim-wiggle { animation: wiggle 0.4s ease-in-out; }
+.anim-float { animation: float 3s ease-in-out infinite; }
+
+/* scrollbars: hidden (kiosk) */
+::-webkit-scrollbar { width: 0; height: 0; }

@@ -1,0 +1,42 @@
+[Unit]
+Description=Kids Smart Dashboard — cage/Chromium kiosk on the DSI panel
+After=network-online.target kids-smart-server.service seatd.service
+Wants=network-online.target
+Requires=seatd.service
+
+[Service]
+Type=exec
+User=pi
+Environment=NODE_ENV=production
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+# Use the root seatd daemon for seat/VT management. (cage's built-in seatd
+# runs as pi and can't open /dev/tty*, which is 0600 root:root on this box.)
+Environment=SEATD_SOCKET=unix:path=/run/seatd.sock
+# -s allows VT switching (Ctrl+Alt+F2) as an escape hatch.
+# --disable-gpu: software rendering (Mesa EGL is unreliable on RP1 + kernel 6.18).
+# --force-device-scale-factor=1: 1:1 (800x480) panel - keep CSS px = physical px
+# so the 800x480 design fills the screen exactly.
+ExecStart=/usr/bin/cage -s -- /usr/bin/chromium \
+	--kiosk \
+	--incognito \
+	--ozone-platform=wayland \
+	--force-device-scale-factor=1 \
+	--enable-features=OverlayScrollbar \
+	--no-first-run \
+	--no-default-browser-check \
+	--disable-pinch \
+	--touch-events=enabled \
+	--no-sandbox \
+	--disable-gpu \
+	--disable-dev-shm-usage \
+	--disable-infobars \
+	--disable-session-crashed-bubble \
+	--disable-features=Translate \
+	--start-maximized \
+	http://localhost:3000
+Restart=always
+RestartSec=3
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

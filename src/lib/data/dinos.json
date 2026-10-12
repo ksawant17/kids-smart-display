@@ -1,0 +1,17 @@
+[
+	{ "name": "Tyrannosaurus rex", "say": "tie-RAN-oh-SORE-us rex", "means": "tyrant lizard king", "lengthFt": 40, "diet": "meat", "period": "Cretaceous", "fact": "It had one of the strongest bites of any land animal ever!" },
+	{ "name": "Triceratops", "say": "try-SAIR-uh-tops", "means": "three-horned face", "lengthFt": 30, "diet": "plants", "period": "Cretaceous", "fact": "Its giant neck frill may have helped it show off to other Triceratops." },
+	{ "name": "Stegosaurus", "say": "STEG-oh-SORE-us", "means": "roof lizard", "lengthFt": 30, "diet": "plants", "period": "Jurassic", "fact": "The spikes on its tail have a funny nickname: the 'thagomizer'!" },
+	{ "name": "Brachiosaurus", "say": "BRAK-ee-oh-SORE-us", "means": "arm lizard", "lengthFt": 85, "diet": "plants", "period": "Jurassic", "fact": "Its front legs were longer than its back legs, just like a giraffe." },
+	{ "name": "Velociraptor", "say": "veh-LOSS-ih-rap-tor", "means": "swift thief", "lengthFt": 6, "diet": "meat", "period": "Cretaceous", "fact": "It was covered in feathers and was about as big as a turkey." },
+	{ "name": "Ankylosaurus", "say": "an-KY-loh-SORE-us", "means": "fused lizard", "lengthFt": 26, "diet": "plants", "period": "Cretaceous", "fact": "It was covered in bony armor, like a tank, and swung a heavy club on its tail." },
+	{ "name": "Spinosaurus", "say": "SPY-noh-SORE-us", "means": "spine lizard", "lengthFt": 46, "diet": "fish", "period": "Cretaceous", "fact": "It had a giant sail on its back and spent lots of time in rivers catching fish." },
+	{ "name": "Diplodocus", "say": "dih-PLOD-oh-kus", "means": "double beam", "lengthFt": 85, "diet": "plants", "period": "Jurassic", "fact": "Its super-long tail may have cracked like a whip!" },
+	{ "name": "Parasaurolophus", "say": "PAIR-uh-sore-OL-oh-fus", "means": "near crested lizard", "lengthFt": 31, "diet": "plants", "period": "Cretaceous", "fact": "The long tube on its head may have worked like a trumpet to make loud honks." },
+	{ "name": "Pachycephalosaurus", "say": "PAK-ee-SEF-uh-lo-SORE-us", "means": "thick-headed lizard", "lengthFt": 15, "diet": "plants", "period": "Cretaceous", "fact": "The bony dome on top of its head was up to 10 inches thick!" },
+	{ "name": "Allosaurus", "say": "AL-oh-SORE-us", "means": "different lizard", "lengthFt": 30, "diet": "meat", "period": "Jurassic", "fact": "It lived about 80 million years before T. rex was even around." },
+	{ "name": "Iguanodon", "say": "ih-GWAH-noh-don", "means": "iguana tooth", "lengthFt": 33, "diet": "plants", "period": "Cretaceous", "fact": "It had big spiky thumbs, maybe for defense or for grabbing food." },
+	{ "name": "Compsognathus", "say": "komp-SOG-nuh-thus", "means": "pretty jaw", "lengthFt": 3, "diet": "meat", "period": "Jurassic", "fact": "It was about the size of a chicken and ate lizards and bugs." },
+	{ "name": "Argentinosaurus", "say": "AR-jen-TEE-noh-SORE-us", "means": "Argentina lizard", "lengthFt": 100, "diet": "plants", "period": "Cretaceous", "fact": "It was one of the biggest animals ever to walk on land." },
+	{ "name": "Microraptor", "say": "MY-kroh-rap-tor", "means": "tiny thief", "lengthFt": 2.5, "diet": "meat", "period": "Cretaceous", "fact": "It had feathered wings on its arms AND its legs: four wings!" }
+]

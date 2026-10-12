@@ -1,0 +1,32 @@
+[
+  {
+    "id": "bed",
+    "label": "Make Your Bed",
+    "emoji": "🛏️",
+    "done": true
+  },
+  {
+    "id": "teeth",
+    "label": "Brush Your Teeth",
+    "emoji": "🪥",
+    "done": false
+  },
+  {
+    "id": "clothes",
+    "label": "Put Away Laundry",
+    "emoji": "👕",
+    "done": false
+  },
+  {
+    "id": "table",
+    "label": "Set the Table",
+    "emoji": "🍽️",
+    "done": false
+  },
+  {
+    "id": "read",
+    "label": "Read for 20 Minutes",
+    "emoji": "📖",
+    "done": false
+  }
+]

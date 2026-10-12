@@ -1,0 +1,30 @@
+{
+	"kids": [
+		{ "name": "Alex", "avatar": "1f467-1f3fd" },
+		{ "name": "Sam", "avatar": "1f466-1f3fd" }
+	],
+	"location": {
+		"name": "Fairfax, VA",
+		"latitude": 38.85,
+		"longitude": -77.31
+	},
+	"school": {
+		"icsUrl": "https://app.tandem.co/US/VA/Fairfax-County-Public-Schools/?type=export&action=ical&export_type=key_dates&year=2026&page=2",
+		"refreshHours": 12,
+		"startHour": 8,
+		"endHour": 15
+	},
+	"weather": {
+		"refreshMinutes": 10
+	},
+	"wardrobe": {
+		"coldBelowF": 45,
+		"coolUpToF": 60,
+		"mildUpToF": 72,
+		"rainChancePct": 40
+	},
+	"kiosk": {
+		"idleReturnSeconds": 120,
+		"nightDim": { "from": "20:30", "to": "06:30", "opacity": 0.55 }
+	}
+}

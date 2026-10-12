@@ -42,10 +42,10 @@ config is used. To run it full-screen on the Pi at boot, see
 
 | Tab        | What it does |
 |------------|--------------|
-| **TODAY**  | Current weather hero (tap or **swipe down** for the full report), next few hours, tomorrow, school-day banner (school day / no school / early release / weekend / summer), quote of the day, "what to wear" with outfit icons (switches to **tomorrow** once school is out) |
+| **TODAY**  | Current weather hero (tap or **swipe down** for the full report), next few hours, tomorrow, school-day banner (school day / no school / early release / weekend / summer), quote of the day, "what to wear" with each kid's **animal buddy dressed in the outfit** (switches to **tomorrow** at 6 PM; tap it for the WARDROBE tab) |
 | **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back, plus "Up Next at School" (breaks that are under way stay listed until they end) |
 | **QUOTE**  | Message of the day: one encouraging, correctly attributed quote, rotates at midnight |
-| **WARDROBE** | The weather to dress for + a tap-to-check outfit checklist **per kid** (remembered for the day) |
+| **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
 | **FUN**    | Dino of the Day (name, how to say it, diet, size in school buses / kids) + a dino fact + a fact of the day |
 
 The **full weather report** (on TODAY) is a slide-down overlay: Today/Tomorrow
@@ -64,8 +64,13 @@ tomorrow card; close by swiping up, tapping ✕, or tapping outside the card.
   shown ("updated 7:40 AM") and the kiosk keeps retrying every minute.
 - **Idle return:** after `kiosk.idleReturnSeconds` without a touch, the screen
   closes the weather report and goes back to TODAY.
-- **Night dim:** between `kiosk.nightDim.from` and `.to` the screen is dimmed;
-  a tap brightens it for 2 minutes (that tap only wakes the screen).
+- **Screen control:** tap the clock to open the **brightness slider**
+  (10–100%, changes the real backlight live, remembered across restarts).
+  With nobody touching it, the screen **dims to 10% after 10 minutes** and
+  **turns off after an hour**; any touch wakes it straight back to the chosen
+  brightness. That waking touch only wakes the screen and doesn't press
+  anything underneath. "Turn Screen Off" in the brightness panel switches it
+  off right away.
 - **Works offline:** fonts and every icon are served locally.
 
 ## Configuration: `config/dashboard.json`
@@ -77,18 +82,33 @@ a typo never takes the kiosk down. The kiosk picks up edits within the hour;
 
 | Key | Meaning |
 |-----|---------|
-| `kids[]` | `{ "name", "avatar" }` per kid. Avatar is a Twemoji code, e.g. `1f467-1f3fd` (girl, medium skin tone) or `1f466-1f3fb` (boy, light skin tone). Names drive the greeting, wardrobe tabs and page title. After picking a new avatar code, run `npm run emoji`. |
+| `kids[]` | `{ "name", "avatar", "color" }` per kid. `avatar` is an animal buddy: `bear`, `monkey`, `fox`, `bunny`, `panda`, `cat` or `dino`. It's drawn wearing the day's outfit (coat/hoodie/stripy shirt/tee, jeans/shorts, sneakers/rain boots, scarf, mittens, umbrella) in the kid's `color` (hex, e.g. `"#3b82f6"`). A Twemoji code such as `1f467-1f3fd` also works for a plain face (then run `npm run emoji`). Names drive the greeting, wardrobe tabs and page title. |
 | `location` | `name`, `latitude`, `longitude` for the weather. Two decimals (~1 km) is plenty; there's no need for your exact address. |
 | `school.icsUrl` | District "key dates" iCal feed (see below) |
 | `school.refreshHours` | How often to re-download the feed (default 12) |
-| `school.startHour` / `endHour` | School-day window (24h). The outfit uses the feels-like temperature and rain chance **inside** this window; after `endHour` it shows tomorrow's outfit. |
+| `school.startHour` / `endHour` | School-day window (24h). The outfit uses the feels-like temperature and rain chance **inside** this window: the middle of that range picks the clothes, and a cool morning on a warm day adds a Light Jacket. |
 | `weather.refreshMinutes` | Kiosk weather refresh (default 10) |
-| `wardrobe` | `coldBelowF` (45), `coolUpToF` (60), `mildUpToF` (72), `rainChancePct` (40) |
+| `wardrobe` | `coldBelowF` (45), `coolUpToF` (60), `mildUpToF` (72), `rainChancePct` (40), `switchToTomorrowHour` (18 = from 6 PM on, show tomorrow's outfit) |
 | `kiosk.idleReturnSeconds` | Return to TODAY after this idle time; `0` = never |
-| `kiosk.nightDim` | `{ "from": "20:30", "to": "06:30", "opacity": 0.55 }`, or `null` to disable |
+| `screen.brightness` | Starting brightness % (the slider's value is saved in `data/screen.json` and wins after that) |
+| `screen.minBrightness` | Lowest slider value, so the screen can't be "lost" (default 10) |
+| `screen.dimAfterMinutes` / `dimBrightness` | Dim after this idle time (default 10) to this % (default 10; never brighter than the chosen brightness). `0` = never dim |
+| `screen.offAfterMinutes` | Backlight off after this idle time (default 60); `0` = never |
 
-Environment variables: only `PORT` (default 3000), `DASHBOARD_CONFIG` and
-`DASHBOARD_DATA` (where the downloaded school calendar is saved, default `data/`).
+Environment variables: only `PORT` (default 3000), `DASHBOARD_CONFIG`,
+`DASHBOARD_DATA` (runtime state: downloaded school calendar and saved brightness,
+default `data/`) and `BACKLIGHT_DIR` (default `/sys/class/backlight`).
+
+### Screen brightness hardware
+
+The server drives the panel backlight through
+`/sys/class/backlight/<device>/brightness` (the official 7" panel appears as
+`11-0045`; `0` = off). That file is writable by the `video` group, so the
+service user must be in it (`pi` is by default; check with `id`). On a
+machine without a backlight, such as a desktop dev browser, the page
+simulates dimming with a dark overlay instead. `GET/POST /api/screen`
+(`{ "mode": "on" | "dim" | "off", "brightness": 1-100 }`) is the
+underlying API.
 
 ### School calendar
 
@@ -147,17 +167,17 @@ missing SVG; `tests/emoji.test.ts` fails if one is missing.
 - **SvelteKit 3** (Svelte 5 runes, TypeScript) + **Vite** + `@sveltejs/adapter-node`
 - **Pure hand-written CSS** (no Tailwind): the "sticker" theme with hard
   drop-shadows, thick dark borders and the bundled Nunito font
-- **Weather:** Open-Meteo (imperial units, `/api/weather`, 5-minute server cache)
+- **Weather:** Open-Meteo (imperial units, 7-day forecast, `/api/weather`, 5-minute server cache)
 - **School calendar:** district iCal feed, parsed by a small built-in reader
 
 ## Layout
 
 ```
-#pi-screen  — fixed 800×480 frame (cyan background)
+#pi-screen  — fixed 800×480 frame (cyan, 5px dark rounded bezel)
 ├── Header      greeting + date (left), live clock pill (right)
 ├── main        the active page
 └── nav.tabs    five flush "file-folder" tabs; active tab is coloured,
-                the rest are slate
+                the rest are dimmed grey and sit slightly lower
 ```
 
 ## Running on the Pi
@@ -187,6 +207,8 @@ sudo systemctl enable --now kids-smart-server kids-smart-kiosk
 ```
 
 After a code change: `npm run build && sudo systemctl restart kids-smart-server kids-smart-kiosk`.
+**Always restart after a build:** the running server keeps old code in memory
+and serves 500 errors once `build/` is replaced underneath it.
 
 `seatd` must be running for cage to grab the panel (cage's built-in seatd
 can't open `/dev/tty0|1` on this Pi). The kiosk unit sets
@@ -210,17 +232,18 @@ sudo systemctl restart kids-smart-server kids-smart-kiosk
 npm install
 npm run dev       # dev server on http://localhost:5173
 npm run check     # svelte-check (should report 0 errors, 0 warnings)
-npm run test      # vitest: calendar/feed, wardrobe, weather codes, config, time, dinos, icons
+npm run test      # vitest: calendar/feed, wardrobe, weather codes, config, screen, time, dinos, icons
 npm run build     # production build → build/index.js
 npm run emoji     # vendor any newly referenced Twemoji SVGs
 ```
 
 Headless screenshots for layout checks (the panel framebuffer is owned by
-cage/DRM, so check against a second server instead). Set `nightDim` to
-`null` in a scratch config if you are testing in the evening:
+cage/DRM, so check against a second server instead). Use
+`BACKLIGHT_DIR` pointing at a scratch folder (with `panel/brightness` and
+`panel/max_brightness` files) so a test server doesn't change the real screen:
 
 ```sh
-PORT=3001 nohup ~/.local/share/pi-node/current/bin/node build/index.js &
+BACKLIGHT_DIR=/tmp/fakebl PORT=3001 nohup ~/.local/share/pi-node/current/bin/node build/index.js &
 chromium --headless=new --no-sandbox --disable-gpu \
   --window-size=800,480 --force-device-scale-factor=1 --hide-scrollbars \
   --virtual-time-budget=8000 --screenshot=/tmp/today.png http://localhost:3001/
@@ -240,16 +263,20 @@ src/
 │   ├── clock.ts             shared ticking clock + todayKey (midnight rollover)
 │   ├── weather.ts           shared self-refreshing weather store
 │   ├── report.ts            open/close state of the full weather report
-│   ├── components/          Emoji, Header, BottomNav, SectionTitle, WeatherReport
+│   ├── screen.ts            idle dim/off rules + brightness panel state
+│   ├── buddies.ts           animal buddy list + default clothes colours
+│   ├── components/          Emoji, Buddy (dressed animal SVG), KidAvatar, Header, BottomNav,
+│   │                        SectionTitle, WeatherReport, ScreenControl
 │   ├── data/                quotes, facts, dinos, school-calendar.seed.ics
-│   ├── server/              config loader, TTL cache, school feed (fetch + fallbacks)
+│   ├── server/              config loader, TTL cache, school feed, backlight control
 │   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino
 └── routes/
     ├── +layout.server.ts    config + school events for every page
-    ├── +layout.svelte       frame, header, nav, polling, idle return, night dim
+    ├── +layout.svelte       frame, header, nav, polling, idle return, screen dim/off/wake
     ├── +page.svelte         TODAY
     ├── calendar/ quote/ wardrobe/ fun/
-    └── api/weather/         Open-Meteo proxy (typed, cached, stale fallback)
+    ├── api/weather/         Open-Meteo proxy (typed, cached, stale fallback)
+    └── api/screen/          backlight on/dim/off + brightness
 scripts/                     emoji vendoring
 tests/                       vitest suites
 systemd/                     kids-smart-server.service, kids-smart-kiosk.service

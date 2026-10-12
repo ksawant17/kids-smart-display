@@ -35,7 +35,7 @@ export interface WeatherData {
 	location: string;
 	current: CurrentWeather;
 	hourly: HourEntry[];
-	days: DaySummary[]; // [today, tomorrow, day after]
+	days: DaySummary[]; // 7 days, [0] = today
 	timezone: string;
 	fetched_at: string;
 	/** true when Open-Meteo was unreachable and this is the last good forecast */

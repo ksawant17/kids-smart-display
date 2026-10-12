@@ -1,23 +1,37 @@
 <script lang="ts">
 	import Emoji from '#lib/components/Emoji.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
+	import KidAvatar from '#lib/components/KidAvatar.svelte';
 	import { weather } from '#lib/weather';
 	import { now, todayKey } from '#lib/clock';
 	import { weatherEmoji, weatherLabel } from '#lib/utils/weatherCodes';
-	import { outfitForDay, outfitDayIndex } from '#lib/utils/wardrobe';
+	import { dayName, outfitForDay, outfitDayIndex } from '#lib/utils/wardrobe';
+	import { isWeekend, parseKey } from '#lib/utils/schoolCalendar';
 
 	let { data } = $props();
 
 	const wx = $derived($weather.data);
-	// today until school is out, then tomorrow
-	const dayIdx = $derived(outfitDayIndex($now, data.school.endHour));
+	const dayCount = $derived(wx?.days.length ?? 1);
+
+	// Starts on today (tomorrow after 6 PM, like the TODAY tab); the arrows
+	// step through the rest of the week's forecast.
+	let picked = $state<number | null>(null);
+	const dayIdx = $derived(
+		Math.min(picked ?? outfitDayIndex($now, data.wardrobe.switchToTomorrowHour), dayCount - 1)
+	);
 	const day = $derived(wx?.days[dayIdx]);
 	const outfit = $derived(day ? outfitForDay(day, data.wardrobe) : null);
+	const name = $derived(day ? dayName(day.date, dayIdx) : 'Today');
+	const shortDate = $derived(
+		day ? parseKey(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+	);
+	const step = (delta: number) => (picked = Math.max(0, Math.min(dayCount - 1, dayIdx + delta)));
 
-	/* ---- per-kid checklist, remembered for the day (survives tab switches) ---- */
+	/* ---- per-kid checklist for that date (survives tab switches, and ticks made
+	        the evening before still count in the morning) ---- */
 	let kidIdx = $state(0);
 	const kid = $derived(data.kids[Math.min(kidIdx, data.kids.length - 1)]);
-	const storeKey = $derived(`wardrobe:${$todayKey}:${dayIdx}:${kid.name}`);
+	const storeKey = $derived(`wardrobe:${day?.date ?? $todayKey}:${kid.name}`);
 
 	let checked = $state<Record<string, boolean>>({});
 	$effect(() => {
@@ -45,18 +59,28 @@
 <div class="wardrobe-grid">
 	<!-- Left: the weather the outfit is for -->
 	<div class="card weather-card">
-		<SectionTitle>{dayIdx === 1 ? "Tomorrow's Weather" : "Today's Weather"}</SectionTitle>
+		<div class="day-nav">
+			<button class="day-arrow pressable" onclick={() => step(-1)} disabled={dayIdx === 0} aria-label="Previous day">&lt;</button>
+			<div class="day-title">
+				<SectionTitle>{name}</SectionTitle>
+				<div class="day-date">{shortDate}</div>
+			</div>
+			<button class="day-arrow pressable" onclick={() => step(1)} disabled={dayIdx >= dayCount - 1} aria-label="Next day">&gt;</button>
+		</div>
 		{#if wx && day}
 			{@const code = dayIdx === 0 ? wx.current.weather_code : day.code}
 			{@const isDay = dayIdx === 0 ? wx.current.is_day === 1 : true}
 			<div class="wx-icon">
-				<Emoji code={weatherEmoji(code, isDay)} size={92} alt="" class="anim-pop" />
+				{#key day.date}
+					<Emoji code={weatherEmoji(code, isDay)} size={84} alt="" class="anim-pop" />
+				{/key}
 			</div>
 			<div class="wx-temp">{Math.round(dayIdx === 0 ? wx.current.temp_f : day.temp_max_f)}°</div>
 			<div class="wx-label">{weatherLabel(code, isDay)}</div>
+			<div class="wx-highlow">H: {Math.round(day.temp_max_f)}° &nbsp; L: {Math.round(day.temp_min_f)}°</div>
 			{#if day.school}
 				<div class="wx-school">
-					School hours feel like {Math.round(day.school.feels_min_f)}–{Math.round(day.school.feels_max_f)}°
+					{isWeekend(day.date) ? 'Daytime' : 'School hours'} feel like {Math.round(day.school.feels_min_f)}–{Math.round(day.school.feels_max_f)}°
 					{#if day.school.pop_max > 0}· <Emoji code="1f4a7" size={14} alt="" shadow="none" /> {day.school.pop_max}%{/if}
 				</div>
 			{/if}
@@ -69,43 +93,57 @@
 		{/if}
 	</div>
 
-	<!-- Right: outfit checklist -->
+	<!-- Right: outfit checklist (sample-pages: big kid on the left, items on the right) -->
 	<div class="card checklist-card">
-		<SectionTitle variant="white">{allDone ? 'All Dressed — Great Job!' : 'Your Outfit Checklist'}</SectionTitle>
-
-		{#if data.kids.length > 1}
-			<div class="kid-picker" role="tablist" aria-label="Whose checklist">
-				{#each data.kids as k, i (k.name)}
-					<button
-						class="kid-chip pressable"
-						class:on={i === kidIdx}
-						role="tab"
-						aria-selected={i === kidIdx}
-						onclick={() => (kidIdx = i)}
-					>
-						<Emoji code={k.avatar} size={30} alt="" shadow="none" />
-						<span>{k.name}</span>
-					</button>
-				{/each}
-			</div>
-		{/if}
+		<SectionTitle variant="white">
+			{allDone ? 'All Dressed — Great Job!' : dayIdx === 0 ? 'Your Outfit Checklist' : `${name}'s Outfit`}
+		</SectionTitle>
 
 		{#if outfit}
-			<div class="items">
-				{#each outfit.items as item (item.name)}
-					<button
-						class="clothes-item pressable"
-						class:done={checked[item.name]}
-						onclick={() => toggle(item.name)}
-						aria-pressed={!!checked[item.name]}
-					>
-						<Emoji code={item.emoji} size={34} alt="" />
-						<span class="item-name">{item.name}</span>
-						<span class="tick">
-							{#if checked[item.name]}<Emoji code="2705" size={24} alt="checked" shadow="none" />{/if}
-						</span>
-					</button>
-				{/each}
+			<div class="checklist-body">
+				<div class="kid-col">
+					<!-- the buddy gets dressed as items are ticked off -->
+					{#key kid.name}
+						<div class="anim-pop">
+							<KidAvatar
+								{kid}
+								items={outfit.items.filter((i) => checked[i.name]).map((i) => i.name)}
+								size={data.kids.length > 1 ? 160 : 190}
+							/>
+						</div>
+					{/key}
+					{#if data.kids.length > 1}
+						<div class="kid-picker" role="tablist" aria-label="Whose checklist">
+							{#each data.kids as k, i (k.name)}
+								<button
+									class="kid-chip pressable"
+									class:on={i === kidIdx}
+									role="tab"
+									aria-selected={i === kidIdx}
+									onclick={() => (kidIdx = i)}
+								>
+									{k.name}
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+				<div class="items" class:many={outfit.items.length > 3}>
+					{#each outfit.items as item (item.name)}
+						<button
+							class="clothes-item pressable"
+							class:done={checked[item.name]}
+							onclick={() => toggle(item.name)}
+							aria-pressed={!!checked[item.name]}
+						>
+							<Emoji code={item.emoji} size={outfit.items.length > 3 ? 26 : 36} alt="" />
+							<span class="item-name">{item.name}</span>
+							<span class="tick">
+								{#if checked[item.name]}<Emoji code="2705" size={22} alt="checked" shadow="none" />{/if}
+							</span>
+						</button>
+					{/each}
+				</div>
 			</div>
 			{#if allDone}
 				<div class="cheer"><Emoji code="1f389" size={30} alt="" class="anim-pop" /></div>
@@ -119,7 +157,7 @@
 <style>
 	.wardrobe-grid {
 		display: grid;
-		grid-template-columns: 1fr 1.7fr;
+		grid-template-columns: 1fr 1.5fr;
 		gap: 14px;
 		height: 100%;
 		min-height: 0;
@@ -127,25 +165,68 @@
 
 	.weather-card {
 		align-items: center;
-		justify-content: center;
+		justify-content: space-between;
 		background-color: var(--bg-light-blue);
 		text-align: center;
+	}
+	.day-nav {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 6px;
+	}
+	.day-title {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		min-width: 0;
+	}
+	.day-title :global(.section-title) {
+		margin-bottom: 0;
+	}
+	.day-date {
+		font-size: 12px;
+		font-weight: 800;
+		color: #475569;
+		margin-top: 2px;
+	}
+	/* fat-finger day arrows (sample-pages arrow-box style) */
+	.day-arrow {
+		width: 44px;
+		height: 40px;
+		flex: 0 0 auto;
+		background: var(--yellow-banner);
+		border: 2.5px solid var(--border-dark);
+		border-radius: 10px;
+		font: 900 20px 'Nunito', sans-serif;
+		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+	}
+	.day-arrow:disabled {
+		background: var(--card-white);
+		opacity: 0.35;
+	}
+	.wx-highlow {
+		font-size: 14px;
+		font-weight: 800;
+		color: #475569;
+		margin-top: 2px;
 	}
 	.wx-icon :global(img) {
 		animation: float 3s ease-in-out infinite;
 	}
 	.wx-temp {
-		font-size: 58px;
+		font-size: 56px;
 		font-weight: 900;
 		line-height: 1;
-		margin: 6px 0;
+		margin: 4px 0;
 	}
 	.wx-label {
 		font-size: 20px;
 		font-weight: 900;
 	}
 	.wx-school {
-		margin-top: 8px;
+		margin-top: 4px;
 		font-size: 13px;
 		font-weight: 800;
 		color: #475569;
@@ -161,21 +242,30 @@
 		position: relative;
 	}
 
-	.kid-picker {
+	.checklist-body {
 		display: flex;
-		gap: 10px;
-		margin-bottom: 8px;
-	}
-	.kid-chip {
-		flex: 1;
-		display: flex;
+		gap: 20px;
 		align-items: center;
 		justify-content: center;
-		gap: 8px;
-		height: 44px;
-		font: 900 18px 'Nunito', sans-serif;
+		flex: 1;
+		min-height: 0;
+	}
+	.kid-col {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+	}
+	.kid-picker {
+		display: flex;
+		gap: 6px;
+	}
+	.kid-chip {
+		height: 36px;
+		padding: 0 12px;
+		font: 900 15px 'Nunito', sans-serif;
 		background: var(--card-white);
-		border: 3px solid var(--border-dark);
+		border: 2.5px solid var(--border-dark);
 		border-radius: 999px;
 		box-shadow: var(--sticker-shadow-sm);
 		color: #64748b;
@@ -186,13 +276,13 @@
 	}
 
 	.items {
-		flex: 1;
-		min-height: 0;
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		grid-auto-rows: minmax(0, 56px);
-		align-content: center;
-		gap: 8px 10px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		width: 240px;
+	}
+	.items.many {
+		gap: 6px;
 	}
 	.clothes-item {
 		display: flex;
@@ -200,19 +290,23 @@
 		background: var(--card-white);
 		border: 3px solid var(--border-dark);
 		border-radius: 12px;
-		padding: 4px 10px;
-		font: 900 17px 'Nunito', sans-serif;
-		gap: 8px;
-		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+		padding: 8px 16px;
+		font: 900 19px 'Nunito', sans-serif;
+		gap: 12px;
+		white-space: nowrap;
+		box-shadow: var(--sticker-shadow-sm);
 		text-align: left;
-		min-width: 0;
+	}
+	.items.many .clothes-item {
+		padding: 3px 12px;
+		font-size: 17px;
+		gap: 10px;
 	}
 	.clothes-item.done {
-		background: #dcfce7;
+		opacity: 0.5;
 	}
 	.clothes-item.done .item-name {
 		text-decoration: line-through;
-		opacity: 0.6;
 	}
 	.item-name {
 		flex: 1;
@@ -220,13 +314,13 @@
 		line-height: 1.1;
 	}
 	.tick {
-		flex: 0 0 24px;
+		flex: 0 0 22px;
 		display: flex;
 	}
 	.cheer {
 		position: absolute;
 		right: 14px;
-		top: 6px;
+		top: 8px;
 	}
 	.loading {
 		margin: auto;

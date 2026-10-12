@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import Emoji from '#lib/components/Emoji.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
+	import KidAvatar from '#lib/components/KidAvatar.svelte';
 	import { openReport } from '#lib/report';
 	import { weather } from '#lib/weather';
 	import { now, todayKey } from '#lib/clock';
@@ -38,11 +40,12 @@
 	const quote = $derived(pickDaily(quotes, $now));
 	const quoteSize = $derived(quote.text.length < 70 ? 'q-lg' : quote.text.length < 105 ? 'q-md' : 'q-sm');
 
-	// --- what to wear: today until school is out, then tomorrow ---
-	const outfitIdx = $derived(outfitDayIndex($now, data.school.endHour));
+	// --- what to wear: today until the evening (6 PM by default), then tomorrow ---
+	const outfitIdx = $derived(outfitDayIndex($now, data.wardrobe.switchToTomorrowHour));
 	const outfitDay = $derived(wx?.days[outfitIdx]);
 	const outfit = $derived(outfitDay ? outfitForDay(outfitDay, data.wardrobe) : null);
-	const avatarSize = $derived(data.kids.length > 2 ? 60 : data.kids.length === 2 ? 85 : 110);
+	const avatarSize = $derived(data.kids.length > 2 ? 100 : data.kids.length === 2 ? 142 : 165);
+	const outfitNames = $derived(outfit ? outfit.items.map((i) => i.name) : []);
 
 	// --- swipe down on the hero opens the full report (tap does too) ---
 	let startY: number | null = null;
@@ -90,21 +93,10 @@
 						class="hero-icon anim-pop"
 					/>
 				</div>
-				<div class="hero-bottom">
-					<div class="hero-texts">
-						<div class="hero-desc">{weatherLabel(wx.current.weather_code, wx.current.is_day === 1)}</div>
-						<div class="hero-loc">
-							{#if wx.stale || $weather.error}
-								{wx.location} · updated {clockTime(new Date(wx.fetched_at))}
-							{:else}
-								{wx.location} · feels like {Math.round(wx.current.feels_f)}&deg;
-							{/if}
-						</div>
-					</div>
-					<div class="tap-hint">
-						<Emoji code="1f446" size={14} alt="" shadow="none" /> tap for details
-					</div>
-				</div>
+				<div class="hero-desc">{weatherLabel(wx.current.weather_code, wx.current.is_day === 1)}</div>
+				{#if wx.stale || $weather.error}
+					<div class="hero-stale">updated {clockTime(new Date(wx.fetched_at))}</div>
+				{/if}
 			</div>
 
 			<div class="hourly-row" aria-label="Next few hours">
@@ -161,25 +153,32 @@
 			</section>
 		</div>
 
-		<!-- Column 3 · right: wardrobe -->
-		<section class="card wardrobe-card">
+		<!-- Column 3 · right: wardrobe (tap: the WARDROBE tab, with the whole week) -->
+		<div
+			class="card wardrobe-card pressable"
+			role="button"
+			tabindex="0"
+			aria-label="What to wear. Tap for the outfit checklist and the rest of the week."
+			onclick={() => goto('/wardrobe')}
+			onkeydown={(e) => e.key === 'Enter' && goto('/wardrobe')}
+		>
 			<SectionTitle>{outfitIdx === 1 ? 'Wear Tomorrow' : 'What to Wear'}</SectionTitle>
 			{#if outfit}
 				<div class="avatars">
-					{#each data.kids as kid, i (kid.name)}
-						<Emoji code={kid.avatar} size={avatarSize} alt={kid.name} class={i > 0 ? 'avatar overlap' : 'avatar'} />
-					{/each}
-				</div>
-				<div class="outfit-icons" aria-label="Outfit">
-					{#each outfit.items as item (item.name)}
-						<Emoji code={item.emoji} size={26} alt={item.name} />
+					{#each data.kids as kid (kid.name)}
+						<div class="avatar"><KidAvatar {kid} items={outfitNames} size={avatarSize} /></div>
 					{/each}
 				</div>
 				<div class="wardrobe-footer">
+					<div class="outfit-icons" aria-label="Outfit">
+						{#each outfit.items as item (item.name)}
+							<Emoji code={item.emoji} size={20} alt={item.name} shadow="none" />
+						{/each}
+					</div>
 					<span>{outfit.summary}{outfitIdx === 1 ? ' tomorrow!' : ' today!'}</span>
 				</div>
 			{/if}
-		</section>
+		</div>
 	</div>
 
 	<!-- (the full weather report panel lives in the root layout) -->
@@ -202,33 +201,29 @@
 	.today-grid {
 		display: grid;
 		grid-template-columns: 1.15fr 0.95fr 0.9fr;
-		gap: 10px;
+		gap: 14px;
 		height: 100%;
 		min-height: 0;
 	}
 	.left-col {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 14px;
 		min-height: 0;
 	}
 	.mid-col {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 14px;
 		min-height: 0;
-	}
-	.today-grid :global(.section-title) {
-		padding: 3px 12px;
 	}
 
 	/* --- hero (whole card is a touch target: opens today's report) --- */
 	.hero-card {
-		flex: 1.35;
+		flex: 1.1;
 		justify-content: space-between;
 		align-items: center;
 		touch-action: none;
-		padding: 8px 10px;
 	}
 	.hero-top {
 		display: flex;
@@ -237,45 +232,25 @@
 		align-items: flex-start;
 	}
 	.hero-temp {
-		font-size: 76px;
+		font-size: 80px;
 		font-weight: 900;
 		line-height: 0.8;
 		letter-spacing: -3px;
 	}
-	.hero-icon {
+	.hero-top :global(img) {
 		margin-top: -5px;
 		margin-right: -5px;
-	}
-	.hero-bottom {
-		display: flex;
-		width: 100%;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 8px;
-	}
-	.hero-texts {
-		min-width: 0;
+		flex: 0 0 auto;
 	}
 	.hero-desc {
 		font-size: 19px;
 		font-weight: 900;
+		margin-top: auto;
 	}
-	.hero-loc {
-		font-size: 12.5px;
+	.hero-stale {
+		font-size: 12px;
 		font-weight: 800;
-		opacity: 0.55;
-		margin-top: 2px;
-		white-space: nowrap;
-	}
-	.tap-hint {
-		flex: 0 0 auto;
-		font-size: 11px;
-		font-weight: 800;
-		opacity: 0.5;
-		display: flex;
-		align-items: center;
-		gap: 3px;
-		white-space: nowrap;
+		opacity: 0.6;
 	}
 
 	/* --- mini hourly: dark timeline strip + white boxes --- */
@@ -329,26 +304,21 @@
 		background-color: var(--yellow-banner);
 		border: 3px solid var(--border-dark);
 		border-radius: 12px;
-		padding: 6px 10px;
+		padding: 8px 12px;
 		font-weight: 800;
 		font-size: 14.5px;
 		display: flex;
 		flex-direction: column;
 		line-height: 1.35;
-		flex: 0.55;
+		flex: 0.6;
 		justify-content: center;
-		gap: 4px;
+		gap: 2px;
 		box-shadow: var(--sticker-shadow);
 	}
 	.banner-row {
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		font-weight: 900;
-	}
-	.banner-row.sub {
-		font-size: 13px;
-		font-weight: 800;
 	}
 	.banner-row span {
 		white-space: nowrap;
@@ -366,41 +336,32 @@
 	/* --- tomorrow card (light-blue; whole card opens tomorrow's report) --- */
 	.tomorrow-card {
 		flex: 0.95;
-		display: flex;
-		flex-direction: column;
 		align-items: center;
-		justify-content: space-evenly;
+		justify-content: center;
 		background-color: var(--bg-light-blue);
-		padding: 8px;
+		padding: 10px;
 		touch-action: manipulation;
 	}
 	.tomorrow-card :global(.section-title) {
-		margin-bottom: 0;
+		margin-bottom: 4px;
 	}
-	.tomorrow-icon {
-		margin: 0;
+	.tomorrow-card :global(img) {
+		margin: 0 0 4px 0;
 	}
 	.tomorrow-desc {
-		font-size: 15px;
+		font-size: 16px;
 		font-weight: 900;
-		line-height: 1.2;
 	}
 	.tomorrow-highlow {
-		font-size: 13px;
-		font-weight: 900;
+		font-size: 14px;
+		font-weight: 800;
 		color: #475569;
-		line-height: 1.2;
-		margin-top: 0;
-	}
-	.hero-icon,
-	.tomorrow-icon {
-		flex: 0 0 auto;
 	}
 
 	/* --- quote card --- */
 	.quote-card {
 		flex: 1.05;
-		padding: 10px;
+		padding: 12px;
 		justify-content: center;
 	}
 	.quote-text {
@@ -437,32 +398,26 @@
 	.wardrobe-card {
 		align-items: center;
 		background-color: var(--bg-light-blue);
-		padding: 10px 10px 0 10px;
+		padding: 12px 12px 0 12px;
 		overflow: hidden;
 	}
 	.avatars {
-		margin: auto 0 4px;
+		margin: auto 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
-	.avatars :global(.overlap) {
-		margin-left: -14px;
-	}
-	.outfit-icons {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 4px;
-		margin-bottom: 8px;
+	/* the buddy SVGs have side padding, so they can tuck together */
+	.avatar + .avatar {
+		margin-left: -30px;
 	}
 	.wardrobe-footer {
 		background: #dbeafe;
 		border-top: 3px solid var(--border-dark);
-		width: calc(100% + 20px);
-		margin-left: -10px;
-		margin-right: -10px;
-		padding: 8px 10px;
+		width: calc(100% + 24px);
+		margin-left: -12px;
+		margin-right: -12px;
+		padding: 8px 12px 10px;
 		text-align: center;
 		font-size: 15px;
 		font-weight: 900;
@@ -470,6 +425,12 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		gap: 4px;
+	}
+	.outfit-icons {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
 		gap: 4px;
 	}
 </style>

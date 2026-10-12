@@ -1,12 +1,12 @@
 /**
  * Wardrobe rule engine.
  *
- * Driven by what it FEELS like during school hours (coldest feels-like
- * temperature between config.school.startHour and endHour: the bus-stop
- * morning matters more than the afternoon high). Default bands (°F):
+ * Driven by what it FEELS like during school hours (config.school.startHour
+ * to endHour): the middle of that range picks the outfit, and a cool morning
+ * on a warm day adds a Light Jacket layer for the bus stop. Bands (°F):
  *   < 45   -> Winter Coat, Scarf, Gloves, Pants
  *   45-60  -> Light Jacket, Pants
- *   61-72  -> Long-Sleeve Shirt
+ *   61-72  -> Long-Sleeve Shirt, Pants
  *   > 72   -> T-Shirt, Shorts
  * School-hours rain chance > 40% -> add Umbrella + Rain Boots.
  * Thresholds come from config.wardrobe.
@@ -33,6 +33,7 @@ export interface WardrobeThresholds {
 	coolUpToF: number;
 	mildUpToF: number;
 	rainChancePct: number;
+	switchToTomorrowHour?: number;
 }
 
 export const DEFAULT_THRESHOLDS: WardrobeThresholds = {
@@ -68,7 +69,7 @@ export function suggestOutfit(
 	} else if (tempF <= t.coolUpToF) {
 		items.push(ITEMS.lightJacket, ITEMS.pants);
 	} else if (tempF <= t.mildUpToF) {
-		items.push(ITEMS.longSleeve);
+		items.push(ITEMS.longSleeve, ITEMS.pants);
 	} else {
 		items.push(ITEMS.tshirt, ITEMS.shorts);
 	}
@@ -86,15 +87,31 @@ export function suggestOutfit(
 
 /** Outfit for a forecast day, using school-hours conditions when available. */
 export function outfitForDay(day: DaySummary, t: WardrobeThresholds = DEFAULT_THRESHOLDS): WardrobeResult {
-	const temp = day.school ? day.school.feels_min_f : (day.temp_min_f + day.temp_max_f) / 2;
+	const low = day.school ? day.school.feels_min_f : day.temp_min_f;
+	const high = day.school ? day.school.feels_max_f : day.temp_max_f;
 	const rain = day.school ? day.school.pop_max : day.rain_max;
-	return suggestOutfit(temp, rain, t);
+	const mid = (low + high) / 2;
+	const result = suggestOutfit(mid, rain, t);
+	// chilly start to a warm day: bring a layer for the morning
+	if (low <= t.coolUpToF && mid > t.coolUpToF) {
+		result.items.splice(1, 0, ITEMS.lightJacket);
+	}
+	return result;
 }
 
 /**
- * Which day should the kids dress for? Today until school is out, then
- * tomorrow (so the evening screen helps lay clothes out for the morning).
+ * Which day should the kids dress for? Today until the evening switch hour
+ * (config.wardrobe.switchToTomorrowHour, default 6 PM), then tomorrow, so the
+ * evening screen helps lay clothes out for the morning.
  */
-export function outfitDayIndex(now: Date, schoolEndHour: number): 0 | 1 {
-	return now.getHours() >= schoolEndHour ? 1 : 0;
+export function outfitDayIndex(now: Date, switchHour: number): 0 | 1 {
+	return now.getHours() >= switchHour ? 1 : 0;
+}
+
+/** "Today" / "Tomorrow" / "Wednesday" for a forecast day index. */
+export function dayName(dateKey: string, index: number): string {
+	if (index === 0) return 'Today';
+	if (index === 1) return 'Tomorrow';
+	const [y, m, d] = dateKey.split('-').map(Number);
+	return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' });
 }

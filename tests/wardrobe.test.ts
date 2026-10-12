@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { outfitDayIndex, outfitForDay, suggestOutfit } from '../src/lib/utils/wardrobe';
+import { dayName, outfitDayIndex, outfitForDay, suggestOutfit } from '../src/lib/utils/wardrobe';
 import type { DaySummary } from '../src/lib/types';
 
 const names = (temp: number, rain = 0) => suggestOutfit(temp, rain).items.map((i) => i.name);
@@ -15,8 +15,8 @@ describe('suggestOutfit', () => {
 		expect(names(55)).not.toContain('T-Shirt');
 	});
 
-	it('recommends long-sleeve for 61-72F', () => {
-		expect(names(70)).toContain('Long-Sleeve Shirt');
+	it('recommends long-sleeve + pants for 61-72F', () => {
+		expect(names(70)).toEqual(expect.arrayContaining(['Long-Sleeve Shirt', 'Pants']));
 		expect(names(70)).not.toContain('Shorts');
 	});
 
@@ -27,7 +27,7 @@ describe('suggestOutfit', () => {
 	it('swaps sneakers for umbrella + rain boots when rain chance > 40%', () => {
 		const r = suggestOutfit(70, 50);
 		expect(r.rainy).toBe(true);
-		expect(r.items.map((i) => i.name)).toEqual(['Long-Sleeve Shirt', 'Umbrella', 'Rain Boots']);
+		expect(r.items.map((i) => i.name)).toEqual(['Long-Sleeve Shirt', 'Pants', 'Umbrella', 'Rain Boots']);
 		expect(names(70, 40)).not.toContain('Umbrella');
 	});
 
@@ -64,10 +64,22 @@ describe('outfitForDay', () => {
 		school
 	});
 
-	it('dresses for the coldest school-hours feels-like, not the afternoon high', () => {
-		const r = outfitForDay(day({ feels_min_f: 50, feels_max_f: 76, pop_max: 10 }));
-		expect(r.items.map((i) => i.name)).toContain('Light Jacket');
-		expect(r.rainy).toBe(false); // the 80% rain is outside school hours
+	it('dresses for the middle of the school day, not just the cold morning', () => {
+		// feels 67-88: a hot afternoon wins (regression: was long sleeves at 86F)
+		const hot = outfitForDay(day({ feels_min_f: 67, feels_max_f: 88, pop_max: 10 }));
+		expect(hot.items.map((i) => i.name)).toEqual(['T-Shirt', 'Shorts', 'Sneakers']);
+		expect(hot.rainy).toBe(false); // the 80% daily rain is outside school hours
+	});
+
+	it('adds a light jacket for a chilly morning on a warm day', () => {
+		const r = outfitForDay(day({ feels_min_f: 50, feels_max_f: 76, pop_max: 0 }));
+		expect(r.items.map((i) => i.name)).toEqual(['Long-Sleeve Shirt', 'Light Jacket', 'Pants', 'Sneakers']);
+		expect(r.summary).toBe('Long-Sleeve Shirt & Sneakers');
+	});
+
+	it('no extra layer when the whole day is cool or cold', () => {
+		const r = outfitForDay(day({ feels_min_f: 40, feels_max_f: 55, pop_max: 0 }));
+		expect(r.items.map((i) => i.name)).toEqual(['Light Jacket', 'Pants', 'Sneakers']);
 	});
 
 	it('falls back to the daily numbers without school-hours data', () => {
@@ -76,8 +88,18 @@ describe('outfitForDay', () => {
 });
 
 describe('outfitDayIndex', () => {
-	it('shows today until school is out, then tomorrow', () => {
-		expect(outfitDayIndex(new Date(2026, 9, 7, 7), 15)).toBe(0);
-		expect(outfitDayIndex(new Date(2026, 9, 7, 15), 15)).toBe(1);
+	it('shows today until 6 PM, then tomorrow', () => {
+		expect(outfitDayIndex(new Date(2026, 9, 7, 7), 18)).toBe(0);
+		expect(outfitDayIndex(new Date(2026, 9, 7, 17, 59), 18)).toBe(0);
+		expect(outfitDayIndex(new Date(2026, 9, 7, 18), 18)).toBe(1);
+		expect(outfitDayIndex(new Date(2026, 9, 7, 23), 18)).toBe(1);
+	});
+});
+
+describe('dayName', () => {
+	it('names forecast days for kids', () => {
+		expect(dayName('2026-10-07', 0)).toBe('Today');
+		expect(dayName('2026-10-08', 1)).toBe('Tomorrow');
+		expect(dayName('2026-10-09', 2)).toBe('Friday');
 	});
 });

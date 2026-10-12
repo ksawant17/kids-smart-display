@@ -64,7 +64,7 @@ async function fetchWeather(): Promise<WeatherData> {
 		daily:
 			'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset',
 		timezone: 'auto',
-		forecast_days: '3',
+		forecast_days: '7', // the WARDROBE tab can plan the week
 		temperature_unit: 'fahrenheit',
 		wind_speed_unit: 'mph'
 	});
@@ -142,7 +142,7 @@ async function fetchWeather(): Promise<WeatherData> {
 
 /**
  * GET /api/weather
- * Current conditions, next-24h hourly (2-hour steps) and daily summaries from
+ * Current conditions, next-24h hourly (2-hour steps) and 7 daily summaries from
  * Open-Meteo, in imperial units. Cached for 5 minutes; if Open-Meteo is down
  * the last good forecast is served with `stale: true`.
  */

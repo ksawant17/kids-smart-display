@@ -113,7 +113,15 @@
 				{/if}
 			</div>
 
-			<div class="hourly-row" aria-label={stripIsTomorrow ? 'Tomorrow morning' : 'Next few hours'}>
+			<!-- tap the hours: the full report (tomorrow's when they show tomorrow morning) -->
+			<div
+				class="hourly-row pressable"
+				role="button"
+				tabindex="0"
+				aria-label={stripIsTomorrow ? 'Tomorrow morning. Tap for the full report.' : 'Next few hours. Tap for the full report.'}
+				onclick={() => openReport(stripIsTomorrow ? 1 : 0)}
+				onkeydown={(e) => e.key === 'Enter' && openReport(stripIsTomorrow ? 1 : 0)}
+			>
 				{#each strip as h, i (h.time)}
 					<div class="hour-box">
 						{#if stripIsTomorrow && i === 0}<span class="tomorrow-badge">Tomorrow</span>{/if}
@@ -137,7 +145,12 @@
 					</div>
 				</button>
 			{:else}
-				<div class="school-banner kind-{schoolToday.kind}">
+				<!-- tap: the calendar, with that day's details open -->
+				<button
+					class="school-banner kind-{schoolToday.kind} pressable"
+					aria-label="{schoolToday.title}. Tap for the school calendar."
+					onclick={() => goto(`/calendar?day=${evening ? tomorrowKey : $todayKey}`)}
+				>
 					<div class="banner-row">
 						<Emoji code={STATUS_EMOJI[schoolToday.kind]} size={18} alt="" shadow="none" />
 						<span>{schoolToday.title}</span>
@@ -148,7 +161,7 @@
 							<span>{schoolToday.subtitle}</span>
 						</div>
 					{/if}
-				</div>
+				</button>
 			{/if}
 		</div>
 
@@ -172,14 +185,22 @@
 				{/if}
 			</div>
 
-			<section class="card quote-card">
+			<!-- tap: the QUOTE tab, big -->
+			<div
+				class="card quote-card pressable"
+				role="button"
+				tabindex="0"
+				aria-label="Quote of the day. Tap to see it big."
+				onclick={() => goto('/quote')}
+				onkeydown={(e) => e.key === 'Enter' && goto('/quote')}
+			>
 				<SectionTitle>Quote of the Day</SectionTitle>
 				<p class="quote-text {quoteSize}">&ldquo;{quote.text}&rdquo;</p>
 				<div class="quote-author">
 					<span>&mdash; {quote.author.split(',')[0]}</span>
 					<Emoji code={quote.emoji} size={18} alt="" shadow="none" />
 				</div>
-			</section>
+			</div>
 		</div>
 
 		<!-- Column 3 · right: wardrobe (tap: the WARDROBE tab, with the whole week) -->
@@ -378,7 +399,7 @@
 	.school-banner.kind-summer {
 		background-color: #bbf7d0;
 	}
-	/* weather alert turn: the advice may wrap onto a second line */
+	/* the banner is a button (calendar / weather report); alert advice may wrap */
 	button.school-banner {
 		font-family: 'Nunito', sans-serif;
 		color: inherit;

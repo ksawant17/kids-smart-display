@@ -17,6 +17,8 @@
 	} from '#lib/utils/schoolCalendar';
 	import { monthTitle } from '#lib/utils/time';
 	import { todayKey } from '#lib/clock';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	import { weather } from '#lib/weather';
 	import { weatherEmoji, weatherLabel } from '#lib/utils/weatherCodes';
 	import { outfitForDay } from '#lib/utils/wardrobe';
@@ -80,6 +82,19 @@
 
 	/* ------------- day popup: what's on that day + weather + outfit ------------- */
 	let openKey = $state<string | null>(null);
+	// /calendar?day=YYYY-MM-DD (from the TODAY school banner): show that month
+	// with the day's details open, then tidy the URL so a reload doesn't reopen it
+	$effect(() => {
+		const day = page.url.searchParams.get('day');
+		if (day && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
+			const d = parseKey(day);
+			viewYear = d.getFullYear();
+			viewMonth = d.getMonth();
+			openKey = day;
+			replaceState('/calendar', {});
+		}
+	});
+
 	function openDay(key: string) {
 		if (!swiped) openKey = key;
 	}

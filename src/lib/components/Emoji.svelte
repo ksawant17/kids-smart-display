@@ -15,8 +15,7 @@
 
 	/** Custom comic stickers (code -> file in static/emoji). */
 	const CUSTOM: Record<string, string> = {
-		'2600': 'sun', // sunny
-		'1f31e': 'sun',
+		'2600': 'sun', // sunny (1f31e, the smiling header sun, stays Twemoji)
 		'1f324': 'sun-cloud', // mostly sunny
 		'26c5': 'sun-cloud', // partly sunny
 		'1f32b': 'cloud', // fog

@@ -12,7 +12,7 @@
 :root {
 	--bg-cyan: #4bd8f6;
 	--card-white: #ffffff;
-	--border-dark: #334155;
+	--border-dark: #111827;
 	--text-dark: #111827;
 	--yellow-banner: #ffde3a;
 	--bg-light-blue: #f0f9ff;
@@ -23,15 +23,15 @@
 	--tab-green: #5ad570;
 	--tab-purple: #b388ff;
 	--tab-pink: #e06ced;
-	--tab-gray: #64748b;
+	--tab-gray: #94a3b8;
 
 	/* School-event colors (FCPS) */
 	--event-holiday: #ff6b6b;
 	--event-early: #ffde3a;
 
 	/* Playful solid (non-blurred) "sticker" shadows */
-	--sticker-shadow: 3px 4px 0px rgba(15, 23, 42, 0.22);
-	--sticker-shadow-sm: 2px 2.5px 0px rgba(15, 23, 42, 0.18);
+	--sticker-shadow: 4px 4px 0px rgba(0, 0, 0, 0.12);
+	--sticker-shadow-sm: 2px 2px 0px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -69,10 +69,9 @@ img {
 }
 
 /* --------------------------------------------------------------------------
-   The 800x480 screen frame.
+   The 800x480 screen frame (matches sample-pages/: 5px dark rounded bezel).
    In the kiosk the viewport IS 800x480, so this fills it exactly. In a
-   bigger dev browser it fills the width and is capped at 480px tall
-   (resize the window to ~800px wide to preview the real layout).
+   bigger dev browser it is centred and capped at 800x480.
    -------------------------------------------------------------------------- */
 #pi-screen {
 	position: fixed;
@@ -83,12 +82,15 @@ img {
 	margin: auto;
 	width: 100vw;
 	height: 100vh;
+	max-width: 800px;
 	max-height: 480px;
+	border: 5px solid var(--border-dark);
+	border-radius: 16px;
 	background-color: var(--bg-cyan);
 	display: flex;
 	flex-direction: column;
-	padding: 10px 12px 0 12px;
-	gap: 10px;
+	padding: 14px 16px 0 16px;
+	gap: 14px;
 	overflow: hidden;
 }
 
@@ -118,8 +120,11 @@ header {
 }
 
 .header-right {
-	font-size: 22px;
-	font-weight: 900;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font: 900 22px 'Nunito', sans-serif;
+	color: var(--text-dark);
 	background-color: var(--card-white);
 	padding: 4px 16px;
 	border: 3px solid var(--border-dark);
@@ -142,7 +147,7 @@ main {
 	background-color: var(--card-white);
 	border: 3px solid var(--border-dark);
 	border-radius: 16px;
-	padding: 8px 10px;
+	padding: 12px;
 	display: flex;
 	flex-direction: column;
 	box-shadow: var(--sticker-shadow);
@@ -158,9 +163,10 @@ main {
 	border: 2.5px solid var(--border-dark);
 	border-radius: 20px;
 	padding: 3px 14px;
-	display: block;
-	width: 100%;
-	margin: 0 0 8px 0;
+	/* a centred pill, not a full-width bar (sample-pages) */
+	display: inline-block;
+	align-self: center;
+	margin: 0 auto 8px auto;
 	white-space: nowrap;
 	box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
 }
@@ -176,9 +182,6 @@ nav.tabs {
 	height: 80px;
 	flex: 0 0 auto;
 	margin-top: auto;
-	margin-left: -12px;
-	margin-right: -12px;
-	padding: 0 10px;
 }
 
 .tab {
@@ -192,15 +195,18 @@ nav.tabs {
 	justify-content: center;
 	cursor: pointer;
 	padding-top: 4px;
-	transition: transform 0.2s ease;
+	transition: opacity 0.2s ease, transform 0.2s ease;
 	text-decoration: none;
-	/* inactive: solid slate, white text + icons (no opacity — it bled into the cyan) */
 	color: #ffffff;
+	/* inactive: dimmed grey folder, sitting slightly lower (sample-pages) */
 	background-color: var(--tab-gray);
+	opacity: 0.5;
+	transform: translateY(6px);
 }
 
 .tab.active {
-	color: var(--text-dark);
+	opacity: 1;
+	transform: translateY(0);
 }
 
 .tab span {
@@ -217,15 +223,8 @@ nav.tabs {
 	object-fit: contain;
 }
 
-.tab:not(.active) img {
-	filter: brightness(0) invert(1);
-}
-.tab.active img {
-	filter: drop-shadow(1px 2px 0 rgba(15, 23, 42, 0.25));
-}
-
 .tab:active {
-	transform: translateY(2px);
+	opacity: 0.8;
 }
 
 .tab-today.active { background-color: var(--tab-orange); }
@@ -234,14 +233,6 @@ nav.tabs {
 .tab-wardrobe.active { background-color: var(--tab-purple); }
 .tab-fun.active { background-color: var(--tab-pink); }
 
-/* Strict comic-book borders: thick + dark, no exceptions (4px per spec) */
-.card,
-.tab,
-.section-title,
-.hour-box,
-.school-banner {
-	border: 4px solid var(--border-dark) !important;
-}
 
 
 /* --- Generic tap targets -------------------------------------------------- */

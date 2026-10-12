@@ -57,12 +57,12 @@
 	<!-- Left: month grid -->
 	<div class="card month-card" onpointerdown={gridDown} onpointerup={gridUp} role="group" aria-label="Month calendar">
 		<div class="month-header">
-			<button class="nav-arrow pressable" onclick={() => shift(-1)} aria-label="Previous month">&lsaquo;</button>
+			<button class="nav-arrow pressable" onclick={() => shift(-1)} aria-label="Previous month">&lt;</button>
 			<div class="month-title">{monthTitle(viewYear, viewMonth)}</div>
 			{#if !isCurrentMonth}
 				<button class="today-btn pressable" onclick={goToday}>Today</button>
 			{/if}
-			<button class="nav-arrow pressable" onclick={() => shift(1)} aria-label="Next month">&rsaquo;</button>
+			<button class="nav-arrow pressable" onclick={() => shift(1)} aria-label="Next month">&gt;</button>
 		</div>
 
 		<div class="calendar-grid">
@@ -78,10 +78,8 @@
 				{@const d = i + 1}
 				{@const key = dateKey(viewYear, viewMonth, d)}
 				{@const mark = marks.get(key)}
-				{@const dow = (firstDay + i) % 7}
 				<div
 					class="day-cell"
-					class:weekend={dow === 0 || dow === 6}
 					class:today={key === $todayKey}
 					class:holiday={mark === 'holiday'}
 					class:early={mark === 'early'}
@@ -138,45 +136,44 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		margin-bottom: 6px;
-		padding: 0 4px;
+		margin-bottom: 8px;
+		padding: 0 6px;
 	}
 	.month-title {
 		flex: 1;
 		text-align: center;
-		font-size: 22px;
+		font-size: 24px;
 		font-weight: 900;
 		white-space: nowrap;
 	}
-	/* fat-finger targets: 44px */
+	/* sample-pages arrow boxes, sized up to a fat-finger target */
+	.nav-arrow,
+	.today-btn {
+		height: 36px;
+		flex: 0 0 auto;
+		background: var(--bg-light-blue);
+		border: 2.5px solid var(--border-dark);
+		border-radius: 8px;
+		font: 900 18px 'Nunito', sans-serif;
+		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+	}
 	.nav-arrow {
 		width: 44px;
-		height: 40px;
-		flex: 0 0 auto;
-		background: var(--yellow-banner);
-		border: 3px solid var(--border-dark);
-		border-radius: 12px;
-		font: 900 30px/1 'Nunito', sans-serif;
-		padding-bottom: 4px;
-		box-shadow: var(--sticker-shadow-sm);
 	}
 	.today-btn {
-		height: 40px;
-		flex: 0 0 auto;
-		padding: 0 12px;
+		padding: 0 10px;
+		font-size: 15px;
 		background: var(--tab-orange);
-		border: 3px solid var(--border-dark);
-		border-radius: 12px;
-		font: 900 15px 'Nunito', sans-serif;
-		box-shadow: var(--sticker-shadow-sm);
 	}
 
 	.calendar-grid {
 		display: grid;
 		grid-template-columns: repeat(7, 1fr);
-		gap: 4px 6px;
+		grid-template-rows: auto;
+		grid-auto-rows: 1fr;
+		gap: 6px;
 		flex: 1;
-		align-content: start;
+		min-height: 0;
 	}
 	.day-name {
 		text-align: center;
@@ -191,13 +188,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 17px;
+		font-size: 18px;
 		font-weight: 800;
-		min-height: 31px;
-	}
-	.day-cell.weekend {
-		background: #e2e8f0;
-		color: #475569;
 	}
 	.day-cell.milestone {
 		background: var(--tab-green);
@@ -205,13 +197,6 @@
 	.day-cell.empty {
 		background: transparent;
 		border: none;
-	}
-	.day-cell.today {
-		background: var(--tab-orange);
-		color: white;
-		font-size: 20px;
-		font-weight: 900;
-		border: 3px solid var(--border-dark);
 	}
 	.day-cell.holiday {
 		background: var(--event-holiday);
@@ -224,15 +209,17 @@
 	.day-cell.today {
 		background: var(--tab-orange);
 		color: white;
-		box-shadow: 0 0 0 3px var(--card-white), 0 0 0 5px var(--border-dark);
+		font-size: 20px;
+		font-weight: 900;
+		border: 3px solid var(--border-dark);
 	}
 
 	.legend {
 		display: flex;
 		justify-content: center;
-		gap: 12px;
+		gap: 14px;
 		margin-top: 8px;
-		font-size: 13px;
+		font-size: 13.5px;
 		font-weight: 800;
 	}
 	.legend span {
@@ -260,10 +247,10 @@
 	.agenda-list {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 5px;
 		overflow-y: auto;
 		padding-right: 4px;
-		margin-top: 2px;
+		margin-top: 0;
 	}
 	.agenda-item {
 		display: flex;
@@ -271,7 +258,7 @@
 		background: var(--bg-light-blue);
 		border: 2.5px solid var(--border-dark);
 		border-radius: 12px;
-		padding: 4px 8px;
+		padding: 3px 8px;
 		gap: 10px;
 		flex: 0 0 auto;
 	}

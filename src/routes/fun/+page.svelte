@@ -21,7 +21,7 @@
 		<div class="dino-left">
 			<SectionTitle variant="white">Dino of the Day!</SectionTitle>
 			{#key dino.name}
-				<Emoji code={dinoEmoji(dino)} size={120} alt={dino.name} shadow={OUTLINE} class="anim-pop" />
+				<Emoji code={dinoEmoji(dino)} size={140} alt={dino.name} shadow={OUTLINE} class="anim-pop" />
 			{/key}
 			<div class="dino-name">{dino.name}</div>
 			<div class="dino-say">say “{dino.say}”</div>
@@ -64,8 +64,8 @@
 		background-color: #dcfce7;
 		flex-direction: row;
 		align-items: stretch;
-		padding: 14px;
-		gap: 16px;
+		padding: 20px;
+		gap: 20px;
 	}
 
 	.dino-left {
@@ -78,7 +78,7 @@
 		min-width: 0;
 	}
 	.dino-name {
-		font-size: 24px;
+		font-size: 26px;
 		font-weight: 900;
 		text-align: center;
 		line-height: 1.1;

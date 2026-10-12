@@ -208,7 +208,7 @@ missing SVG; `tests/emoji.test.ts` fails if one is missing.
 ## Layout
 
 ```
-#pi-screen  — fixed 800×480 frame (cyan, 5px dark rounded bezel)
+#pi-screen  — fixed 800×480 frame, edge to edge (sky background)
 ├── Header      greeting + date (left), live clock pill (right)
 ├── main        the active page
 └── nav.tabs    five flush "file-folder" tabs; active tab is coloured,

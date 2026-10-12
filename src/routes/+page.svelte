@@ -256,6 +256,7 @@
 	.today {
 		height: 100%;
 		min-height: 0;
+		min-width: 0; /* a long quote must never widen the page */
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
@@ -276,7 +277,9 @@
 		font: 800 15px 'Nunito', sans-serif;
 		color: var(--text-dark);
 		text-align: left;
+		width: 100%;
 		min-width: 0;
+		overflow: hidden;
 	}
 	.strip b {
 		font-weight: 900;

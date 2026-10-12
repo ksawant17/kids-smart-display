@@ -77,7 +77,7 @@ img {
 }
 
 /* --------------------------------------------------------------------------
-   The 800x480 screen frame (matches sample-pages/: 5px dark rounded bezel).
+   The 800x480 screen frame, edge to edge (the panel has its own bezel).
    In the kiosk the viewport IS 800x480, so this fills it exactly. In a
    bigger dev browser it is centred and capped at 800x480.
    -------------------------------------------------------------------------- */
@@ -92,8 +92,6 @@ img {
 	height: 100vh;
 	max-width: 800px;
 	max-height: 480px;
-	border: 5px solid var(--border-dark);
-	border-radius: 16px;
 	background-color: var(--bg-cyan);
 	display: flex;
 	flex-direction: column;
@@ -175,6 +173,8 @@ main {
 	flex: 1;
 	min-height: 0;
 	display: grid;
+	/* pages can never be wider than the screen, whatever their content */
+	grid-template-columns: minmax(0, 1fr);
 	gap: 14px;
 	position: relative;
 	overflow: hidden;

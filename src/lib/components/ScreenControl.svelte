@@ -1,7 +1,9 @@
 <script lang="ts">
 	/**
-	 * Brightness panel (opened by tapping the clock). The slider changes the
-	 * backlight live; the value is remembered on the server.
+	 * Quick menu: a sheet that drops from the top of the screen when you pull
+	 * down from the header (or tap the grab handle). Brightness slider (changes
+	 * the backlight live, remembered on the server) + "Turn Screen Off".
+	 * Close: swipe the sheet up, tap outside it, or Done.
 	 */
 	import Emoji from '#lib/components/Emoji.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
@@ -26,12 +28,31 @@
 	function onScrimDown(e: PointerEvent) {
 		if (e.target === e.currentTarget) close();
 	}
+
+	// swipe the sheet up to close, from anywhere on it; a slider drag is
+	// sideways, so it never counts
+	let start: { x: number; y: number } | null = null;
+	function sheetUp(e: PointerEvent) {
+		if (!start) return;
+		const dx = e.clientX - start.x;
+		const dy = e.clientY - start.y;
+		start = null;
+		if (dy < -40 && Math.abs(dy) > Math.abs(dx) * 1.5) close();
+	}
 </script>
 
 {#if $screenPanelOpen}
 	<!-- svelte-ignore a11y_no_static_element_interactions (scrim tap = close; Done button is the accessible path) -->
 	<div class="overlay" onpointerdown={onScrimDown}>
-		<div class="card panel" role="dialog" aria-modal="true" aria-label="Screen brightness" tabindex="-1">
+		<div
+			class="card panel"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Quick menu"
+			tabindex="-1"
+			onpointerdown={(e) => (start = { x: e.clientX, y: e.clientY })}
+			onpointerup={sheetUp}
+		>
 			<SectionTitle big>Screen Brightness</SectionTitle>
 
 			<div class="value">{brightness}%</div>
@@ -69,6 +90,7 @@
 			</div>
 
 			<div class="hint">Dims after a while and turns off later on its own. Touch to wake.</div>
+			<div class="grabber" aria-hidden="true"></div>
 		</div>
 	</div>
 {/if}
@@ -79,17 +101,28 @@
 		inset: 0;
 		z-index: 40;
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: center;
 		background: rgba(17, 24, 39, 0.35);
 	}
+	/* a sheet hanging from the top edge */
 	.panel {
-		width: 560px;
-		padding: 18px 26px 14px;
+		width: 600px;
+		padding: 14px 26px 8px;
 		align-items: center;
 		gap: 6px;
 		background: #fef9c3;
-		animation: pop-in 0.25s ease-out both;
+		border-top: none;
+		border-radius: 0 0 22px 22px;
+		animation: slide-down 0.22s ease-out both;
+		touch-action: none;
+	}
+	.grabber {
+		width: 60px;
+		height: 6px;
+		border-radius: 3px;
+		background: rgba(17, 24, 39, 0.35);
+		margin-top: 4px;
 	}
 	.value {
 		font-size: 44px;

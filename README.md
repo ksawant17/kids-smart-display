@@ -79,13 +79,15 @@ outside the card.
   shown ("updated 7:40 AM") and the kiosk keeps retrying every minute.
 - **Idle return:** after `kiosk.idleReturnSeconds` without a touch, the screen
   closes the weather report and goes back to TODAY.
-- **Screen control:** tap the clock to open the **brightness slider**
+- **Screen control:** **pull down from the top of the screen** (or tap the
+  little grab handle at the top edge) to open the quick menu with the
+  **brightness slider**
   (10–100%, changes the real backlight live, remembered across restarts).
   With nobody touching it, the screen **dims to 10% after 10 minutes** and
   **turns off after an hour**; any touch wakes it straight back to the chosen
   brightness. That waking touch only wakes the screen and doesn't press
   anything underneath. "Turn Screen Off" in the brightness panel switches it
-  off right away.
+  off right away. Swipe the menu back up (or tap outside it) to close it.
 - **Weather alerts:** active National Weather Service alerts (winter storm, heat,
   thunderstorm...) take turns with the school status in the TODAY banner (red /
   orange / yellow by severity) with kid advice ("Bundle up! School might be

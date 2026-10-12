@@ -135,6 +135,7 @@ img {
 
 /* --- Header ------------------------------------------------------------- */
 header {
+	touch-action: none; /* pull-down for the quick menu starts here */
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -159,11 +160,8 @@ header {
 }
 
 .header-right {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	font: 900 22px 'Nunito', sans-serif;
-	color: var(--text-dark);
+	font-size: 22px;
+	font-weight: 900;
 	background-color: var(--card-white);
 	padding: 4px 16px;
 	border: 3px solid var(--border-dark);

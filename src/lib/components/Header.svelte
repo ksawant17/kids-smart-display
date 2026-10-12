@@ -4,7 +4,6 @@
 	import { moonPhase } from '#lib/utils/moon';
 	import { now } from '#lib/clock';
 	import { weather } from '#lib/weather';
-	import { screenPanelOpen } from '#lib/screen';
 	import { themeFor } from '#lib/themes';
 
 	let { names }: { names: string } = $props();
@@ -34,11 +33,7 @@
 			{/each}
 		</div>
 	{/if}
-	<!-- the clock doubles as the brightness button -->
-	<button class="header-right pressable" onclick={() => screenPanelOpen.set(true)} aria-label="Screen brightness">
-		<Emoji code="1f506" size={20} alt="" shadow="none" />
-		{clockTime($now)}
-	</button>
+	<div class="header-right">{clockTime($now)}</div>
 </header>
 
 <style>

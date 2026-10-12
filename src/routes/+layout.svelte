@@ -159,10 +159,6 @@
 />
 
 <div id="pi-screen" class="sky-{sky}" bind:this={frame}>
-	<!-- grab handle: hints that the quick menu pulls down from here (tap works too) -->
-	<button class="pull-handle" onclick={() => screenPanelOpen.set(true)} aria-label="Open quick menu">
-		<span></span>
-	</button>
 	<Header {names} />
 	<main>
 		{@render children()}
@@ -186,29 +182,6 @@
 </div>
 
 <style>
-	.pull-handle {
-		position: absolute;
-		top: 0;
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 25;
-		width: 84px;
-		height: 18px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(255, 255, 255, 0.55);
-		border: 2px solid rgba(17, 24, 39, 0.35);
-		border-top: none;
-		border-radius: 0 0 12px 12px;
-		touch-action: none;
-	}
-	.pull-handle span {
-		width: 34px;
-		height: 4px;
-		border-radius: 2px;
-		background: rgba(17, 24, 39, 0.55);
-	}
 	.screen-sim {
 		position: absolute;
 		inset: 0;

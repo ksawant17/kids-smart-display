@@ -79,8 +79,8 @@ outside the card.
   shown ("updated 7:40 AM") and the kiosk keeps retrying every minute.
 - **Idle return:** after `kiosk.idleReturnSeconds` without a touch, the screen
   closes the weather report and goes back to TODAY.
-- **Screen control:** **pull down from the top of the screen** (or tap the
-  little grab handle at the top edge) to open the quick menu with the
+- **Screen control:** **pull down from the top of the screen** (start on
+  the greeting/clock bar) to open the quick menu with the
   **brightness slider**
   (10–100%, changes the real backlight live, remembered across restarts).
   With nobody touching it, the screen **dims to 10% after 10 minutes** and

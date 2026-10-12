@@ -1,7 +1,7 @@
 <script lang="ts">
 	/**
 	 * Quick menu: a sheet that drops from the top of the screen when you pull
-	 * down from the header (or tap the grab handle). Brightness slider (changes
+	 * down from the header. Brightness slider (changes
 	 * the backlight live, remembered on the server) + "Turn Screen Off".
 	 * Close: swipe the sheet up, tap outside it, or Done.
 	 */

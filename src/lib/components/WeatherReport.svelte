@@ -14,7 +14,19 @@
 	import { weatherEmoji, weatherLabel } from '#lib/utils/weatherCodes';
 	import { clockTime, hourLabel } from '#lib/utils/time';
 	import { outfitForDay, type WardrobeThresholds } from '#lib/utils/wardrobe';
-	import { daylight, skyStory, sunProgress, tempColor, uvInfo, windWord } from '#lib/utils/forecastStory';
+	import {
+		airInfo,
+		alertAdvice,
+		alertLevel,
+		daylight,
+		skyStory,
+		sunProgress,
+		tempColor,
+		uvInfo,
+		windWord
+	} from '#lib/utils/forecastStory';
+	import { moonPhase } from '#lib/utils/moon';
+	import { parseKey } from '#lib/utils/schoolCalendar';
 	import type { Kid } from '#lib/config';
 
 	let { kids, wardrobe }: { kids: Kid[]; wardrobe: WardrobeThresholds } = $props();
@@ -46,6 +58,14 @@
 
 	const wind = $derived(windWord(day?.wind_mph ?? 0));
 	const uv = $derived(uvInfo(day?.uv_max ?? null));
+	const air = $derived(airInfo(data?.air?.aqi));
+	// the moon that night (9 PM of the selected day)
+	const moon = $derived.by(() => {
+		if (!day) return null;
+		const d = parseKey(day.date);
+		d.setHours(21);
+		return moonPhase(d);
+	});
 	const sunAt = $derived(
 		selected === 0 && day?.sunrise && day?.sunset ? sunProgress($now, day.sunrise, day.sunset) : null
 	);
@@ -77,6 +97,7 @@
 	<div class="overlay" onpointerdown={onScrimDown}>
 		<div
 			class="card report"
+			class:has-alert={(data?.alerts.length ?? 0) > 0}
 			role="dialog"
 			aria-modal="true"
 			aria-label="Full weather report"
@@ -122,11 +143,22 @@
 					<button class="retry pressable" onclick={loadWeather}>Try again</button>
 				</div>
 			{:else}
+				{#each data.alerts as a (a.event + a.ends)}
+					{@const tip = alertAdvice(a.event)}
+					<div class="alert-strip alert-{alertLevel(a.severity)}">
+						<Emoji code="26a0" size={22} alt="" shadow="none" />
+						<div class="alert-text">
+							<b>{a.event}</b>{#if a.ends}<span> · until {clockTime(new Date(a.ends))}</span>{/if}
+							<div class="alert-tip">{tip.advice}</div>
+						</div>
+						<Emoji code={tip.emoji} size={24} alt="" shadow="none" />
+					</div>
+				{/each}
 				<!-- hero: the day at a glance + the buddy's report -->
 				<div class="hero">
 					<div class="hero-wx">
 						{#key selected}
-							<Emoji code={weatherEmoji(day.code, true)} size={78} alt="" class="anim-pop" />
+							<Emoji code={weatherEmoji(day.code, true)} size={data.alerts.length ? 60 : 78} alt="" class="anim-pop" />
 						{/key}
 						<div class="hero-text">
 							<div class="hero-label">{weatherLabel(day.code, true)}</div>
@@ -146,7 +178,7 @@
 					</div>
 
 					<div class="reporter">
-						<KidAvatar {kid} items={outfitNames} size={128} />
+						<KidAvatar {kid} items={outfitNames} size={data.alerts.length ? 100 : 128} />
 					</div>
 				</div>
 
@@ -218,6 +250,24 @@
 							<div class="tile-small">UV {day.uv_max == null ? '—' : Math.round(day.uv_max)}</div>
 						</div>
 					</div>
+					<div class="tile air-{air.level}">
+						<Emoji code={air.emoji} size={30} alt="" />
+						<div class="tile-body">
+							<div class="tile-big">{air.word}</div>
+							<div class="tile-small">
+								{data.air ? `air quality ${data.air.aqi} now` : 'no reading'}
+							</div>
+						</div>
+					</div>
+					{#if moon}
+						<div class="tile moon-tile">
+							<Emoji code={moon.emoji} size={30} alt="" shadow="none" />
+							<div class="tile-body">
+								<div class="tile-big">{moon.name}</div>
+								<div class="tile-small">{selected === 0 ? 'tonight' : 'tomorrow night'} · {moon.illumination}% lit</div>
+							</div>
+						</div>
+					{/if}
 				</div>
 
 				<div class="swipe-hint">
@@ -340,7 +390,7 @@
 		-webkit-text-stroke: 0;
 	}
 	.hero-loc {
-		font-size: 12px;
+		font-size: 13px;
 		font-weight: 800;
 		opacity: 0.6;
 		white-space: nowrap;
@@ -370,7 +420,7 @@
 		transform: translateY(-50%) rotate(45deg) skew(10deg, 10deg);
 	}
 	.bubble-who {
-		font-size: 12px;
+		font-size: 13px;
 		font-weight: 900;
 		color: #7c3aed;
 	}
@@ -412,10 +462,24 @@
 	}
 	.hill {
 		position: relative;
-		height: 76px;
+		height: 58px;
 		background: linear-gradient(180deg, #fff7ed, #f0f9ff);
 		border-top: 2px dashed #cbd5e1;
 		border-bottom: 2px dashed #cbd5e1;
+	}
+	/* an alert strip takes ~50px: squeeze the hill a little to make room */
+	.has-alert .hill {
+		height: 42px;
+	}
+	.has-alert .hero-temps {
+		font-size: 34px;
+	}
+	.has-alert .swipe-hint {
+		display: none;
+	}
+	.hours,
+	.tiles {
+		flex-shrink: 0;
 	}
 	.hill svg {
 		position: absolute;
@@ -443,7 +507,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 2px;
-		font-size: 11.5px;
+		font-size: 12.5px;
 		font-weight: 800;
 		color: #64748b;
 		padding: 3px 0;
@@ -456,8 +520,8 @@
 	/* --- fun tiles --- */
 	.tiles {
 		display: grid;
-		grid-template-columns: 1fr 1fr 1.35fr 1fr;
-		gap: 10px;
+		grid-template-columns: 1fr 1.25fr 1fr;
+		gap: 7px 10px;
 	}
 	.tile {
 		display: flex;
@@ -466,7 +530,7 @@
 		background: var(--bg-light-blue);
 		border: 3px solid var(--border-dark);
 		border-radius: 14px;
-		padding: 10px;
+		padding: 4px 10px;
 		box-shadow: var(--sticker-shadow-sm);
 		min-width: 0;
 	}
@@ -481,7 +545,7 @@
 		white-space: nowrap;
 	}
 	.tile-small {
-		font-size: 11.5px;
+		font-size: 12.5px;
 		font-weight: 800;
 		color: #475569;
 		white-space: nowrap;
@@ -503,12 +567,52 @@
 		gap: 4px;
 	}
 	.sun-tile .tile-small {
-		font-size: 11px;
+		font-size: 11.5px;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	.uv-high {
+	.uv-high,
+	.air-bad {
 		background: #fee2e2;
+	}
+	.air-good {
+		background: #dcfce7;
+	}
+	.moon-tile {
+		background: #e0e7ff;
+	}
+	.alert-strip {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		border: 3px solid var(--border-dark);
+		border-radius: 12px;
+		padding: 4px 10px;
+		font-size: 14px;
+		font-weight: 800;
+		box-shadow: var(--sticker-shadow-sm);
+	}
+	.alert-strip b {
+		font-weight: 900;
+		font-size: 15px;
+	}
+	.alert-text {
+		flex: 1;
+		min-width: 0;
+		line-height: 1.2;
+	}
+	.alert-tip {
+		font-size: 13px;
+	}
+	.alert-red {
+		background: #ef4444;
+		color: #ffffff;
+	}
+	.alert-orange {
+		background: #fb923c;
+	}
+	.alert-yellow {
+		background: #fde047;
 	}
 	.uv-mid {
 		background: #fef3c7;
@@ -517,7 +621,7 @@
 	.swipe-hint {
 		margin-top: auto;
 		text-align: center;
-		font-size: 11px;
+		font-size: 12.5px;
 		font-weight: 800;
 		opacity: 0.55;
 		display: flex;

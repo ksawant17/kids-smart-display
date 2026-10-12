@@ -11,7 +11,8 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "vitest run",
-    "emoji": "node scripts/vendor-emoji.mjs"
+    "emoji": "node scripts/vendor-emoji.mjs",
+    "cursor": "node scripts/blank-cursor.mjs"
   },
   "devDependencies": {
     "@sveltejs/kit": "^3.0.0",

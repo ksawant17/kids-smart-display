@@ -229,9 +229,96 @@ export function todayStatus(events: SchoolEvent[], key: string): TodayStatus {
 	if (ev) return { kind: 'special', title: ev.title, subtitle: ev.subtitle || 'School Day', event: ev };
 
 	const nextOff = events.find((e) => e.type === 'no_school' && e.date > key);
+	const n = nextOff ? sleepsUntil(key, nextOff.date) : 0;
 	return {
 		kind: 'regular',
 		title: 'School Day',
-		subtitle: nextOff ? `Next day off: ${weekdayShort(nextOff.date)}` : ''
+		subtitle: nextOff ? `Next day off: ${weekdayShort(nextOff.date)} (${n} ${n === 1 ? 'sleep' : 'sleeps'})` : ''
 	};
+}
+
+/* --------------------------- countdowns & look-ahead --------------------------- */
+
+/** Whole days from one date key to another ("sleeps" for kids). */
+export function sleepsUntil(fromKey: string, toKey: string): number {
+	return Math.round((parseKey(toKey).getTime() - parseKey(fromKey).getTime()) / 86400000);
+}
+
+/** "Today!" / "Tomorrow!" / "3 sleeps" */
+export function sleepsLabel(n: number): string {
+	if (n <= 0) return 'Today!';
+	if (n === 1) return 'Tomorrow!';
+	return `${n} sleeps`;
+}
+
+/** The next multi-day break that hasn't started yet (Thanksgiving, Winter Break...). */
+export function nextBreak(events: SchoolEvent[], key: string): SchoolEvent | null {
+	return (
+		events.find((e) => e.type === 'no_school' && !!e.endDate && e.endDate !== e.date && e.date > key) ?? null
+	);
+}
+
+/**
+ * The school banner for TOMORROW (shown in the evening), e.g.
+ * "No School Tomorrow!" / "Early Release Tomorrow" / "School Tomorrow".
+ */
+export function tomorrowStatus(events: SchoolEvent[], tomorrowKey: string): TodayStatus {
+	const s = todayStatus(events, tomorrowKey);
+	switch (s.kind) {
+		case 'no-school':
+			return { ...s, title: 'No School Tomorrow!' };
+		case 'early':
+			return { ...s, title: s.event?.type === 'last_day' ? 'Last Day Tomorrow!' : 'Early Release Tomorrow' };
+		case 'weekend':
+			return { ...s, title: 'No School Tomorrow!', subtitle: "It's the weekend" };
+		case 'summer':
+			return s;
+		case 'special':
+			return { ...s, title: `Tomorrow: ${s.title.replace(/!$/, '')}!` };
+		default:
+			return { ...s, title: 'School Tomorrow', subtitle: 'Pack your backpack tonight!' };
+	}
+}
+
+/* ------------------------------ any-day details ------------------------------ */
+
+/** Twemoji for each school status (shared by TODAY and the calendar popup). */
+export const STATUS_EMOJI: Record<TodayKind, string> = {
+	regular: '1f392', // backpack
+	early: '23f0', // alarm clock
+	'no-school': '1f389', // party popper
+	weekend: '1f3e1', // house with garden
+	summer: '1f3d6', // beach
+	special: '1f4c5' // calendar
+};
+
+/** All events covering a date, most important first. */
+export function eventsOn(events: SchoolEvent[], key: string): SchoolEvent[] {
+	return events.filter((ev) => covers(ev, key)).sort((a, b) => PRIORITY[a.type] - PRIORITY[b.type]);
+}
+
+/** School status for any date, in neutral words ("No School", not "No School Today!"). */
+export function dayStatus(events: SchoolEvent[], key: string): TodayStatus {
+	const s = todayStatus(events, key);
+	switch (s.kind) {
+		case 'no-school':
+			return { ...s, title: 'No School' };
+		case 'early':
+			return { ...s, title: s.event?.type === 'last_day' ? 'Last Day of School' : 'Early Release' };
+		case 'weekend':
+			return { ...s, title: 'Weekend', subtitle: 'No school' };
+		case 'summer':
+			return { ...s, title: 'Summer Break' };
+		case 'special':
+			return { ...s, title: s.title.replace(/!$/, '') };
+		default:
+			return { ...s, title: 'School Day', subtitle: 'A regular school day' };
+	}
+}
+
+/** "Today!" / "Tomorrow!" / "5 sleeps" / "Yesterday" / "3 days ago" */
+export function relativeDay(fromKey: string, key: string): string {
+	const n = sleepsUntil(fromKey, key);
+	if (n >= 0) return sleepsLabel(n);
+	return n === -1 ? 'Yesterday' : `${-n} days ago`;
 }

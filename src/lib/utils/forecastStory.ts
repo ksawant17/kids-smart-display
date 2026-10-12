@@ -92,3 +92,34 @@ export function sunProgress(now: Date, sunrise: string, sunset: string): number 
 	if (t < a || t > b) return null;
 	return (t - a) / (b - a);
 }
+
+/** US air quality index in kid words. */
+export function airInfo(aqi: number | null | undefined): { word: string; emoji: string; level: 'good' | 'ok' | 'bad' } {
+	if (aqi == null) return { word: 'Air: no data', emoji: '1f343', level: 'ok' };
+	if (aqi <= 50) return { word: 'Air is great', emoji: '1f33f', level: 'good' };
+	if (aqi <= 100) return { word: 'Air is okay', emoji: '1f343', level: 'ok' };
+	if (aqi <= 150) return { word: 'Take it easy outside', emoji: '1f637', level: 'bad' };
+	return { word: 'Play inside today', emoji: '1f637', level: 'bad' };
+}
+
+/** Kid-friendly advice for a National Weather Service alert. */
+export function alertAdvice(event: string): { advice: string; emoji: string } {
+	const e = event.toLowerCase();
+	if (/winter|snow|ice|blizzard|freez|frost|sleet/.test(e))
+		return { advice: 'Bundle up! School might be closed, ask a grown-up.', emoji: '2744' };
+	if (/heat/.test(e)) return { advice: 'Drink lots of water and stay cool.', emoji: '1f975' };
+	if (/thunder|tornado|lightning/.test(e)) return { advice: 'Stay inside when it rumbles!', emoji: '26a1' };
+	if (/flood|rain/.test(e)) return { advice: 'Stay away from deep water.', emoji: '1f30a' };
+	if (/wind|gale/.test(e)) return { advice: 'Hold on to your hat!', emoji: '1f32c' };
+	if (/fog/.test(e)) return { advice: 'Extra careful at the bus stop.', emoji: '1f32b' };
+	if (/air quality|smoke/.test(e)) return { advice: 'Play inside today.', emoji: '1f637' };
+	if (/cold|chill/.test(e)) return { advice: 'Wear your warmest coat!', emoji: '1f976' };
+	return { advice: 'Ask a grown-up what to do.', emoji: '26a0' };
+}
+
+/** Severe/extreme alerts are red, moderate orange, the rest yellow. */
+export function alertLevel(severity: string): 'red' | 'orange' | 'yellow' {
+	if (severity === 'Extreme' || severity === 'Severe') return 'red';
+	if (severity === 'Moderate') return 'orange';
+	return 'yellow';
+}

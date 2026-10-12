@@ -62,6 +62,14 @@ body {
 	background-color: #1e293b;
 }
 
+/* Touch kiosk: no mouse cursor (cage would park one in the middle of the
+   screen). +layout.svelte adds .mouse to <html> the moment a real mouse
+   moves, so a plugged-in mouse still works for debugging. */
+html:not(.mouse),
+html:not(.mouse) * {
+	cursor: none !important;
+}
+
 img {
 	-webkit-user-drag: none;
 	user-drag: none;
@@ -92,6 +100,37 @@ img {
 	padding: 14px 16px 0 16px;
 	gap: 14px;
 	overflow: hidden;
+}
+
+/* --- Time-of-day sky (class set by +layout.svelte from sunrise/sunset) ---- */
+#pi-screen {
+	transition: background-color 2s ease;
+}
+#pi-screen.sky-dawn {
+	background: linear-gradient(180deg, #ffd6a5 0%, #9be7f7 55%, var(--bg-cyan) 100%);
+}
+#pi-screen.sky-day {
+	background: var(--bg-cyan);
+}
+#pi-screen.sky-dusk {
+	background: linear-gradient(180deg, #fb923c 0%, #f472b6 45%, #a78bfa 100%);
+}
+#pi-screen.sky-night {
+	background:
+		radial-gradient(1.5px 1.5px at 12% 8%, #fff 95%, transparent),
+		radial-gradient(1.5px 1.5px at 33% 4%, #fff 95%, transparent),
+		radial-gradient(2px 2px at 58% 9%, #fef9c3 95%, transparent),
+		radial-gradient(1.5px 1.5px at 71% 3%, #fff 95%, transparent),
+		radial-gradient(1.5px 1.5px at 47% 13%, #fff 95%, transparent),
+		radial-gradient(2px 2px at 88% 12%, #fff 95%, transparent),
+		radial-gradient(1.5px 1.5px at 4% 15%, #fff 95%, transparent),
+		linear-gradient(180deg, #0b1d4d 0%, #1e3a8a 60%, #3b4fa0 100%);
+}
+/* light text on the dark night sky / dusk */
+#pi-screen.sky-night .header-left,
+#pi-screen.sky-dusk .header-left {
+	color: #ffffff;
+	text-shadow: 2px 2px 0 rgba(17, 24, 39, 0.45);
 }
 
 /* --- Header ------------------------------------------------------------- */
@@ -197,15 +236,20 @@ nav.tabs {
 	padding-top: 4px;
 	transition: opacity 0.2s ease, transform 0.2s ease;
 	text-decoration: none;
-	color: #ffffff;
-	/* inactive: dimmed grey folder, sitting slightly lower (sample-pages) */
-	background-color: var(--tab-gray);
-	opacity: 0.5;
+	/* inactive: a pale version of the tab's own colour (kids find tabs by
+	   colour), sitting slightly lower; dark label so it reads from afar */
+	--tab-color: var(--tab-gray);
+	background-color: color-mix(in srgb, var(--tab-color) 38%, #ffffff);
+	color: #334155;
 	transform: translateY(6px);
+}
+.tab:not(.active) img {
+	opacity: 0.75;
 }
 
 .tab.active {
-	opacity: 1;
+	background-color: var(--tab-color);
+	color: #ffffff;
 	transform: translateY(0);
 }
 
@@ -224,14 +268,17 @@ nav.tabs {
 }
 
 .tab:active {
-	opacity: 0.8;
+	filter: brightness(0.92);
+}
+.tab.active span {
+	text-shadow: 1px 1px 0 rgba(17, 24, 39, 0.35);
 }
 
-.tab-today.active { background-color: var(--tab-orange); }
-.tab-calendar.active { background-color: var(--tab-red); }
-.tab-quote.active { background-color: var(--tab-green); }
-.tab-wardrobe.active { background-color: var(--tab-purple); }
-.tab-fun.active { background-color: var(--tab-pink); }
+.tab-today { --tab-color: var(--tab-orange); }
+.tab-calendar { --tab-color: var(--tab-red); }
+.tab-quote { --tab-color: var(--tab-green); }
+.tab-wardrobe { --tab-color: var(--tab-purple); }
+.tab-fun { --tab-color: var(--tab-pink); }
 
 
 

@@ -11,11 +11,17 @@
 	import { modeForIdle, screenPanelOpen, type ScreenMode } from '#lib/screen';
 	import { now, todayKey } from '#lib/clock';
 	import { closeReport } from '#lib/report';
-	import { startWeather } from '#lib/weather';
+	import { startWeather, weather } from '#lib/weather';
+	import { skyPhase } from '#lib/sky';
 
 	let { data, children } = $props();
 
 	const names = $derived(kidNames(data.kids));
+
+	// background follows the real sky: dawn / day / dusk / starry night
+	const sky = $derived(
+		skyPhase($now, $weather.data?.days[0]?.sunrise, $weather.data?.days[0]?.sunset)
+	);
 
 	// One shared weather feed for every page, refreshed in the background.
 	onMount(() => startWeather(data.weatherRefreshMinutes));
@@ -94,6 +100,22 @@
 		}, 120);
 	}
 
+	// Show the cursor only once a real mouse is moved around (touches never
+	// count). Chromium fires a synthetic mouse event when the compositor first
+	// hands it the pointer, so a single event, or a small nudge, doesn't count:
+	// the pointer has to travel 60px from where it first appeared.
+	let mouseOrigin: { x: number; y: number } | null = null;
+	function onPointerMove(e: PointerEvent) {
+		if (e.pointerType !== 'mouse') return;
+		if (!mouseOrigin) {
+			mouseOrigin = { x: e.clientX, y: e.clientY };
+			return;
+		}
+		if (Math.hypot(e.clientX - mouseOrigin.x, e.clientY - mouseOrigin.y) > 60) {
+			document.documentElement.classList.add('mouse');
+		}
+	}
+
 	function onTouch() {
 		lastTouch = Date.now();
 		sentHome = false;
@@ -113,9 +135,9 @@
 	<title>{names} — Smart Dashboard</title>
 </svelte:head>
 
-<svelte:window onpointerdowncapture={onTouch} />
+<svelte:window onpointerdowncapture={onTouch} onpointermove={onPointerMove} />
 
-<div id="pi-screen">
+<div id="pi-screen" class="sky-{sky}">
 	<Header {names} />
 	<main>
 		{@render children()}

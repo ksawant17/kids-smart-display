@@ -40,8 +40,22 @@ export interface WeatherData {
 	current: CurrentWeather;
 	hourly: HourEntry[];
 	days: DaySummary[]; // 7 days, [0] = today
+	/** US air quality index now + today's worst hour; null when unavailable */
+	air: { aqi: number; aqi_max: number } | null;
+	/** active National Weather Service alerts (empty when none / unavailable) */
+	alerts: WeatherAlert[];
 	timezone: string;
 	fetched_at: string;
 	/** true when Open-Meteo was unreachable and this is the last good forecast */
 	stale: boolean;
+}
+
+export interface WeatherAlert {
+	/** e.g. "Winter Storm Warning" */
+	event: string;
+	/** Extreme | Severe | Moderate | Minor | Unknown */
+	severity: string;
+	headline: string;
+	/** ISO end time, when known */
+	ends: string | null;
 }

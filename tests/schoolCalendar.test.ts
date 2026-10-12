@@ -3,9 +3,16 @@ import { readFileSync } from 'node:fs';
 import {
 	agendaItem,
 	covers,
+	dayStatus,
 	eventOn,
+	eventsOn,
+	relativeDay,
 	fromIcs,
 	monthMarks,
+	nextBreak,
+	sleepsLabel,
+	sleepsUntil,
+	tomorrowStatus,
 	todayStatus,
 	upNext,
 	type SchoolEvent
@@ -123,7 +130,7 @@ describe('todayStatus', () => {
 	it('a normal weekday is a school day, with the next day off', () => {
 		const s = todayStatus(events, '2026-10-07'); // Wednesday
 		expect(s.kind).toBe('regular');
-		expect(s.subtitle).toBe('Next day off: Mon, Oct 12');
+		expect(s.subtitle).toBe('Next day off: Mon, Oct 12 (5 sleeps)');
 	});
 
 	it('weekends are not school days (regression)', () => {
@@ -147,5 +154,60 @@ describe('todayStatus', () => {
 
 	it('last day of school', () => {
 		expect(todayStatus(events, '2027-06-16')).toMatchObject({ kind: 'early', title: 'Last Day of School!' });
+	});
+});
+
+describe('countdowns', () => {
+	it('counts sleeps, including across months', () => {
+		expect(sleepsUntil('2026-10-11', '2026-10-12')).toBe(1);
+		expect(sleepsUntil('2026-10-30', '2026-11-25')).toBe(26);
+		expect(sleepsUntil('2026-11-01', '2026-11-08')).toBe(7); // across the DST change
+	});
+
+	it('labels them for kids', () => {
+		expect(sleepsLabel(0)).toBe('Today!');
+		expect(sleepsLabel(1)).toBe('Tomorrow!');
+		expect(sleepsLabel(4)).toBe('4 sleeps');
+	});
+
+	it('finds the next multi-day break', () => {
+		expect(nextBreak(events, '2026-10-11')?.title).toBe('Thanksgiving Break');
+		expect(nextBreak(events, '2026-11-26')?.title).toBe('Winter Break');
+		expect(nextBreak(events, '2027-01-02')).toBeNull();
+	});
+});
+
+describe('tomorrowStatus (evening look-ahead)', () => {
+	it('announces tomorrow', () => {
+		expect(tomorrowStatus(events, '2026-10-12')).toMatchObject({ title: 'No School Tomorrow!', subtitle: 'Staff Development Day' });
+		expect(tomorrowStatus(events, '2026-10-30').title).toBe('Early Release Tomorrow');
+		expect(tomorrowStatus(events, '2026-10-10')).toMatchObject({ title: 'No School Tomorrow!', subtitle: "It's the weekend" });
+		expect(tomorrowStatus(events, '2026-10-13')).toMatchObject({ title: 'School Tomorrow', subtitle: 'Pack your backpack tonight!' });
+		expect(tomorrowStatus(events, '2026-08-24').title).toBe('Tomorrow: First Day of School!');
+		expect(tomorrowStatus(events, '2027-06-16').title).toBe('Last Day Tomorrow!');
+	});
+});
+
+describe('any-day details (calendar popup)', () => {
+	it('lists every event on a day, most important first', () => {
+		const extra: SchoolEvent = { date: '2026-11-26', title: 'Parade', subtitle: '', type: 'event' };
+		expect(eventsOn([extra, ...events], '2026-11-26').map((e) => e.title)).toEqual(['Thanksgiving Break', 'Parade']);
+		expect(eventsOn(events, '2026-10-07')).toEqual([]);
+	});
+
+	it('describes any day in neutral words', () => {
+		expect(dayStatus(events, '2026-10-12')).toMatchObject({ kind: 'no-school', title: 'No School', subtitle: 'Staff Development Day' });
+		expect(dayStatus(events, '2026-10-30')).toMatchObject({ kind: 'early', title: 'Early Release' });
+		expect(dayStatus(events, '2026-10-10')).toMatchObject({ kind: 'weekend', title: 'Weekend' });
+		expect(dayStatus(events, '2026-10-07')).toMatchObject({ kind: 'regular', title: 'School Day' });
+		expect(dayStatus(events, '2027-07-04')).toMatchObject({ kind: 'summer', title: 'Summer Break' });
+		expect(dayStatus(events, '2026-08-24').title).toBe('First Day of School');
+	});
+
+	it('says how far away a day is, both ways', () => {
+		expect(relativeDay('2026-10-11', '2026-10-11')).toBe('Today!');
+		expect(relativeDay('2026-10-11', '2026-10-16')).toBe('5 sleeps');
+		expect(relativeDay('2026-10-11', '2026-10-10')).toBe('Yesterday');
+		expect(relativeDay('2026-10-11', '2026-10-01')).toBe('10 days ago');
 	});
 });

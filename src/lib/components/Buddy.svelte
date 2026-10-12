@@ -6,12 +6,14 @@
 	 * style: deep fills + dark ink outline + hard offset shadow.
 	 */
 	import type { BuddyKind } from '#lib/buddies';
+	import type { BuddyHat } from '#lib/themes';
 	let {
 		kind = 'bear',
 		items = [],
 		color = '#b388ff',
 		size = 140,
-		label = ''
+		label = '',
+		hat = null
 	}: {
 		kind?: BuddyKind;
 		/** outfit item names to wear */
@@ -22,6 +24,8 @@
 		size?: number;
 		/** accessible name, e.g. the kid's name */
 		label?: string;
+		/** seasonal hat (themes.ts) */
+		hat?: BuddyHat;
 	} = $props();
 
 	const INK = '#111827';
@@ -206,6 +210,21 @@
 	<circle cx="78" cy="58" r="4.5" fill="#fb7185" opacity="0.55" />
 	{#if kind === 'cat'}
 		<path d="M30 54 h10 M30 60 l10 -2 M90 54 h-10 M90 60 l-10 -2" stroke={INK} stroke-width="2" stroke-linecap="round" />
+	{/if}
+
+	<!-- seasonal hat -->
+	{#if hat === 'witch'}
+		<path d="M41 22 Q50 2 58 -22 Q64 -4 80 22 Z" fill="#6d28d9" stroke={INK} stroke-width="3" stroke-linejoin="round" />
+		<path d="M45 16 h31" stroke="#facc15" stroke-width="6" />
+		<ellipse cx="60" cy="22" rx="36" ry="7" fill="#6d28d9" stroke={INK} stroke-width="3" />
+	{:else if hat === 'winter'}
+		<path d="M31 32 Q32 2 60 2 Q88 2 89 32 Z" fill="#ef4444" stroke={INK} stroke-width="3" stroke-linejoin="round" />
+		<rect x="28" y="24" width="64" height="12" rx="6" fill="#ffffff" stroke={INK} stroke-width="3" />
+		<circle cx="60" cy="0" r="8" fill="#ffffff" stroke={INK} stroke-width="3" />
+	{:else if hat === 'party'}
+		<path d="M46 22 L60 -16 L74 22 Z" fill="#38bdf8" stroke={INK} stroke-width="3" stroke-linejoin="round" />
+		<path d="M51 9 L69 9 M55 -2 L65 -2" stroke="#facc15" stroke-width="4" />
+		<circle cx="60" cy="-17" r="5" fill="#f472b6" stroke={INK} stroke-width="2.5" />
 	{/if}
 
 	<!-- scarf -->

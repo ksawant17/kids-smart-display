@@ -186,7 +186,7 @@
 		margin-bottom: 0;
 	}
 	.day-date {
-		font-size: 12px;
+		font-size: 13px;
 		font-weight: 800;
 		color: #475569;
 		margin-top: 2px;

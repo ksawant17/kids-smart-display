@@ -3,7 +3,10 @@
 A full-screen, touch-first dashboard for kids, built for a **Raspberry Pi 5**
 and the **official 7" touchscreen (800×480)**. Each morning it answers what the
 kids want to know: *What's the weather? Is there school today? What should I
-wear?* It also has a quote, a dinosaur and a fun fact for the day.
+wear?* In the evening it looks ahead to tomorrow. Each kid has an animal
+buddy dressed for the weather, and there's a daily dinosaur, joke, word, math
+puzzle and fun fact. It also watches for severe weather alerts and dims or
+switches off the screen when nobody's around.
 
 It's a **SvelteKit** app shown in **Chromium kiosk mode** inside the **cage**
 Wayland compositor, so no desktop environment is needed. Everything is big,
@@ -11,9 +14,13 @@ colourful, sticker-styled and works with fat fingers; no mouse or keyboard.
 
 | | |
 |---|---|
-| ![TODAY tab](docs/screenshots/today.png) | ![CALENDAR tab](docs/screenshots/calendar.png) |
-| ![Full weather report](docs/screenshots/weather-report.png) | ![WARDROBE tab](docs/screenshots/wardrobe.png) |
-| ![FUN tab](docs/screenshots/fun.png) | ![QUOTE tab](docs/screenshots/quote.png) |
+| ![TODAY tab](docs/screenshots/today.png) | ![Full weather report](docs/screenshots/weather-report.png) |
+| ![CALENDAR tab](docs/screenshots/calendar.png) | ![Calendar day details](docs/screenshots/calendar-day.png) |
+| ![WARDROBE tab](docs/screenshots/wardrobe.png) | ![FUN tab: joke corner](docs/screenshots/fun.png) |
+| ![QUOTE tab](docs/screenshots/quote.png) | |
+
+*Screenshots use the example config (Alex & Sam), taken on an October evening:
+night sky, Halloween decorations and witch hats.*
 
 ## Hardware
 
@@ -42,11 +49,11 @@ config is used. To run it full-screen on the Pi at boot, see
 
 | Tab        | What it does |
 |------------|--------------|
-| **TODAY**  | Current weather hero (tap or **swipe down** for the full report), next few hours, tomorrow, school-day banner (school day / no school / early release / weekend / summer), quote of the day, "what to wear" with each kid's **animal buddy dressed in the outfit** (switches to **tomorrow** at 6 PM; tap it for the WARDROBE tab) |
-| **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back, plus "Up Next at School" (breaks that are under way stay listed until they end) |
+| **TODAY**  | Current weather hero (tap or **swipe down** for the full report), next few hours, tomorrow, school-day banner (school day + "next day off in N sleeps" / no school / early release / weekend / summer), quote of the day, "what to wear" with each kid's **animal buddy dressed in the outfit** (tap it for the WARDROBE tab). **From 6 PM it looks ahead:** the banner says what tomorrow brings ("No School Tomorrow!"), the hours show tomorrow morning, and the outfit is tomorrow's |
+| **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back. **Tap any day** (or an Up Next row) for a popup with that day's school status, events (with break dates), and, within the week's forecast, the weather and what to wear. Plus "Up Next at School" with **"Tomorrow!" / "N sleeps" countdowns** (breaks under way stay listed until they end) and a **next-break countdown** |
 | **QUOTE**  | Message of the day: one encouraging, correctly attributed quote, rotates at midnight |
 | **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
-| **FUN**    | Dino of the Day (name, how to say it, diet, size in school buses / kids) + a dino fact + a fact of the day |
+| **FUN**    | Five corners, each with a daily pick and an "another!" button: 🦖 **Dino** (how to say it, diet, size, era, fact) · 😂 **Joke** told by a kid's buddy, tap "Tell me!" for the punchline · 🔤 **Word of the day** (picture, pronunciation, meaning, sentence) · ➕ **Math** (Easy / Tricky, tap an answer to check it) · 💡 **Facts** |
 
 The **full weather report** (on TODAY) is a slide-down card. A kid's animal
 buddy (the kids take turns) "reports" the day, dressed for it, with a speech
@@ -55,7 +62,8 @@ lunch. Grab your umbrella!"). Below that, the hours appear as a **temperature
 hill**: coloured dots from blue (cold) to red (hot), night hours shaded, and the
 rain chance under each hour. Today shows the coming hours, Tomorrow 6 AM to 10 PM.
 Fun tiles show a rain meter, wind in words (Calm / Breezy / Windy), the sun's arc
-with sunrise, sunset and daylight, and sun safety from the UV index. Open it by
+with sunrise, sunset and daylight, sun safety from the UV index, **air quality**
+(US AQI) and **the moon** that night. Open it by
 swiping down on the hero or tapping the hero or tomorrow card. Switch days with
 the pills or a sideways swipe; close by swiping up, tapping ✕, or tapping
 outside the card.
@@ -78,7 +86,21 @@ outside the card.
   brightness. That waking touch only wakes the screen and doesn't press
   anything underneath. "Turn Screen Off" in the brightness panel switches it
   off right away.
+- **Weather alerts:** active National Weather Service alerts (winter storm, heat,
+  thunderstorm...) take turns with the school status in the TODAY banner (red /
+  orange / yellow by severity) with kid advice ("Bundle up! School might be
+  closed, ask a grown-up."), and appear at the top of the weather report.
+- **Holiday themes:** decorations in the header through each season (Halloween
+  🎃 all October, Thanksgiving 🦃, winter ❄️, Valentine's, St. Patrick's, 4th of
+  July), a greeting on the day itself ("Happy Halloween, …!") and seasonal hats
+  on the buddies (witch hats, pom-pom beanies, New Year party hats).
+- **The real moon:** at night the header shows tonight's moon phase.
 - **Works offline:** fonts and every icon are served locally.
+- **Sky that follows the day:** the background is peach at sunrise, cyan by
+  day, orange-pink at sunset and a starry navy at night (from the real
+  sunrise/sunset times).
+- **Tabs by colour:** the active tab is full colour; the others are a pale
+  version of their own colour, so kids can find them by colour.
 
 ## Configuration: `config/dashboard.json`
 
@@ -102,7 +124,8 @@ a typo never takes the kiosk down. The kiosk picks up edits within the hour;
 | `screen.dimAfterMinutes` / `dimBrightness` | Dim after this idle time (default 10) to this % (default 10; never brighter than the chosen brightness). `0` = never dim |
 | `screen.offAfterMinutes` | Backlight off after this idle time (default 60); `0` = never |
 
-Environment variables: only `PORT` (default 3000), `DASHBOARD_CONFIG`,
+Environment variables: only `PORT` (default 3000), `NWS_ALERTS_URL` (to test
+with a fake alerts file), `DASHBOARD_CONFIG`,
 `DASHBOARD_DATA` (runtime state: downloaded school calendar and saved brightness,
 default `data/`) and `BACKLIGHT_DIR` (default `/sys/class/backlight`).
 
@@ -174,7 +197,10 @@ missing SVG; `tests/emoji.test.ts` fails if one is missing.
 - **SvelteKit 3** (Svelte 5 runes, TypeScript) + **Vite** + `@sveltejs/adapter-node`
 - **Pure hand-written CSS** (no Tailwind): the "sticker" theme with hard
   drop-shadows, thick dark borders and the bundled Nunito font
-- **Weather:** Open-Meteo (imperial units, 7-day forecast, `/api/weather`, 5-minute server cache)
+- **Weather:** Open-Meteo (imperial units, 7-day forecast, `/api/weather`, 5-minute server cache),
+  Open-Meteo air quality (US AQI; their pollen data only covers Europe), and
+  National Weather Service alerts from `api.weather.gov` (US only, free, no key)
+- **Moon phase:** calculated on the Pi (no network)
 - **School calendar:** district iCal feed, parsed by a small built-in reader
 
 ## Layout
@@ -208,6 +234,7 @@ cp -n config/dashboard.example.json config/dashboard.json   # first time only; t
 npm run build
 sudo apt install cage seatd chromium        # if not already installed
 sudo systemctl enable --now seatd
+npm run cursor                              # hide the mouse arrow on the touch screen (see below)
 sudo cp systemd/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now kids-smart-server kids-smart-kiosk
@@ -221,6 +248,14 @@ and serves 500 errors once `build/` is replaced underneath it.
 can't open `/dev/tty0|1` on this Pi). The kiosk unit sets
 `SEATD_SOCKET=unix:path=/run/seatd.sock`, `XDG_RUNTIME_DIR=/run/user/1000`,
 and launches `cage -s` (the `-s` flag keeps a VT escape hatch).
+
+**No mouse arrow:** with a touch-only panel, an arrow sits in the middle of
+the screen (Chromium draws it once and never updates it, since no mouse ever
+moves). `npm run cursor` installs blank copies of the `default` and `Adwaita`
+cursor themes in `~/.local/share/icons` for the kiosk user, which hides it
+(no root needed; restart the kiosk afterwards). `node scripts/blank-cursor.mjs
+--remove` brings the arrow back. In the page, the cursor stays hidden until
+a real mouse is moved around, so a plugged-in mouse still works for debugging.
 
 `start-dashboard.sh` starts the same server + kiosk by hand (same flags as the
 units) for when the services are not installed.
@@ -242,6 +277,7 @@ npm run check     # svelte-check (should report 0 errors, 0 warnings)
 npm run test      # vitest: calendar/feed, wardrobe, weather codes, config, screen, time, dinos, icons
 npm run build     # production build → build/index.js
 npm run emoji     # vendor any newly referenced Twemoji SVGs
+npm run cursor    # (on the Pi) hide the kiosk's mouse arrow
 ```
 
 Headless screenshots for layout checks (the panel framebuffer is owned by
@@ -271,12 +307,15 @@ src/
 │   ├── weather.ts           shared self-refreshing weather store
 │   ├── report.ts            open/close state of the full weather report
 │   ├── screen.ts            idle dim/off rules + brightness panel state
+│   ├── sky.ts               time-of-day background phase
+│   ├── themes.ts            holiday themes (decorations, greetings, buddy hats)
 │   ├── buddies.ts           animal buddy list + default clothes colours
 │   ├── components/          Emoji, Buddy (dressed animal SVG), KidAvatar, Header, BottomNav,
 │   │                        SectionTitle, WeatherReport, ScreenControl
-│   ├── data/                quotes, facts, dinos, school-calendar.seed.ics
+│   ├── data/                quotes, facts, dinos, jokes, words, school-calendar.seed.ics
 │   ├── server/              config loader, TTL cache, school feed, backlight control
-│   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino
+│   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino,
+│                            forecastStory (story/air/alerts), moon, mathPuzzle
 └── routes/
     ├── +layout.server.ts    config + school events for every page
     ├── +layout.svelte       frame, header, nav, polling, idle return, screen dim/off/wake
@@ -284,7 +323,7 @@ src/
     ├── calendar/ quote/ wardrobe/ fun/
     ├── api/weather/         Open-Meteo proxy (typed, cached, stale fallback)
     └── api/screen/          backlight on/dim/off + brightness
-scripts/                     emoji vendoring
+scripts/                     emoji vendoring, blank kiosk cursor
 tests/                       vitest suites
 systemd/                     kids-smart-server.service, kids-smart-kiosk.service
 sample-pages/                the original HTML mockups (design reference)

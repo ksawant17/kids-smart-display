@@ -9,8 +9,9 @@
 	import { now, todayKey } from '#lib/clock';
 	import { weatherEmoji, weatherLabel } from '#lib/utils/weatherCodes';
 	import { outfitForDay, outfitDayIndex } from '#lib/utils/wardrobe';
-	import { todayStatus, type TodayKind } from '#lib/utils/schoolCalendar';
+	import { STATUS_EMOJI, keyOf, parseKey, todayStatus, tomorrowStatus } from '#lib/utils/schoolCalendar';
 	import { clockTime, hourLabel, pickDaily } from '#lib/utils/time';
+	import { alertAdvice, alertLevel } from '#lib/utils/forecastStory';
 	import quotes from '#lib/data/quotes.json';
 
 	let { data } = $props();
@@ -25,16 +26,29 @@
 	const today = $derived(wx?.days[0]);
 	const tomorrow = $derived(wx?.days[1]);
 
+	// --- evening look-ahead: from 6 PM (wardrobe.switchToTomorrowHour) TODAY talks about tomorrow ---
+	const evening = $derived($now.getHours() >= data.wardrobe.switchToTomorrowHour);
+	const tomorrowKey = $derived.by(() => {
+		const d = parseKey($todayKey);
+		d.setDate(d.getDate() + 1);
+		return keyOf(d);
+	});
+
 	// --- school status (district calendar) ---
-	const schoolToday = $derived(todayStatus(data.schoolEvents, $todayKey));
-	const SCHOOL_EMOJI: Record<TodayKind, string> = {
-		regular: '1f392', // backpack
-		early: '23f0', // alarm clock
-		'no-school': '1f389', // party popper
-		weekend: '1f3e1', // house with garden
-		summer: '1f3d6', // beach
-		special: '1f4c5' // calendar
-	};
+	const schoolToday = $derived(
+		evening ? tomorrowStatus(data.schoolEvents, tomorrowKey) : todayStatus(data.schoolEvents, $todayKey)
+	);
+	// weather alerts take turns with the school status (15 s each, on the clock tick)
+	const alerts = $derived(wx?.alerts ?? []);
+	const alertTurn = $derived(alerts.length > 0 && Math.floor($now.getTime() / 15000) % 2 === 1);
+	const alert = $derived(alertTurn ? alerts[Math.floor($now.getTime() / 30000) % alerts.length] : null);
+
+	// next few hours, or tomorrow morning (the bus-stop hours) in the evening
+	const strip = $derived(
+		wx ? (evening && wx.days[1]?.hours.length ? wx.days[1].hours.slice(0, 4) : wx.hourly.slice(0, 4)) : []
+	);
+	const stripIsTomorrow = $derived(evening && !!wx?.days[1]?.hours.length);
+
 
 	// --- quote of the day (rotates at midnight) ---
 	const quote = $derived(pickDaily(quotes, $now));
@@ -99,28 +113,43 @@
 				{/if}
 			</div>
 
-			<div class="hourly-row" aria-label="Next few hours">
-				{#each wx.hourly.slice(0, 4) as h, i (h.time)}
+			<div class="hourly-row" aria-label={stripIsTomorrow ? 'Tomorrow morning' : 'Next few hours'}>
+				{#each strip as h, i (h.time)}
 					<div class="hour-box">
-						<span>{i === 0 ? 'Now' : hourLabel(h.time)}</span>
+						{#if stripIsTomorrow && i === 0}<span class="tomorrow-badge">Tomorrow</span>{/if}
+						<span>{i === 0 && !stripIsTomorrow ? 'Now' : hourLabel(h.time)}</span>
 						<Emoji code={weatherEmoji(h.weather_code, h.is_day === 1)} size={28} alt="" />
 						<span>{Math.round(h.temp_f)}&deg;</span>
 					</div>
 				{/each}
 			</div>
 
-			<div class="school-banner kind-{schoolToday.kind}">
-				<div class="banner-row">
-					<Emoji code={SCHOOL_EMOJI[schoolToday.kind]} size={18} alt="" shadow="none" />
-					<span>{schoolToday.title}</span>
-				</div>
-				{#if schoolToday.subtitle}
-					<div class="banner-row sub">
-						<Emoji code="1f31f" size={16} alt="" shadow="none" />
-						<span>{schoolToday.subtitle}</span>
+			{#if alert}
+				{@const tip = alertAdvice(alert.event)}
+				<button class="school-banner alert-{alertLevel(alert.severity)} pressable" onclick={() => openReport(0)}>
+					<div class="banner-row">
+						<Emoji code="26a0" size={18} alt="" shadow="none" />
+						<span>{alert.event}</span>
 					</div>
-				{/if}
-			</div>
+					<div class="banner-row sub">
+						<Emoji code={tip.emoji} size={16} alt="" shadow="none" />
+						<span>{tip.advice}</span>
+					</div>
+				</button>
+			{:else}
+				<div class="school-banner kind-{schoolToday.kind}">
+					<div class="banner-row">
+						<Emoji code={STATUS_EMOJI[schoolToday.kind]} size={18} alt="" shadow="none" />
+						<span>{schoolToday.title}</span>
+					</div>
+					{#if schoolToday.subtitle}
+						<div class="banner-row sub">
+							<Emoji code="1f31f" size={16} alt="" shadow="none" />
+							<span>{schoolToday.subtitle}</span>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 
 		<!-- Column 2 · middle: tomorrow & quote -->
@@ -200,7 +229,8 @@
 	/* --- main grid: 1.15 / 0.95 / 0.9 columns, like the reference page --- */
 	.today-grid {
 		display: grid;
-		grid-template-columns: 1.15fr 0.95fr 0.9fr;
+		/* minmax(0, …): long text must never widen a column */
+		grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(0, 0.9fr);
 		gap: 14px;
 		height: 100%;
 		min-height: 0;
@@ -248,7 +278,7 @@
 		margin-top: auto;
 	}
 	.hero-stale {
-		font-size: 12px;
+		font-size: 13px;
 		font-weight: 800;
 		opacity: 0.6;
 	}
@@ -295,6 +325,22 @@
 		font-size: 15px;
 		font-weight: 900;
 	}
+	.hour-box {
+		position: relative;
+	}
+	.hour-box .tomorrow-badge {
+		position: absolute;
+		top: -11px;
+		left: 50%;
+		transform: translateX(-50%);
+		background: var(--tab-orange);
+		border: 2px solid var(--border-dark);
+		border-radius: 999px;
+		padding: 0 5px;
+		font-size: 10.5px;
+		font-weight: 900;
+		white-space: nowrap;
+	}
 	.hour-box :global(img) {
 		margin: 3px 0;
 	}
@@ -331,6 +377,32 @@
 	.school-banner.kind-weekend,
 	.school-banner.kind-summer {
 		background-color: #bbf7d0;
+	}
+	/* weather alert turn: the advice may wrap onto a second line */
+	button.school-banner {
+		font-family: 'Nunito', sans-serif;
+		color: inherit;
+		text-align: left;
+		width: 100%;
+		min-width: 0;
+	}
+	button.school-banner .banner-row.sub {
+		align-items: flex-start;
+		font-size: 13px;
+		line-height: 1.25;
+	}
+	button.school-banner .banner-row.sub span {
+		white-space: normal;
+	}
+	.school-banner.alert-red {
+		background-color: #ef4444;
+		color: #ffffff;
+	}
+	.school-banner.alert-orange {
+		background-color: #fb923c;
+	}
+	.school-banner.alert-yellow {
+		background-color: #fde047;
 	}
 
 	/* --- tomorrow card (light-blue; whole card opens tomorrow's report) --- */

@@ -4,6 +4,11 @@ import { TtlCache } from '#lib/server/cache';
 import type { WeatherData } from '#lib/types';
 
 const OPEN_METEO = 'https://api.open-meteo.com/v1/forecast';
+const AIR_QUALITY = 'https://air-quality-api.open-meteo.com/v1/air-quality';
+// api.weather.gov asks every client to identify itself
+// (NWS_ALERTS_URL overrides it, e.g. to test with a fake alert)
+const NWS_ALERTS = process.env.NWS_ALERTS_URL ?? 'https://api.weather.gov/alerts/active';
+const NWS_UA = 'kids-smart-display (https://github.com/ksawant17/kids-smart-display)';
 
 // Short server cache: the kiosk polls every config.weather.refreshMinutes.
 const cache = new TtlCache<WeatherData>(5 * 60 * 1000);
@@ -54,6 +59,52 @@ function withOffset(local: string, offsetSec: number): string {
 
 const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
 
+/** US AQI now + today's worst hour (Open-Meteo air quality; no pollen for the US). */
+async function fetchAir(lat: number, lon: number): Promise<WeatherData['air']> {
+	try {
+		const params = new URLSearchParams({
+			latitude: String(lat),
+			longitude: String(lon),
+			current: 'us_aqi',
+			hourly: 'us_aqi',
+			forecast_days: '1',
+			timezone: 'auto'
+		});
+		const res = await fetch(`${AIR_QUALITY}?${params}`, { signal: AbortSignal.timeout(10000) });
+		if (!res.ok) return null;
+		const raw = (await res.json()) as { current?: { us_aqi?: number }; hourly?: { us_aqi?: (number | null)[] } };
+		const hours = (raw.hourly?.us_aqi ?? []).filter((v): v is number => typeof v === 'number');
+		const now = raw.current?.us_aqi;
+		if (typeof now !== 'number') return null;
+		return { aqi: Math.round(now), aqi_max: hours.length ? Math.round(Math.max(...hours)) : Math.round(now) };
+	} catch {
+		return null;
+	}
+}
+
+/** Active National Weather Service alerts for the location (US only). */
+async function fetchAlerts(lat: number, lon: number): Promise<WeatherData['alerts']> {
+	try {
+		const res = await fetch(`${NWS_ALERTS}?point=${lat.toFixed(4)},${lon.toFixed(4)}`, {
+			headers: { 'User-Agent': NWS_UA, Accept: 'application/geo+json' },
+			signal: AbortSignal.timeout(10000)
+		});
+		if (!res.ok) return [];
+		const raw = (await res.json()) as { features?: { properties: Record<string, string | null> }[] };
+		return (raw.features ?? [])
+			.map((f) => f.properties)
+			.filter((p) => p.status === 'Actual' && p.event)
+			.map((p) => ({
+				event: p.event as string,
+				severity: (p.severity as string) ?? 'Unknown',
+				headline: (p.headline as string) ?? '',
+				ends: (p.ends as string) ?? (p.expires as string) ?? null
+			}));
+	} catch {
+		return [];
+	}
+}
+
 async function fetchWeather(): Promise<WeatherData> {
 	const { location, school } = getConfig();
 	const params = new URLSearchParams({
@@ -70,7 +121,12 @@ async function fetchWeather(): Promise<WeatherData> {
 		wind_speed_unit: 'mph'
 	});
 
-	const res = await fetch(`${OPEN_METEO}?${params}`, { signal: AbortSignal.timeout(15000) });
+	// air quality + alerts ride along; their failures never break the forecast
+	const [res, air, alerts] = await Promise.all([
+		fetch(`${OPEN_METEO}?${params}`, { signal: AbortSignal.timeout(15000) }),
+		fetchAir(location.latitude, location.longitude),
+		fetchAlerts(location.latitude, location.longitude)
+	]);
 	if (!res.ok) throw new Error(`Open-Meteo returned ${res.status}`);
 	const raw = (await res.json()) as OpenMeteoResponse;
 	const off = raw.utc_offset_seconds;
@@ -141,6 +197,8 @@ async function fetchWeather(): Promise<WeatherData> {
 		},
 		hourly,
 		days,
+		air,
+		alerts,
 		timezone: raw.timezone,
 		fetched_at: new Date().toISOString(),
 		stale: false

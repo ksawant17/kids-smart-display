@@ -2,8 +2,9 @@
 	/**
 	 * TODAY: three big answers, one column each.
 	 *   Weather · School · What to Wear
-	 * The top strip is the quote of the day, or a red weather alert, or (from
-	 * 6 PM) a "Getting ready for tomorrow" ribbon. In the evening ALL three
+	 * The top strip is the quote of the day, or a red weather alert, or a note
+	 * from a grown-up (admin tab), or (from 6 PM) a "Getting ready for
+	 * tomorrow" ribbon. In the evening ALL three
 	 * columns switch to tomorrow together, so nothing on screen is mixed.
 	 * Every column is one big button.
 	 */
@@ -29,6 +30,8 @@
 	import { clockTime, hourLabel, pickDaily } from '#lib/utils/time';
 	import { alertAdvice, alertLevel, skyStory } from '#lib/utils/forecastStory';
 	import { moonPhase } from '#lib/utils/moon';
+	import { messagesOn } from '#lib/utils/messages';
+	import { messages } from '#lib/messages';
 	import quotes from '#lib/data/quotes.json';
 
 	let { data } = $props();
@@ -53,10 +56,13 @@
 	const day = $derived(wx?.days[dayIdx]);
 	const dayName = $derived(parseKey(dayKey).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }));
 
-	// ---- top strip: alert > evening ribbon > quote ----
+	// ---- top strip: alert > grown-up note > evening ribbon > quote ----
 	const alerts = $derived(wx?.alerts ?? []);
-	// several alerts take turns on the clock tick
-	const alert = $derived(alerts.length ? alerts[Math.floor($now.getTime() / 15000) % alerts.length] : null);
+	// several alerts (or notes) take turns on the clock tick
+	const turn = $derived(Math.floor($now.getTime() / 15000));
+	const alert = $derived(alerts.length ? alerts[turn % alerts.length] : null);
+	const notes = $derived(messagesOn($messages, dayKey));
+	const note = $derived(notes.length ? notes[turn % notes.length] : null);
 	const quote = $derived(pickDaily(quotes, $now));
 
 	// ---- weather column ----
@@ -125,6 +131,12 @@
 				<span class="strip-text">{tip.advice}</span>
 				<Emoji code={tip.emoji} size={22} alt="" shadow="none" />
 			</button>
+		{:else if note}
+			<div class="strip note">
+				<Emoji code={note.emoji} size={24} alt="" shadow="none" />
+				{#if dayIdx === 1}<b>Tomorrow:</b>{/if}
+				<span class="strip-text">{note.text}</span>
+			</div>
 		{:else if dayIdx === 1}
 			<div class="strip ribbon">
 				<Emoji code="1f319" size={22} alt="" shadow="none" />
@@ -300,6 +312,11 @@
 	}
 	.strip.ribbon {
 		background: #e0e7ff;
+	}
+	.strip.note {
+		background: #dcfce7;
+		font-size: 17px;
+		font-weight: 900;
 	}
 	.strip.alert-red {
 		background: #ef4444;

@@ -20,7 +20,8 @@ export interface Kid {
 
 export interface DashboardConfig {
 	kids: Kid[];
-	location: { name: string; latitude: number; longitude: number };
+	/** where the weather comes from; `zip` is set when picked by ZIP code in the admin tab */
+	location: { name: string; latitude: number; longitude: number; zip?: string };
 	school: {
 		/** iCal feed of school key dates (no-school days, early releases...) */
 		icsUrl: string;
@@ -56,6 +57,14 @@ export interface DashboardConfig {
 		/** backlight off after this many idle minutes (0 = never); a touch wakes it */
 		offAfterMinutes: number;
 	};
+	/** quiet hours: the screen stays dim and goes off after a minute without a
+	 *  touch, then comes back on by itself in the morning */
+	bedtime: {
+		enabled: boolean;
+		/** "HH:MM" (24h), local */
+		start: string;
+		end: string;
+	};
 }
 
 export const DEFAULT_CONFIG: DashboardConfig = {
@@ -71,11 +80,13 @@ export const DEFAULT_CONFIG: DashboardConfig = {
 	weather: { refreshMinutes: 10 },
 	wardrobe: { coldBelowF: 45, coolUpToF: 60, mildUpToF: 72, rainChancePct: 40, switchToTomorrowHour: 18 },
 	kiosk: { idleReturnSeconds: 120 },
-	screen: { brightness: 100, minBrightness: 10, dimAfterMinutes: 10, dimBrightness: 10, offAfterMinutes: 60 }
+	screen: { brightness: 100, minBrightness: 10, dimAfterMinutes: 10, dimBrightness: 10, offAfterMinutes: 60 },
+	bedtime: { enabled: false, start: '20:30', end: '06:30' }
 };
 
 const EMOJI_CODE = /^[0-9a-f]{4,5}(-[0-9a-f]{4,5})*$/;
 const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
 	typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -93,6 +104,8 @@ export function resolveConfig(raw: unknown): DashboardConfig {
 	const wr = isObj(r.wardrobe) ? r.wardrobe : {};
 	const kiosk = isObj(r.kiosk) ? r.kiosk : {};
 	const screen = isObj(r.screen) ? r.screen : {};
+	const bed = isObj(r.bedtime) ? r.bedtime : {};
+	const hhmm = (v: unknown, fallback: string) => (typeof v === 'string' && HHMM.test(v) ? v : fallback);
 
 	const kids = Array.isArray(r.kids)
 		? r.kids
@@ -115,7 +128,8 @@ export function resolveConfig(raw: unknown): DashboardConfig {
 		location: {
 			name: str(loc.name, d.location.name),
 			latitude: num(loc.latitude, d.location.latitude, -90, 90),
-			longitude: num(loc.longitude, d.location.longitude, -180, 180)
+			longitude: num(loc.longitude, d.location.longitude, -180, 180),
+			...(typeof loc.zip === 'string' && /^\d{5}$/.test(loc.zip) ? { zip: loc.zip } : {})
 		},
 		school: {
 			icsUrl: str(school.icsUrl, d.school.icsUrl),
@@ -140,6 +154,11 @@ export function resolveConfig(raw: unknown): DashboardConfig {
 			dimAfterMinutes: num(screen.dimAfterMinutes, d.screen.dimAfterMinutes, 0),
 			dimBrightness: num(screen.dimBrightness, d.screen.dimBrightness, 1, 100),
 			offAfterMinutes: num(screen.offAfterMinutes, d.screen.offAfterMinutes, 0)
+		},
+		bedtime: {
+			enabled: bed.enabled === true,
+			start: hhmm(bed.start, d.bedtime.start),
+			end: hhmm(bed.end, d.bedtime.end)
 		}
 	};
 }

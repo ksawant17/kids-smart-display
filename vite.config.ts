@@ -11,8 +11,12 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// Node adapter: builds to build/index.js (run with `node build/index.js`)
-			adapter: adapter()
+			// Node adapter: builds to build/index.js (run with `node build/index.js`).
+			// BUILD_OUT lets the updater build next to the running copy, then swap.
+			adapter: adapter({ out: process.env.BUILD_OUT ?? 'build' }),
+
+			// the kiosk checks for a new build every minute and reloads itself
+			version: { pollInterval: 60_000 }
 		})
 	]
 });

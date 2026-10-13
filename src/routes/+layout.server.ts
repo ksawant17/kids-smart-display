@@ -13,6 +13,7 @@ export async function load() {
 		weatherRefreshMinutes: config.weather.refreshMinutes,
 		kiosk: config.kiosk,
 		screenConfig: config.screen,
+		bedtime: config.bedtime,
 		screen: getScreen(),
 		schoolEvents: await getSchoolEvents()
 	};

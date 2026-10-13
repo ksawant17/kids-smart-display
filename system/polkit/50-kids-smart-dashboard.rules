@@ -1,0 +1,25 @@
+// Kids Smart Dashboard: lets the dashboard server (running as user "pi")
+// restart / power off the Pi, set the clock and join Wi-Fi networks from the
+// Grown-ups (admin) tab,
+// without a password prompt. Install once:
+//   sudo cp system/polkit/50-kids-smart-dashboard.rules /etc/polkit-1/rules.d/
+// (polkit picks it up straight away). Change "pi" if the service runs as
+// another user.
+polkit.addRule(function (action, subject) {
+	var allowed = [
+		"org.freedesktop.login1.reboot",
+		"org.freedesktop.login1.reboot-multiple-sessions",
+		"org.freedesktop.login1.power-off",
+		"org.freedesktop.login1.power-off-multiple-sessions",
+		"org.freedesktop.timedate1.set-time",
+		"org.freedesktop.timedate1.set-timezone",
+		"org.freedesktop.timedate1.set-ntp",
+		"org.freedesktop.NetworkManager.network-control",
+		"org.freedesktop.NetworkManager.wifi.scan",
+		"org.freedesktop.NetworkManager.settings.modify.system",
+		"org.freedesktop.NetworkManager.settings.modify.own"
+	];
+	if (subject.user == "pi" && allowed.indexOf(action.id) >= 0) {
+		return polkit.Result.YES;
+	}
+});

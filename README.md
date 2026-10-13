@@ -6,7 +6,10 @@ kids want to know: *What's the weather? Is there school today? What should I
 wear?* In the evening it looks ahead to tomorrow. Each kid has an animal
 buddy dressed for the weather, and there's a daily dinosaur, joke, word, math
 puzzle and fun fact. It also watches for severe weather alerts and dims or
-switches off the screen when nobody's around.
+switches off the screen when nobody's around. A PIN-locked **Grown-ups** tab
+handles the settings on the screen itself (or from a phone): notes for the
+kids, names and buddies, weather place by ZIP code, school calendar, bedtime,
+Wi-Fi, date & time, updates, restart and power off.
 
 It's a **SvelteKit** app shown in **Chromium kiosk mode** inside the **cage**
 Wayland compositor, so no desktop environment is needed. Everything is big,
@@ -17,7 +20,8 @@ colourful, sticker-styled and works with fat fingers; no mouse or keyboard.
 | ![TODAY tab](docs/screenshots/today.png) | ![Full weather report](docs/screenshots/weather-report.png) |
 | ![CALENDAR tab](docs/screenshots/calendar.png) | ![Calendar day details](docs/screenshots/calendar-day.png) |
 | ![WARDROBE tab](docs/screenshots/wardrobe.png) | ![FUN tab: joke corner](docs/screenshots/fun.png) |
-| ![QUOTE tab](docs/screenshots/quote.png) | |
+| ![QUOTE tab](docs/screenshots/quote.png) | ![Grown-ups tab](docs/screenshots/admin.png) |
+| ![Grown-ups: a note for the kids](docs/screenshots/admin-notes.png) | ![Grown-ups: kids and buddies](docs/screenshots/admin-kids.png) |
 
 *Screenshots use the example config (Alex & Sam), taken on an October evening:
 night sky, Halloween decorations and witch hats.*
@@ -49,7 +53,7 @@ config is used. To run it full-screen on the Pi at boot, see
 
 | Tab        | What it does |
 |------------|--------------|
-| **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), or a red **weather alert** when there is one. **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days |
+| **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), a red **weather alert** when there is one, or a **note from a grown-up** (Grown-ups tab). **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days |
 | **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back. **Tap any day** (or an Up Next row) for a popup with that day's school status, events (with break dates), and, within the week's forecast, the weather and what to wear. Plus "Up Next at School" with **"Tomorrow!" / "N sleeps" countdowns** (breaks under way stay listed until they end) and a **next-break countdown** |
 | **QUOTE**  | Message of the day: one encouraging, correctly attributed quote, rotates at midnight |
 | **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
@@ -86,8 +90,15 @@ outside the card.
   With nobody touching it, the screen **dims to 10% after 10 minutes** and
   **turns off after an hour**; any touch wakes it straight back to the chosen
   brightness. That waking touch only wakes the screen and doesn't press
-  anything underneath. "Turn Screen Off" in the brightness panel switches it
+  anything underneath. "Screen Off" in the quick menu switches it
   off right away. Swipe the menu back up (or tap outside it) to close it.
+- **Grown-ups (admin) tab:** "Grown-ups" in the quick menu opens the parent
+  settings, locked with a 4-digit PIN (see below).
+- **Bedtime:** with quiet hours on (admin tab), the screen stays dim at night,
+  goes off a minute after the last touch, and wakes up by itself in the morning.
+- **Notes from grown-ups** show in the TODAY banner (after weather alerts).
+- **Updates reload themselves:** after a new build the kiosk page reloads on
+  its own once the screen hasn't been touched for 20 seconds.
 - **Weather alerts:** active National Weather Service alerts (winter storm, heat,
   thunderstorm...) take turns with the school status in the TODAY banner (red /
   orange / yellow by severity) with kid advice ("Bundle up! School might be
@@ -125,6 +136,8 @@ a typo never takes the kiosk down. The kiosk picks up edits within the hour;
 | `screen.minBrightness` | Lowest slider value, so the screen can't be "lost" (default 10) |
 | `screen.dimAfterMinutes` / `dimBrightness` | Dim after this idle time (default 10) to this % (default 10; never brighter than the chosen brightness). `0` = never dim |
 | `screen.offAfterMinutes` | Backlight off after this idle time (default 60); `0` = never |
+| `bedtime.enabled` / `start` / `end` | Quiet hours, "HH:MM" 24h (default off, 20:30–06:30): dim, off a minute after the last touch, back on at `end` |
+| `location.zip` | Set by the admin tab's Weather Place (informational) |
 
 Environment variables: only `PORT` (default 3000), `NWS_ALERTS_URL` (to test
 with a fake alerts file), `DASHBOARD_CONFIG`,
@@ -170,6 +183,54 @@ first/last day of school), so it works for most feeds; add a test to
 update `school.icsUrl`. To refresh the offline snapshot, download the feed over
 `src/lib/data/school-calendar.seed.ics` and rebuild. The TODAY banner says
 "Summer Break!" between the last day of school and the next first day it knows about.
+
+## Grown-ups (admin) tab
+
+Pull down from the top of the screen → **Grown-ups**. The first time, it asks
+you to make up a 4-digit PIN (stored hashed in `data/admin.json`; forgot it?
+delete that file and make a new one). Five wrong tries lock it for 5 minutes.
+It also works from a phone on the same Wi-Fi: `http://<pi-address>:3000/admin`
+(add `?section=wifi` etc. to jump straight to a section). Leaving the page, or
+the idle timer, locks it again. Text is typed on a big on-screen keyboard.
+
+![Grown-ups: What to Wear settings](docs/screenshots/admin-wear.png)
+
+| Tile | What it does |
+| --- | --- |
+| **Notes** | A note in the TODAY banner ("Library day! Bring your books"): pick a ready-made one or type your own, for today, tomorrow (from 6 PM tonight) or every day. Kept in `data/messages.json`; the kiosk checks every minute. |
+| **Kids** | Names, animal buddy and clothes colour; add or remove kids (1–4). |
+| **Weather Place** | Type a ZIP code → it finds the town (Open-Meteo geocoding, Zippopotam.us as a fallback) → "Use this place". Offers to switch the clock if the town is in another time zone. |
+| **School** | The school calendar link (.ics / webcal; it is downloaded and checked before it's saved) and the school-day hours. |
+| **What to Wear** | Coat / jacket / long-sleeve temperatures, the umbrella rain chance, and when TODAY switches to tomorrow's outfit. Saves as you tap. |
+| **Bedtime** | Quiet hours: the screen goes dim, turns off a minute after the last touch, and turns itself back on at wake-up time. |
+| **Screen** | Dim after / turn off after / go back to TODAY after. |
+| **Date & Time** | US time zone, automatic internet time on/off, or set the date and time by hand. A new time zone restarts the kiosk browser. |
+| **Wi-Fi** | Nearby networks with signal bars; tap one and type its password to join. |
+| **Power** | Wi-Fi name, address, uptime, CPU temperature, free space; **Reload**, **Restart Pi**, **Power Off**. |
+| **Updates** | Shows the installed version and new commits on GitHub; **Update now** runs `scripts/update.sh`. |
+| **PIN** | Change the PIN. |
+
+Everything except Notes and the PIN is saved in `config/dashboard.json`.
+
+**One-time permission.** Restart / power off, the clock and Wi-Fi go through
+systemd and NetworkManager, which need permission for the dashboard's user (a
+polkit rule; until it is installed those buttons are greyed out with a note):
+
+```sh
+sudo cp system/polkit/50-kids-smart-dashboard.rules /etc/polkit-1/rules.d/
+```
+
+The rule lets user `pi` reboot, power off, set the time / time zone /
+automatic time and join Wi-Fi networks without a password (edit the user name
+inside if yours differs). `ADMIN_DRY_RUN=1` makes the server log those commands
+instead of running them (handy for testing).
+
+**Updates** (`scripts/update.sh`, also fine to run by hand): `git pull
+--ff-only`, `npm ci` if `package-lock.json` changed, build into `build-next/`
+while the old copy keeps running, swap it in (the previous one stays in
+`build-old/`), then restart the server. The kiosk page checks for a new build
+every minute and reloads itself once nobody is touching the screen. A checkout
+with local edits is never updated from the tab (update it by hand).
 
 ## Content
 
@@ -238,11 +299,13 @@ sudo apt install cage seatd chromium        # if not already installed
 sudo systemctl enable --now seatd
 npm run cursor                              # hide the mouse arrow on the touch screen (see below)
 sudo cp systemd/*.service /etc/systemd/system/
+sudo cp system/polkit/50-kids-smart-dashboard.rules /etc/polkit-1/rules.d/   # admin tab: power + clock
 sudo systemctl daemon-reload
 sudo systemctl enable --now kids-smart-server kids-smart-kiosk
 ```
 
-After a code change: `npm run build && sudo systemctl restart kids-smart-server kids-smart-kiosk`.
+After a code change: `npm run build && sudo systemctl restart kids-smart-server kids-smart-kiosk`
+(or let `scripts/update.sh` do it without the 500s: it builds beside the running copy).
 **Always restart after a build:** the running server keeps old code in memory
 and serves 500 errors once `build/` is replaced underneath it.
 
@@ -313,21 +376,30 @@ src/
 │   ├── themes.ts            holiday themes (decorations, greetings, buddy hats)
 │   ├── buddies.ts           animal buddy list + default clothes colours
 │   ├── components/          Emoji, Buddy (dressed animal SVG), KidAvatar, Header, BottomNav,
-│   │                        SectionTitle, WeatherReport, ScreenControl
+│   │                        SectionTitle, WeatherReport, ScreenControl, Keypad
+│   │   └── admin/           one *Section per admin tile, TextSheet (on-screen keyboard), Stepper
+│   ├── admin.svelte.ts      the admin page's session (API calls, notes, lock)
+│   ├── messages.ts          grown-up notes store (polled every minute)
 │   ├── data/                quotes, facts, dinos, jokes, words, school-calendar.seed.ics
-│   ├── server/              config loader, TTL cache, school feed, backlight control
+│   ├── server/              config loader/writer, TTL cache, school feed, backlight control,
+│   │                        admin PIN + sessions, ZIP geocoding, notes,
+│   │                        system (power/clock/Wi-Fi/health/updates)
 │   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino,
-│                            forecastStory (story/air/alerts), moon, mathPuzzle
+│                            forecastStory (story/air/alerts), moon, mathPuzzle, admin, messages
 └── routes/
     ├── +layout.server.ts    config + school events for every page
     ├── +layout.svelte       frame, header, nav, polling, idle return, screen dim/off/wake
     ├── +page.svelte         TODAY
     ├── calendar/ quote/ wardrobe/ fun/
+    ├── admin/               Grown-ups tab (PIN gate + tiles)
     ├── api/weather/         Open-Meteo proxy (typed, cached, stale fallback)
-    └── api/screen/          backlight on/dim/off + brightness
-scripts/                     emoji vendoring, blank kiosk cursor
+    ├── api/screen/          backlight on/dim/off + brightness
+    ├── api/messages/        grown-up notes for the TODAY banner
+    └── api/admin/           admin: login, settings, zip, time, power, pin, messages, wifi, update
+scripts/                     emoji vendoring, blank kiosk cursor, update.sh
 tests/                       vitest suites
 systemd/                     kids-smart-server.service, kids-smart-kiosk.service
+system/polkit/               rule letting the dashboard restart/power off, set the clock, join Wi-Fi
 sample-pages/                the original HTML mockups (design reference)
 ```
 

@@ -35,21 +35,26 @@ function fromDisk(): SchoolEvent[] {
 	return toEvents(seed) ?? [];
 }
 
+/** Download a feed, keep it (memory + disk) and return its events; throws if it isn't one. */
+export async function loadFeed(url: string): Promise<SchoolEvent[]> {
+	const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+	if (!res.ok) throw new Error(`HTTP ${res.status}`);
+	const text = await res.text();
+	const events = toEvents(text);
+	if (!events) throw new Error('that link is not a calendar (.ics) feed');
+	try {
+		mkdirSync(dirname(SAVED), { recursive: true });
+		writeFileSync(SAVED, text);
+	} catch (err) {
+		console.warn(`[school] could not save ${SAVED}: ${err}`);
+	}
+	memo = { at: Date.now(), url, events };
+	return events;
+}
+
 async function refresh(url: string): Promise<SchoolEvent[]> {
 	try {
-		const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-		if (!res.ok) throw new Error(`HTTP ${res.status}`);
-		const text = await res.text();
-		const events = toEvents(text);
-		if (!events) throw new Error('response is not an iCal feed');
-		try {
-			mkdirSync(dirname(SAVED), { recursive: true });
-			writeFileSync(SAVED, text);
-		} catch (err) {
-			console.warn(`[school] could not save ${SAVED}: ${err}`);
-		}
-		memo = { at: Date.now(), url, events };
-		return events;
+		return await loadFeed(url);
 	} catch (err) {
 		console.warn(`[school] feed refresh failed (${err}); using saved calendar`);
 		const events = memo?.url === url ? memo.events : fromDisk();

@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { page } from '$app/state';
+	import { page, updated } from '$app/state';
 	import '../app.css';
 	import Header from '#lib/components/Header.svelte';
 	import BottomNav from '#lib/components/BottomNav.svelte';
 	import WeatherReport from '#lib/components/WeatherReport.svelte';
 	import ScreenControl from '#lib/components/ScreenControl.svelte';
 	import { kidNames } from '#lib/config';
-	import { modeForIdle, screenPanelOpen, type ScreenMode } from '#lib/screen';
+	import { awakeMode, inBedtime, modeForIdle, screenPanelOpen, type ScreenMode } from '#lib/screen';
+	import { startMessages } from '#lib/messages';
 	import { now, todayKey } from '#lib/clock';
 	import { closeReport } from '#lib/report';
 	import { startWeather, weather } from '#lib/weather';
@@ -25,6 +26,8 @@
 
 	// One shared weather feed for every page, refreshed in the background.
 	onMount(() => startWeather(data.weatherRefreshMinutes));
+	// grown-up notes for the TODAY banner
+	onMount(() => startMessages());
 
 	// Every hour (and so at midnight): re-run server loads to pick up config
 	// edits and school-calendar updates. The kiosk page itself is never reloaded.
@@ -84,10 +87,30 @@
 		postScreen({ mode: 'on' });
 	});
 
+	// bedtime (quiet hours): dim while in use, off a minute after the last touch
+	const bedtime = $derived(inBedtime($now, data.bedtime));
+	const awake = $derived(awakeMode(bedtime));
+
 	// idle: only ever go darker here; only a touch brings the screen back
 	$effect(() => {
-		const want = modeForIdle($now.getTime() - lastTouch, data.screenConfig);
+		const want = modeForIdle($now.getTime() - lastTouch, data.screenConfig, bedtime);
 		if (RANK[want] > RANK[screenMode]) setMode(want);
+	});
+
+	// ...except in the morning: when bedtime ends, the screen wakes up by itself
+	let wasBedtime = untrack(() => bedtime);
+	$effect(() => {
+		if (wasBedtime && !bedtime) {
+			lastTouch = Date.now();
+			setMode('on');
+		}
+		wasBedtime = bedtime;
+	});
+
+	// A new version was installed (admin tab "Update", or a rebuild): reload
+	// the kiosk page once nobody has touched it for a little while.
+	$effect(() => {
+		if (updated.current && $now.getTime() - lastTouch > 20_000) location.reload();
 	});
 
 	// brightness slider: update live, but send at most ~8 requests a second
@@ -129,12 +152,12 @@
 
 	function onTouch(e: PointerEvent) {
 		const top = frame?.getBoundingClientRect().top ?? 0;
-		pullFrom = !$screenPanelOpen && screenMode === 'on' && e.clientY - top < PULL_ZONE ? e.clientY : null;
+		pullFrom = !$screenPanelOpen && screenMode === awake && e.clientY - top < PULL_ZONE ? e.clientY : null;
 		lastTouch = Date.now();
 		sentHome = false;
-		if (screenMode !== 'on') {
+		if (RANK[screenMode] > RANK[awake]) {
 			waking = true;
-			setMode('on');
+			setMode(awake);
 			setTimeout(() => (waking = false), 400);
 		}
 	}
@@ -175,7 +198,7 @@
 	{#if simulate && simOpacity > 0}
 		<div class="screen-sim" style="opacity:{simOpacity}" aria-hidden="true"></div>
 	{/if}
-	{#if screenMode !== 'on' || waking}
+	{#if RANK[screenMode] > RANK[awake] || waking}
 		<!-- dimmed / off: the first touch only wakes the screen, it doesn't press anything -->
 		<div class="wake-catcher" aria-hidden="true"></div>
 	{/if}

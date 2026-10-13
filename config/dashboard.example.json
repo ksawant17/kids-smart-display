@@ -33,5 +33,10 @@
 		"dimAfterMinutes": 10,
 		"dimBrightness": 10,
 		"offAfterMinutes": 60
+	},
+	"bedtime": {
+		"enabled": false,
+		"start": "20:30",
+		"end": "06:30"
 	}
 }

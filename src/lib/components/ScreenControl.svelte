@@ -2,11 +2,13 @@
 	/**
 	 * Quick menu: a sheet that drops from the top of the screen when you pull
 	 * down from the header. Brightness slider (changes
-	 * the backlight live, remembered on the server) + "Turn Screen Off".
+	 * the backlight live, remembered on the server), "Screen Off" and
+	 * "Grown-ups" (the PIN-locked admin tab).
 	 * Close: swipe the sheet up, tap outside it, or Done.
 	 */
 	import Emoji from '#lib/components/Emoji.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
+	import { goto } from '$app/navigation';
 	import { screenPanelOpen } from '#lib/screen';
 
 	let {
@@ -81,7 +83,17 @@
 					}}
 				>
 					<Emoji code="1f634" size={26} alt="" shadow="none" />
-					Turn Screen Off
+					Screen Off
+				</button>
+				<button
+					class="btn grownups pressable"
+					onclick={() => {
+						close();
+						goto('/admin');
+					}}
+				>
+					<Emoji code="1f512" size={24} alt="" shadow="none" />
+					Grown-ups
 				</button>
 				<button class="btn done pressable" onclick={close}>
 					<Emoji code="2705" size={24} alt="" shadow="none" />
@@ -177,12 +189,16 @@
 		justify-content: center;
 		gap: 8px;
 		font: 900 19px 'Nunito', sans-serif;
+		white-space: nowrap;
 		border: 3px solid var(--border-dark);
 		border-radius: 14px;
 		box-shadow: var(--sticker-shadow-sm);
 	}
 	.btn.off {
 		background: #c7d2fe;
+	}
+	.btn.grownups {
+		background: #e5e7eb;
 	}
 	.btn.done {
 		background: var(--tab-green);

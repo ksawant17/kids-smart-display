@@ -7,8 +7,9 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const CODE = /['"]([0-9a-f]{4,5}(?:-[0-9a-f]{4,5})*)['"]/g;
-// quoted hex that is not an emoji (e.g. years in test data)
-const NOT_EMOJI = /^(19|20)\d\d$/;
+// quoted hex that is not an emoji: years in test data, ZIP codes in config
+// (twemoji's 5-digit codes all start with "1f", so never all digits)
+const NOT_EMOJI = /^((19|20)\d\d|\d{5})$/;
 
 /** @param {string} dir @param {string[]} out @returns {string[]} */
 function walk(dir, out = []) {

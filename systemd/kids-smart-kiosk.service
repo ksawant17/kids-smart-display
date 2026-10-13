@@ -9,6 +9,9 @@ Type=exec
 User=pi
 Environment=NODE_ENV=production
 Environment=XDG_RUNTIME_DIR=/run/user/1000
+# the user's session bus (lingering is on), so Chromium doesn't log D-Bus
+# errors every few seconds
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
 # Use the root seatd daemon for seat/VT management. (cage's built-in seatd
 # runs as pi and can't open /dev/tty*, which is 0600 root:root on this box.)
 Environment=SEATD_SOCKET=unix:path=/run/seatd.sock
@@ -32,6 +35,7 @@ ExecStart=/usr/bin/cage -s -- /usr/bin/chromium \
 	--disable-infobars \
 	--disable-session-crashed-bubble \
 	--disable-features=Translate \
+	--password-store=basic \
 	--start-maximized \
 	http://localhost:3000
 Restart=always

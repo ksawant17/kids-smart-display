@@ -188,7 +188,8 @@ update `school.icsUrl`. To refresh the offline snapshot, download the feed over
 
 Pull down from the top of the screen → **Grown-ups**. The first time, it asks
 you to make up a 4-digit PIN (stored hashed in `data/admin.json`; forgot it?
-delete that file and make a new one). Five wrong tries lock it for 5 minutes.
+delete that file and make a new one). Five wrong tries lock it for 5 minutes,
+and each lockout in a row doubles (up to an hour) until the right PIN is typed.
 It also works from a phone on the same Wi-Fi: `http://<pi-address>:3000/admin`
 (add `?section=wifi` etc. to jump straight to a section). Leaving the page, or
 the idle timer, locks it again. Text is typed on a big on-screen keyboard.
@@ -225,6 +226,14 @@ The rule lets user `pi` reboot, power off, set the time / time zone /
 automatic time and join Wi-Fi networks without a password (edit the user name
 inside if yours differs). `ADMIN_DRY_RUN=1` makes the server log those commands
 instead of running them (handy for testing).
+
+**Security.** The server also answers on the home network (so a phone can open
+the Grown-ups tab), over plain HTTP. Everything that changes something needs
+the PIN, except the screen controls (`/api/screen`), which only the kiosk
+itself (or an unlocked Grown-ups tab) may use. Pages are sent with
+anti-framing / no-sniff headers and admin replies are never cached
+(`src/hooks.server.ts`). Joining Wi-Fi passes the password to `nmcli` on its
+command line, visible to other local users of the Pi for a moment.
 
 **Updates** (`scripts/update.sh`, also fine to run by hand): `git pull
 --ff-only`, `npm ci` if `package-lock.json` changed, build into `build-next/`
@@ -356,7 +365,8 @@ sudo systemctl restart kids-smart-server kids-smart-kiosk
 npm install
 npm run dev       # dev server on http://localhost:5173
 npm run check     # svelte-check (should report 0 errors, 0 warnings)
-npm run test      # vitest: calendar/feed, wardrobe, weather codes, config, screen, time, dinos, icons
+npm run test      # vitest (plain Node, ~2 s): calendar/feed, wardrobe, weather, config, screen,
+                  # admin (PIN, settings), notes, live content filter, icons...
 npm run build     # production build → build/index.js
 npm run emoji     # vendor any newly referenced Twemoji SVGs
 npm run cursor    # (on the Pi) hide the kiosk's mouse arrow
@@ -366,6 +376,10 @@ Headless screenshots for layout checks (the panel framebuffer is owned by
 cage/DRM, so check against a second server instead). Use
 `BACKLIGHT_DIR` pointing at a scratch folder (with `panel/brightness` and
 `panel/max_brightness` files) so a test server doesn't change the real screen:
+
+Add `ADMIN_DRY_RUN=1` (log power/clock/Wi-Fi commands instead of running
+them) and a scratch `DASHBOARD_CONFIG` / `DASHBOARD_DATA` when testing the
+Grown-ups tab.
 
 ```sh
 BACKLIGHT_DIR=/tmp/fakebl PORT=3001 nohup ~/.local/share/pi-node/current/bin/node build/index.js &

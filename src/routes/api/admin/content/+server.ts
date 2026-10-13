@@ -1,8 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { requireAdmin } from '#lib/server/admin';
+import { EMOJI_CODE } from '#lib/config';
 import { decide, getContent, refill, removeKept } from '#lib/server/content';
-
-const EMOJI_CODE = /^[0-9a-f]{4,5}(-[0-9a-f]{4,5})*$/;
 
 /** GET /api/admin/content -> { pending, kept, lastFetch } (fetches first if nothing is waiting and it's been an hour) */
 export async function GET({ cookies }) {

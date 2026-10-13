@@ -70,6 +70,13 @@ html:not(.mouse) * {
 	cursor: none !important;
 }
 
+/* backlight off (+layout.svelte): nothing to animate for */
+html.screen-off *,
+html.screen-off *::before,
+html.screen-off *::after {
+	animation-play-state: paused !important;
+}
+
 img {
 	-webkit-user-drag: none;
 	user-drag: none;

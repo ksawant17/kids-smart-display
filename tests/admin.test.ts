@@ -119,5 +119,21 @@ describe('server: updateConfig and PIN', () => {
 		expect(admin.checkPin('0000')).toMatchObject({ ok: false, waitSeconds: 300 });
 		// locked: even the right PIN waits
 		expect(admin.checkPin('2468')).toMatchObject({ ok: false });
+
+		// the next lockout in a row is twice as long; the right PIN resets it
+		vi.useFakeTimers({ now: Date.now() + 301_000 });
+		for (let i = 0; i < 4; i++) admin.checkPin('0000');
+		expect(admin.checkPin('0000')).toMatchObject({ ok: false, waitSeconds: 600 });
+		vi.setSystemTime(Date.now() + 601_000);
+		expect(admin.checkPin('2468')).toEqual({ ok: true });
+		for (let i = 0; i < 4; i++) admin.checkPin('0000');
+		expect(admin.checkPin('0000')).toMatchObject({ ok: false, waitSeconds: 300 });
+		vi.useRealTimers();
+	});
+
+	it('only the Pi itself counts as the kiosk', async () => {
+		const { isLocal } = await import('../src/lib/server/admin');
+		expect(['127.0.0.1', '::1', '::ffff:127.0.0.1'].every(isLocal)).toBe(true);
+		expect(['192.168.1.5', '::ffff:192.168.1.5', '1270.0.0.1'].some(isLocal)).toBe(false);
 	});
 });

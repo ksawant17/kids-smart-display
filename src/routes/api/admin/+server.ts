@@ -6,6 +6,7 @@ import { permissions, systemInfo, timeStatus } from '#lib/server/system';
 import { pendingCount } from '#lib/server/content';
 import { MAX_KIDS, isZip } from '#lib/utils/admin';
 import { isBuddy } from '#lib/buddies';
+import { EMOJI_CODE, HEX_COLOR, HHMM } from '#lib/config';
 
 /** everything the admin tab can change */
 function settings() {
@@ -31,10 +32,7 @@ export async function GET({ cookies }) {
 
 const whole = (v: unknown, min: number, max: number): v is number =>
 	typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
-const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
-const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const KID_NAME = /^[\p{L}\p{M}' .-]{1,16}$/u;
-const EMOJI_CODE = /^[0-9a-f]{4,5}(-[0-9a-f]{4,5})*$/;
 
 /**
  * POST /api/admin with any of these sections (each replaces what it names):

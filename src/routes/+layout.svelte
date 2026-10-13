@@ -87,6 +87,12 @@
 		postScreen({ mode: 'on' });
 	});
 
+	// screen off: pause every CSS animation (software rendering repaints them
+	// all night otherwise, for nobody)
+	$effect(() => {
+		document.documentElement.classList.toggle('screen-off', screenMode === 'off');
+	});
+
 	// bedtime (quiet hours): dim while in use, off a minute after the last touch
 	const bedtime = $derived(inBedtime($now, data.bedtime));
 	const awake = $derived(awakeMode(bedtime));

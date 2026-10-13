@@ -5,7 +5,8 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
 		include: ['tests/**/*.test.ts'],
-		environment: 'jsdom',
+		// pure logic only: no browser DOM needed (much faster)
+		environment: 'node',
 		globals: true,
 	},
 });

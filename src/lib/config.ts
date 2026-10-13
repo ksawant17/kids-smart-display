@@ -84,9 +84,10 @@ export const DEFAULT_CONFIG: DashboardConfig = {
 	bedtime: { enabled: false, start: '20:30', end: '06:30' }
 };
 
-const EMOJI_CODE = /^[0-9a-f]{4,5}(-[0-9a-f]{4,5})*$/;
-const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
-const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+/** shared input checks (config here, and the admin API) */
+export const EMOJI_CODE = /^[0-9a-f]{4,5}(-[0-9a-f]{4,5})*$/;
+export const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+export const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
 	typeof v === 'object' && v !== null && !Array.isArray(v);

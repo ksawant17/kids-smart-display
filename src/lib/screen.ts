@@ -66,5 +66,5 @@ export function rawLevel(percent: number, max: number): number {
 	return Math.max(1, Math.round((p / 100) * max));
 }
 
-/** Open/closed state of the brightness panel (opened from the header clock). */
+/** Open/closed state of the quick menu (pulled down from the top of the screen). */
 export const screenPanelOpen = writable(false);

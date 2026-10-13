@@ -1,9 +1,8 @@
 import { json, error } from '@sveltejs/kit';
 import { requireAdmin } from '#lib/server/admin';
+import { EMOJI_CODE } from '#lib/config';
 import { addMessage, removeMessage } from '#lib/server/messages';
 import { cleanMessage, isDayKey } from '#lib/utils/messages';
-
-const EMOJI_CODE = /^[0-9a-f]{4,5}(-[0-9a-f]{4,5})*$/;
 
 /** POST /api/admin/messages { text, emoji, from: "YYYY-MM-DD", until: "YYYY-MM-DD" | null } -> all messages */
 export async function POST({ request, cookies }) {

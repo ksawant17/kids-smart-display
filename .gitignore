@@ -22,15 +22,9 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# runtime state: last downloaded school calendar, saved screen brightness,
-# grown-ups PIN (hashed)
-/data/school-calendar.ics
-/data/screen.json
-/data/admin.json
-/data/messages.json
-/data/content.json
-/data/update.log
-/data/update.lock
+# runtime state (school calendar copy, brightness, PIN hash, notes, fetched
+# quotes/facts, update log...): stays on the device
+/data/
 
 # family-specific settings (names, location) stay on the device;
 # copy config/dashboard.example.json to create it

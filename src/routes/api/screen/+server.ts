@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { getScreen, setScreen } from '#lib/server/screen';
+import { isAdmin, isLocal } from '#lib/server/admin';
 import type { ScreenMode } from '#lib/screen';
 
 const MODES: ScreenMode[] = ['on', 'dim', 'off'];
@@ -12,8 +13,11 @@ export function GET() {
 /**
  * POST /api/screen  { mode?: "on" | "dim" | "off", brightness?: 1-100 }
  * Called by the kiosk page (idle dim/off, wake on touch) and the brightness slider.
+ * Only the kiosk itself (or an unlocked Grown-ups tab) may switch the screen:
+ * the server also answers on the home network.
  */
-export async function POST({ request }) {
+export async function POST({ request, cookies, getClientAddress }) {
+	if (!isLocal(getClientAddress()) && !isAdmin(cookies)) error(403, 'Only the dashboard screen can do that');
 	const body = await request.json().catch(() => null);
 	if (!body || typeof body !== 'object') error(400, 'expected a JSON object');
 	const change: { mode?: ScreenMode; brightness?: number } = {};

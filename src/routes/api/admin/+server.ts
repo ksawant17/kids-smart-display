@@ -3,6 +3,7 @@ import { requireAdmin } from '#lib/server/admin';
 import { getConfig, updateConfig } from '#lib/server/config';
 import { loadFeed } from '#lib/server/schoolFeed';
 import { permissions, systemInfo, timeStatus } from '#lib/server/system';
+import { pendingCount } from '#lib/server/content';
 import { MAX_KIDS, isZip } from '#lib/utils/admin';
 import { isBuddy } from '#lib/buddies';
 
@@ -21,11 +22,11 @@ function settings() {
 }
 export type AdminSettings = ReturnType<typeof settings>;
 
-/** GET /api/admin -> { settings, time, system, permissions } */
+/** GET /api/admin -> { settings, time, system, permissions, contentPending } */
 export async function GET({ cookies }) {
 	requireAdmin(cookies);
 	const [time, system, perms] = await Promise.all([timeStatus(), systemInfo(), permissions()]);
-	return json({ settings: settings(), time, system, permissions: perms });
+	return json({ settings: settings(), time, system, permissions: perms, contentPending: pendingCount() });
 }
 
 const whole = (v: unknown, min: number, max: number): v is number =>

@@ -8,7 +8,7 @@ buddy dressed for the weather, and there's a daily dinosaur, joke, word, math
 puzzle and fun fact. It also watches for severe weather alerts and dims or
 switches off the screen when nobody's around. A PIN-locked **Grown-ups** tab
 handles the settings on the screen itself (or from a phone): notes for the
-kids, names and buddies, weather place by ZIP code, school calendar, bedtime,
+kids, new quotes and facts to approve, names and buddies, weather place by ZIP code, school calendar, bedtime,
 Wi-Fi, date & time, updates, restart and power off.
 
 It's a **SvelteKit** app shown in **Chromium kiosk mode** inside the **cage**
@@ -55,8 +55,8 @@ config is used. To run it full-screen on the Pi at boot, see
 |------------|--------------|
 | **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), a red **weather alert** when there is one, or a **note from a grown-up** (Grown-ups tab). **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days |
 | **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back. **Tap any day** (or an Up Next row) for a popup with that day's school status, events (with break dates), and, within the week's forecast, the weather and what to wear. Plus "Up Next at School" with **"Tomorrow!" / "N sleeps" countdowns** (breaks under way stay listed until they end) and a **next-break countdown** |
-| **QUOTE**  | Message of the day: one encouraging, correctly attributed quote, rotates at midnight |
 | **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
+| **QUOTE**  | Message of the day: one encouraging, correctly attributed quote, rotates at midnight (built-in, plus any a grown-up kept from the internet) |
 | **FUN**    | Five corners, each with a daily pick and an "another!" button: 🦖 **Dino** (how to say it, diet, size, era, fact) · 😂 **Joke** told by a kid's buddy, tap "Tell me!" for the punchline · 🔤 **Word of the day** (picture, pronunciation, meaning, sentence) · ➕ **Math** (Easy / Tricky, tap an answer to check it) · 💡 **Facts** |
 
 The **full weather report** (on TODAY) is a slide-down card. A kid's animal
@@ -197,6 +197,7 @@ the idle timer, locks it again. Text is typed on a big on-screen keyboard.
 
 | Tile | What it does |
 | --- | --- |
+| **New Content** | Quotes and fun facts fetched from the internet each day wait here (the tile shows how many). Tap **Keep** (with a sticker) or **Skip**; only kept ones are shown to the kids. **Kept** lists them, ✕ takes one off again. |
 | **Notes** | A note in the TODAY banner ("Library day! Bring your books"): pick a ready-made one or type your own, for today, tomorrow (from 6 PM tonight) or every day. Kept in `data/messages.json`; the kiosk checks every minute. |
 | **Kids** | Names, animal buddy and clothes colour; add or remove kids (1–4). |
 | **Weather Place** | Type a ZIP code → it finds the town (Open-Meteo geocoding, Zippopotam.us as a fallback) → "Use this place". Offers to switch the clock if the town is in another time zone. |
@@ -210,7 +211,7 @@ the idle timer, locks it again. Text is typed on a big on-screen keyboard.
 | **Updates** | Shows the installed version and new commits on GitHub; **Update now** runs `scripts/update.sh`. |
 | **PIN** | Change the PIN. |
 
-Everything except Notes and the PIN is saved in `config/dashboard.json`.
+Everything except Notes, New Content and the PIN is saved in `config/dashboard.json`.
 
 **One-time permission.** Restart / power off, the clock and Wi-Fi go through
 systemd and NetworkManager, which need permission for the dashboard's user (a
@@ -243,6 +244,22 @@ with local edits is never updated from the tab (update it by hand).
 Each rotates once a day (`pickDaily`: days since 1970 % length, so the order
 continues across New Year). Add entries freely; if you use a new emoji code,
 run `npm run emoji` (see below).
+
+**Fresh quotes and facts from the internet, vetted by a grown-up.** Once a
+day the Pi fetches new candidates: quotes from [ZenQuotes](https://zenquotes.io)
+and facts from [Useless Facts](https://uselessfacts.jsph.pl). Neither is
+written for kids (we sampled them: heavy adult quotes, facts about gambling
+or poisons, some plain wrong), so nothing goes on screen by itself:
+
+1. a filter drops anything too long or touching blocked topics
+   (`kidSafe()` in `src/lib/utils/content.ts`),
+2. the rest wait in **Grown-ups → New Content**, where you tap **Keep** (and
+   pick a sticker) or **Skip**,
+3. kept ones join the built-in lists on TODAY, QUOTE and FUN (quotes from
+   ZenQuotes show a small credit, as its free API asks).
+
+Everything lives in `data/content.json` (git-ignored); skipped ones are never
+offered again.
 
 ## Icons
 
@@ -382,10 +399,10 @@ src/
 │   ├── messages.ts          grown-up notes store (polled every minute)
 │   ├── data/                quotes, facts, dinos, jokes, words, school-calendar.seed.ics
 │   ├── server/              config loader/writer, TTL cache, school feed, backlight control,
-│   │                        admin PIN + sessions, ZIP geocoding, notes,
+│   │                        admin PIN + sessions, ZIP geocoding, notes, live quotes/facts,
 │   │                        system (power/clock/Wi-Fi/health/updates)
 │   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino,
-│                            forecastStory (story/air/alerts), moon, mathPuzzle, admin, messages
+│                            forecastStory (story/air/alerts), moon, mathPuzzle, admin, messages, content
 └── routes/
     ├── +layout.server.ts    config + school events for every page
     ├── +layout.svelte       frame, header, nav, polling, idle return, screen dim/off/wake
@@ -395,7 +412,7 @@ src/
     ├── api/weather/         Open-Meteo proxy (typed, cached, stale fallback)
     ├── api/screen/          backlight on/dim/off + brightness
     ├── api/messages/        grown-up notes for the TODAY banner
-    └── api/admin/           admin: login, settings, zip, time, power, pin, messages, wifi, update
+    └── api/admin/           admin: login, settings, zip, time, power, pin, messages, wifi, update, content
 scripts/                     emoji vendoring, blank kiosk cursor, update.sh
 tests/                       vitest suites
 systemd/                     kids-smart-server.service, kids-smart-kiosk.service

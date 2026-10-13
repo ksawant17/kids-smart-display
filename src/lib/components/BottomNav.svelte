@@ -5,8 +5,8 @@
 	const tabs = [
 		{ path: '/', label: 'TODAY', emoji: '1f60e', cls: 'tab-today' },
 		{ path: '/calendar', label: 'CALENDAR', emoji: '1f5d3', cls: 'tab-calendar' },
-		{ path: '/quote', label: 'QUOTE', emoji: '1f3c6', cls: 'tab-quote' },
 		{ path: '/wardrobe', label: 'WARDROBE', emoji: '1f9e5', cls: 'tab-wardrobe' },
+		{ path: '/quote', label: 'QUOTE', emoji: '1f3c6', cls: 'tab-quote' },
 		{ path: '/fun', label: 'FUN', emoji: '1f996', cls: 'tab-fun' }
 	];
 

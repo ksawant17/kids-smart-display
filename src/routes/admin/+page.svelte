@@ -22,11 +22,13 @@
 	import PowerSection from '#lib/components/admin/PowerSection.svelte';
 	import UpdatesSection from '#lib/components/admin/UpdatesSection.svelte';
 	import PinSection from '#lib/components/admin/PinSection.svelte';
+	import ContentSection from '#lib/components/admin/ContentSection.svelte';
 
 	const admin = new AdminSession();
 
 	const SECTIONS: { id: string; label: string; emoji: string; color: string; component: Component<{ admin: AdminSession }> }[] = [
 		{ id: 'messages', label: 'Notes', emoji: '1f4e3', color: '#dcfce7', component: MessagesSection },
+		{ id: 'content', label: 'New Content', emoji: '1f4e5', color: '#fef3c7', component: ContentSection },
 		{ id: 'kids', label: 'Kids', emoji: '1f9d2', color: '#fce7f3', component: KidsSection },
 		{ id: 'place', label: 'Weather Place', emoji: '1f4cd', color: '#e0f2fe', component: PlaceSection },
 		{ id: 'school', label: 'School', emoji: '1f3eb', color: '#fee2e2', component: SchoolSection },
@@ -156,6 +158,9 @@
 				<button class="tile pressable" style="background:{s.color}" onclick={() => open(s.id)}>
 					<Emoji code={s.emoji} size={40} alt="" />
 					<span>{s.label}</span>
+					{#if s.id === 'content' && admin.status?.contentPending}
+						<b class="badge">{admin.status.contentPending}</b>
+					{/if}
 				</button>
 			{/each}
 			<button class="tile lock pressable" onclick={() => admin.lock()}>
@@ -259,6 +264,21 @@
 		box-shadow: var(--sticker-shadow-sm);
 		min-height: 0;
 		white-space: nowrap;
+	}
+	.tile {
+		position: relative;
+	}
+	.badge {
+		position: absolute;
+		top: 6px;
+		right: 8px;
+		min-width: 28px;
+		padding: 2px 7px;
+		font-size: 15px;
+		color: #fff;
+		background: var(--tab-red);
+		border: 2px solid var(--border-dark);
+		border-radius: 999px;
 	}
 	.tile.lock {
 		background: #e5e7eb;

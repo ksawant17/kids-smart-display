@@ -28,6 +28,7 @@ vite.config.ts.timestamp-*
 /data/screen.json
 /data/admin.json
 /data/messages.json
+/data/content.json
 /data/update.log
 /data/update.lock
 

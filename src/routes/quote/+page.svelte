@@ -5,8 +5,13 @@
 	import { pickDaily } from '#lib/utils/time';
 	import quotes from '#lib/data/quotes.json';
 
-	// rotates at midnight (same pick as the TODAY tab)
-	const quote = $derived(pickDaily(quotes, $now));
+	let { data } = $props();
+
+	// rotates at midnight (same pick as the TODAY tab): built-in quotes plus
+	// the ones a grown-up kept (Grown-ups tab -> New Content)
+	const quote = $derived<{ text: string; author: string; emoji: string; source?: string }>(
+		pickDaily([...quotes, ...data.content.quotes], $now)
+	);
 	const size = $derived(quote.text.length < 60 ? 'big' : quote.text.length < 100 ? 'mid' : 'small');
 </script>
 
@@ -20,6 +25,10 @@
 			– {quote.author}
 			<Emoji code={quote.emoji} size={28} alt="" />
 		</div>
+		{#if quote.source === 'zenquotes'}
+			<!-- ZenQuotes' free API asks for a credit -->
+			<div class="credit">Quote from zenquotes.io</div>
+		{/if}
 	</div>
 </div>
 
@@ -54,6 +63,14 @@
 	.quote-text.small {
 		font-size: 25px;
 		line-height: 1.35;
+	}
+	.credit {
+		position: absolute;
+		bottom: 8px;
+		right: 14px;
+		font-size: 12px;
+		font-weight: 800;
+		color: #94a3b8;
 	}
 	.quote-author {
 		font-size: 22px;

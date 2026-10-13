@@ -63,7 +63,8 @@
 	const alert = $derived(alerts.length ? alerts[turn % alerts.length] : null);
 	const notes = $derived(messagesOn($messages, dayKey));
 	const note = $derived(notes.length ? notes[turn % notes.length] : null);
-	const quote = $derived(pickDaily(quotes, $now));
+	// built-in quotes + the ones a grown-up kept (Grown-ups tab -> New Content)
+	const quote = $derived(pickDaily([...quotes, ...data.content.quotes], $now));
 
 	// ---- weather column ----
 	// today: now + the coming hours; evening: tomorrow + tomorrow morning

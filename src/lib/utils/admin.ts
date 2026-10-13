@@ -145,6 +145,8 @@ export interface AdminStatus {
 		wifi: string | null;
 	};
 	permissions: { power: boolean; clock: boolean; wifi: boolean };
+	/** new quotes / facts waiting for Keep or Skip */
+	contentPending: number;
 }
 
 /** "20:30" -> "8:30 PM" */

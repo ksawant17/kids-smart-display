@@ -18,6 +18,13 @@
 
 	let { admin }: { admin: AdminSession } = $props();
 
+	const SOURCES: Record<string, string> = {
+		zenquotes: 'zenquotes.io',
+		uselessfacts: 'uselessfacts.jsph.pl',
+		jokeapi: 'jokeapi.dev',
+		icanhazdadjoke: 'icanhazdadjoke.com'
+	};
+
 	interface ContentState {
 		pending: Candidate[];
 		kept: KeptContent;
@@ -30,7 +37,9 @@
 
 	const waiting = $derived(content?.pending.filter((p) => p.kind === view) ?? []);
 	const current = $derived(waiting[0] ?? null);
-	const keptCount = $derived(content ? content.kept.quotes.length + content.kept.facts.length : 0);
+	const keptCount = $derived(
+		content ? content.kept.quotes.length + content.kept.facts.length + content.kept.jokes.length : 0
+	);
 	const count = (kind: ContentKind) => content?.pending.filter((p) => p.kind === kind).length ?? 0;
 	// suggested sticker for each new card
 	$effect(() => {
@@ -61,8 +70,9 @@
 	const kept = $derived(
 		content
 			? [
-					...content.kept.quotes.map((q) => ({ id: q.id, text: q.text, who: q.author, emoji: q.emoji })),
-					...content.kept.facts.map((f) => ({ id: f.id, text: f.text, who: 'fact', emoji: f.emoji[0] }))
+					...content.kept.quotes.map((q) => ({ id: q.id, text: q.text, who: `– ${q.author}`, emoji: q.emoji })),
+					...content.kept.facts.map((f) => ({ id: f.id, text: f.text, who: 'Fun fact', emoji: f.emoji[0] })),
+					...content.kept.jokes.map((j) => ({ id: j.id, text: `${j.q} ${j.a}`, who: 'Joke', emoji: j.emoji }))
 				]
 			: []
 	);
@@ -71,6 +81,7 @@
 <div class="a-row">
 	<button class="a-chip pressable" class:on={view === 'quote'} onclick={() => (view = 'quote')}>Quotes ({count('quote')})</button>
 	<button class="a-chip pressable" class:on={view === 'fact'} onclick={() => (view = 'fact')}>Facts ({count('fact')})</button>
+	<button class="a-chip pressable" class:on={view === 'joke'} onclick={() => (view = 'joke')}>Jokes ({count('joke')})</button>
 	<button class="a-chip pressable" class:on={view === 'kept'} onclick={() => (view = 'kept')}>Kept ({keptCount})</button>
 	<div class="a-spacer"></div>
 	<button class="a-btn small pressable" disabled={admin.busy} onclick={() => load(true)}>
@@ -87,7 +98,7 @@
 				<Emoji code={k.emoji} size={24} alt="" shadow="none" />
 				<div class="kept-text">
 					<div>{k.text}</div>
-					<div class="a-muted">{k.who === 'fact' ? 'Fun fact' : `– ${k.who}`}</div>
+					<div class="a-muted">{k.who}</div>
 				</div>
 				<button class="a-mini pressable" onclick={() => act('remove', k.id)} aria-label="Take it off the dashboard">✕</button>
 			</div>
@@ -100,6 +111,7 @@
 		{#key current.id}
 			<div class="text">{current.kind === 'quote' ? `“${current.text}”` : current.text}</div>
 			{#if current.author}<div class="who">– {current.author}</div>{/if}
+			{#if current.answer}<div class="answer">{current.answer}</div>{/if}
 		{/key}
 	</div>
 	<div class="a-row stickers">
@@ -111,13 +123,13 @@
 		{/each}
 	</div>
 	<div class="a-row">
-		<span class="a-muted grow">{waiting.length - 1} more waiting · from {current.source === 'zenquotes' ? 'zenquotes.io' : 'uselessfacts.jsph.pl'}</span>
+		<span class="a-muted grow">{waiting.length - 1} more waiting · from {SOURCES[current.source] ?? current.source}</span>
 		<button class="a-btn danger pressable" disabled={admin.busy} onclick={() => act('skip', current!.id)}>Skip</button>
 		<button class="a-btn go pressable keep" disabled={admin.busy} onclick={() => act('keep', current!.id)}>Keep</button>
 	</div>
 {:else}
 	<div class="a-muted">
-		No new {view === 'quote' ? 'quotes' : 'facts'} waiting. New ones arrive every day, or tap "Get more".
+		No new {view}s waiting. New ones arrive every day, or tap "Get more".
 		Only the ones you keep are shown to the kids.
 	</div>
 {/if}
@@ -139,6 +151,11 @@
 		font-size: 22px;
 		font-weight: 900;
 		line-height: 1.3;
+	}
+	.answer {
+		font-size: 20px;
+		font-weight: 900;
+		color: #15803d;
 	}
 	.who {
 		font-size: 17px;

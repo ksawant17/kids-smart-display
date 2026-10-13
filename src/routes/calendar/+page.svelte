@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
 	import Emoji from '#lib/components/Emoji.svelte';
+	import WeatherIcon from '#lib/components/WeatherIcon.svelte';
 	import {
 		STATUS_EMOJI,
 		dateKey,
@@ -232,7 +233,7 @@
 
 					{#if popup.wx}
 						<div class="pop-wx">
-							<Emoji code={weatherEmoji(popup.wx.code, true)} size={44} alt="" />
+							<WeatherIcon code={weatherEmoji(popup.wx.code, true)} size={44} />
 							<div class="pop-wx-text">
 								<div class="wx-line"><b>{weatherLabel(popup.wx.code, true)}</b> · H {Math.round(popup.wx.temp_max_f)}° / L {Math.round(popup.wx.temp_min_f)}°</div>
 								<div class="wx-sub">

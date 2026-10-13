@@ -2,13 +2,14 @@
  * Fresh quotes and fun facts from the internet, vetted by a grown-up.
  *
  * The Pi fetches candidates every day (ZenQuotes for quotes, Useless Facts
- * for facts; see src/lib/server/content.ts). Neither source is written for
+ * for facts, JokeAPI and icanhazdadjoke for jokes; see
+ * src/lib/server/content.ts). Neither source is written for
  * kids, so candidates first go through `kidSafe()` (length + blocked words),
  * then wait in the Grown-ups tab ("New Content") until someone taps Keep or
  * Skip. Only kept ones are shown, mixed in with the built-in lists.
  */
 
-export type ContentKind = 'quote' | 'fact';
+export type ContentKind = 'quote' | 'fact' | 'joke';
 
 export interface Candidate {
 	id: string;
@@ -16,7 +17,9 @@ export interface Candidate {
 	text: string;
 	/** quotes only */
 	author?: string;
-	/** "zenquotes" | "uselessfacts" */
+	/** jokes only: the punchline (`text` is the question) */
+	answer?: string;
+	/** "zenquotes" | "uselessfacts" | "jokeapi" | "icanhazdadjoke" */
 	source: string;
 }
 
@@ -35,13 +38,23 @@ export interface KeptFact {
 	source: string;
 }
 
+/** same shape as src/lib/data/jokes.json */
+export interface KeptJoke {
+	id: string;
+	q: string;
+	a: string;
+	emoji: string;
+	source: string;
+}
+
 export interface KeptContent {
 	quotes: KeptQuote[];
 	facts: KeptFact[];
+	jokes: KeptJoke[];
 }
 
 /** longest text that still fits the TODAY banner / FUN card nicely */
-export const MAX_LENGTH = { quote: 120, fact: 150 } as const;
+export const MAX_LENGTH = { quote: 120, fact: 150, joke: 100 } as const;
 
 // Topics a kids' screen shouldn't raise on its own. Deliberately broad: a
 // false alarm only costs one candidate, and a grown-up still checks the rest.
@@ -63,12 +76,27 @@ const BLOCKED = new RegExp(
 	'i'
 );
 
-/** Plain text a 6-year-old's screen can show: short, no blocked topics. */
-export function kidSafe(text: string, kind: ContentKind, author = ''): boolean {
+// grown-up life a kids' joke shouldn't be about
+const GROWN_UP = /\b(boss|wife|husband|diet|tax(es)?|mortgage|office|coworkers?|developers?|programmers?|code|coding|syndrome|bar|bartender|dating|girlfriend|boyfriend|marri\w*|lawyers?|bank)\b/i;
+
+/**
+ * Plain text a 6-year-old's screen can show: short, no blocked topics.
+ * `extra` is the author (quotes) or the punchline (jokes, which also must
+ * stay off grown-up life).
+ */
+export function kidSafe(text: string, kind: ContentKind, extra = ''): boolean {
 	const t = text.trim();
-	if (t.length < 15 || t.length > MAX_LENGTH[kind]) return false;
-	if (/https?:|www\.|[<>{}]|@/.test(t)) return false;
-	return !BLOCKED.test(t) && !BLOCKED.test(author);
+	if (t.length < (kind === 'joke' ? 8 : 15) || t.length > MAX_LENGTH[kind]) return false;
+	if (kind === 'joke' && (extra.length < 2 || extra.length > MAX_LENGTH.joke || /\n/.test(extra))) return false;
+	if (/https?:|www\.|[<>{}]|@/.test(t + extra)) return false;
+	if (kind === 'joke' && GROWN_UP.test(t + ' ' + extra)) return false;
+	return !BLOCKED.test(t) && !BLOCKED.test(extra);
+}
+
+/** "What do you call a sleeping bull? A bulldozer!" -> question + answer (null if it isn't one) */
+export function splitJoke(joke: string): { q: string; a: string } | null {
+	const m = joke.trim().match(/^(.{8,}?\?)\s+(.{2,})$/s);
+	return m ? { q: m[1].trim(), a: m[2].replace(/\s+/g, ' ').trim() } : null;
 }
 
 /** tidy a fetched text: straight quotes, single spaces, backticks as apostrophes */
@@ -122,11 +150,13 @@ const STICKERS: [RegExp, string][] = [
 	[/\bbody\b|\bbones?\b/, '1f9b4']
 ];
 
+export const DEFAULT_STICKER: Record<ContentKind, string> = { quote: '1f31f', fact: '1f4a1', joke: '1f602' };
+
 /** a sticker that matches the text (grown-ups can pick another) */
 export function suggestEmoji(text: string, kind: ContentKind): string {
 	const t = text.toLowerCase();
-	return STICKERS.find(([re]) => re.test(t))?.[1] ?? (kind === 'quote' ? '1f31f' : '1f4a1');
+	return STICKERS.find(([re]) => re.test(t))?.[1] ?? DEFAULT_STICKER[kind];
 }
 
 /** stickers offered when keeping something */
-export const STICKER_CHOICES = ['1f31f', '1f4a1', '2b50', '1f60a', '2764', '1f4aa', '1f9e0', '1f30d', '1f43e', '1f680'];
+export const STICKER_CHOICES = ['1f31f', '1f4a1', '1f602', '2b50', '1f60a', '2764', '1f4aa', '1f9e0', '1f30d', '1f43e', '1f680'];

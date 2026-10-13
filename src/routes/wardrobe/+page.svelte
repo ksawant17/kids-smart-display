@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Emoji from '#lib/components/Emoji.svelte';
+	import WeatherIcon from '#lib/components/WeatherIcon.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
 	import KidAvatar from '#lib/components/KidAvatar.svelte';
 	import { weather } from '#lib/weather';
@@ -72,7 +73,7 @@
 			{@const isDay = dayIdx === 0 ? wx.current.is_day === 1 : true}
 			<div class="wx-icon">
 				{#key day.date}
-					<Emoji code={weatherEmoji(code, isDay)} size={84} alt="" class="anim-pop" />
+					<WeatherIcon code={weatherEmoji(code, isDay)} size={84} class="anim-pop" />
 				{/key}
 			</div>
 			<div class="wx-temp">{Math.round(dayIdx === 0 ? wx.current.temp_f : day.temp_max_f)}°</div>

@@ -7,6 +7,7 @@
 	 * left/right swipe; swipe up, ✕ or a tap outside closes it.
 	 */
 	import Emoji from '#lib/components/Emoji.svelte';
+	import WeatherIcon from '#lib/components/WeatherIcon.svelte';
 	import KidAvatar from '#lib/components/KidAvatar.svelte';
 	import { reportState, closeReport } from '#lib/report';
 	import { weather, loadWeather } from '#lib/weather';
@@ -158,7 +159,7 @@
 				<div class="hero">
 					<div class="hero-wx">
 						{#key selected}
-							<Emoji code={weatherEmoji(day.code, true)} size={data.alerts.length ? 60 : 78} alt="" class="anim-pop" />
+							<WeatherIcon code={weatherEmoji(day.code, true)} size={data.alerts.length ? 60 : 78} class="anim-pop" />
 						{/key}
 						<div class="hero-text">
 							<div class="hero-label">{weatherLabel(day.code, true)}</div>

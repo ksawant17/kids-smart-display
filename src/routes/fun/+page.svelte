@@ -39,7 +39,8 @@
 	}
 
 	const dino = $derived(pick(dinos as Dino[], 0, extra.dino));
-	const joke = $derived(pick(jokes, 3, extra.joke));
+	// built-in jokes + the ones a grown-up kept (Grown-ups tab -> New Content)
+	const joke = $derived(pick([...jokes, ...data.content.jokes], 3, extra.joke));
 	const word = $derived(pick(words, 11, extra.word));
 	// built-in facts + the ones a grown-up kept (Grown-ups tab -> New Content)
 	const fact = $derived(pick([...facts, ...data.content.facts], 7, extra.fact));

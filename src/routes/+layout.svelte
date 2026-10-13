@@ -7,6 +7,7 @@
 	import BottomNav from '#lib/components/BottomNav.svelte';
 	import WeatherReport from '#lib/components/WeatherReport.svelte';
 	import ScreenControl from '#lib/components/ScreenControl.svelte';
+	import PowerMenu from '#lib/components/PowerMenu.svelte';
 	import { kidNames } from '#lib/config';
 	import { awakeMode, inBedtime, modeForIdle, screenPanelOpen, type ScreenMode } from '#lib/screen';
 	import { startMessages } from '#lib/messages';
@@ -113,6 +114,33 @@
 		wasBedtime = bedtime;
 	});
 
+	/* ---- the top push button (GPIO, see src/lib/server/button.ts) ----
+	   tap: screen off, or wake it up · hold: power menu */
+	let powerMenu = $state(false);
+	function wake() {
+		lastTouch = Date.now();
+		sentHome = false;
+		setMode(awake);
+	}
+	function onButton(gesture: string) {
+		if (gesture === 'hold') {
+			wake();
+			screenPanelOpen.set(false);
+			powerMenu = true;
+		} else if (gesture === 'tap') {
+			if (powerMenu) powerMenu = false;
+			else if (RANK[screenMode] > RANK[awake]) wake();
+			else setMode('off');
+		}
+	}
+	onMount(() => {
+		// only the kiosk browser on the Pi itself listens (not a phone)
+		if (!['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return;
+		const events = new EventSource('/api/button');
+		events.onmessage = (e) => onButton(e.data);
+		return () => events.close();
+	});
+
 	// A new version was installed (admin tab "Update", or a rebuild): reload
 	// the kiosk page once nobody has touched it for a little while.
 	$effect(() => {
@@ -201,6 +229,15 @@
 		onbrightness={onBrightness}
 		onoff={() => setMode('off')}
 	/>
+	{#if powerMenu}
+		<PowerMenu
+			onclose={() => (powerMenu = false)}
+			onscreenoff={() => {
+				powerMenu = false;
+				setMode('off');
+			}}
+		/>
+	{/if}
 	{#if simulate && simOpacity > 0}
 		<div class="screen-sim" style="opacity:{simOpacity}" aria-hidden="true"></div>
 	{/if}

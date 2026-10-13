@@ -57,6 +57,14 @@ export interface DashboardConfig {
 		/** backlight off after this many idle minutes (0 = never); a touch wakes it */
 		offAfterMinutes: number;
 	};
+	/** a push button on the GPIO header (see README: "Top button") */
+	button: {
+		enabled: boolean;
+		/** BCM GPIO number (17 = header pin 11; wire the other side to GND, pin 9) */
+		gpio: number;
+		/** hold this long for the power menu */
+		holdSeconds: number;
+	};
 	/** quiet hours: the screen stays dim and goes off after a minute without a
 	 *  touch, then comes back on by itself in the morning */
 	bedtime: {
@@ -81,7 +89,8 @@ export const DEFAULT_CONFIG: DashboardConfig = {
 	wardrobe: { coldBelowF: 45, coolUpToF: 60, mildUpToF: 72, rainChancePct: 40, switchToTomorrowHour: 18 },
 	kiosk: { idleReturnSeconds: 120 },
 	screen: { brightness: 100, minBrightness: 10, dimAfterMinutes: 10, dimBrightness: 10, offAfterMinutes: 60 },
-	bedtime: { enabled: false, start: '20:30', end: '06:30' }
+	bedtime: { enabled: false, start: '20:30', end: '06:30' },
+	button: { enabled: true, gpio: 17, holdSeconds: 2 }
 };
 
 /** shared input checks (config here, and the admin API) */
@@ -106,6 +115,7 @@ export function resolveConfig(raw: unknown): DashboardConfig {
 	const kiosk = isObj(r.kiosk) ? r.kiosk : {};
 	const screen = isObj(r.screen) ? r.screen : {};
 	const bed = isObj(r.bedtime) ? r.bedtime : {};
+	const btn = isObj(r.button) ? r.button : {};
 	const hhmm = (v: unknown, fallback: string) => (typeof v === 'string' && HHMM.test(v) ? v : fallback);
 
 	const kids = Array.isArray(r.kids)
@@ -155,6 +165,11 @@ export function resolveConfig(raw: unknown): DashboardConfig {
 			dimAfterMinutes: num(screen.dimAfterMinutes, d.screen.dimAfterMinutes, 0),
 			dimBrightness: num(screen.dimBrightness, d.screen.dimBrightness, 1, 100),
 			offAfterMinutes: num(screen.offAfterMinutes, d.screen.offAfterMinutes, 0)
+		},
+		button: {
+			enabled: btn.enabled !== false,
+			gpio: Number.isInteger(btn.gpio) ? num(btn.gpio, d.button.gpio, 2, 27) : d.button.gpio,
+			holdSeconds: num(btn.holdSeconds, d.button.holdSeconds, 1, 8)
 		},
 		bedtime: {
 			enabled: bed.enabled === true,

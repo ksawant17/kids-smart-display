@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cleanText, contentId, kidSafe, suggestEmoji } from '../src/lib/utils/content';
+import { cleanText, contentId, kidSafe, splitJoke, suggestEmoji } from '../src/lib/utils/content';
 
 describe('kidSafe filter', () => {
 	it('lets ordinary kid-friendly lines through', () => {
@@ -30,6 +30,24 @@ describe('kidSafe filter', () => {
 		expect(kidSafe('Too short', 'fact')).toBe(false);
 		expect(kidSafe('x '.repeat(80), 'quote')).toBe(false);
 		expect(kidSafe('See https://example.com for more fun facts!', 'fact')).toBe(false);
+	});
+});
+
+describe('jokes from the internet', () => {
+	it('splits one-line dad jokes into question and answer', () => {
+		expect(splitJoke("What do you call a fake noodle? An impasta!")).toEqual({ q: 'What do you call a fake noodle?', a: 'An impasta!' });
+		expect(splitJoke("What's large, grey, and doesn't matter?\nAn irrelephant.")).toEqual({
+			q: "What's large, grey, and doesn't matter?",
+			a: 'An irrelephant.'
+		});
+		expect(splitJoke('I only have my shelf to blame.')).toBeNull();
+	});
+
+	it('keeps kid jokes, drops grown-up ones (sampled from JokeAPI / icanhazdadjoke)', () => {
+		expect(kidSafe('Why are fish easy to weigh?', 'joke', 'Because they have their own scales.')).toBe(true);
+		expect(kidSafe('Why do front end developers eat lunch alone?', 'joke', "Because they don't know how to join tables.")).toBe(false);
+		expect(kidSafe('My boss told me to have a good day...', 'joke', 'so I went home.')).toBe(false);
+		expect(kidSafe('How did Harry Potter get down the hill?', 'joke', 'Walking...\nJK, Rolling.')).toBe(false);
 	});
 });
 
@@ -61,6 +79,17 @@ describe('server: fetch, keep, skip', () => {
 			'Sea otters hold hands when they sleep.'
 		];
 		vi.stubGlobal('fetch', async (url: string) => {
+			if (url.includes('jokeapi'))
+				return new Response(
+					JSON.stringify({
+						jokes: [
+							{ setup: 'Why are fish easy to weigh?', delivery: 'They have their own scales.' },
+							{ setup: 'How did Harry Potter get down the hill?', delivery: 'Walking...\nJK, Rolling.' }
+						]
+					})
+				);
+			if (url.includes('icanhazdadjoke'))
+				return new Response(JSON.stringify({ results: [{ joke: 'What do you call a fake noodle? An impasta!' }, { joke: 'I only have my shelf to blame.' }] }));
 			const body = url.includes('zenquotes')
 				? [
 						{ q: 'A path is made by walking on it.', a: 'Zhuangzi' },
@@ -82,6 +111,11 @@ describe('server: fetch, keep, skip', () => {
 		await c.refill();
 		let { pending } = c.getContent();
 		expect(pending.filter((p) => p.kind === 'quote').map((p) => p.text)).toEqual(['A path is made by walking on it.']);
+		// jokes: the multi-line one and the one that isn't a question are dropped
+		expect(pending.filter((p) => p.kind === 'joke').map((p) => `${p.text} ${p.answer}`).sort()).toEqual([
+			'What do you call a fake noodle? An impasta!',
+			'Why are fish easy to weigh? They have their own scales.'
+		]);
 		expect(pending.filter((p) => p.kind === 'fact').map((p) => p.text).sort()).toEqual([
 			'A group of owls is called a parliament.',
 			'Sea otters hold hands when they sleep.'
@@ -97,7 +131,7 @@ describe('server: fetch, keep, skip', () => {
 		expect(c.getKept().facts).toEqual([]);
 
 		await c.refill();
-		pending = c.getContent().pending;
+		pending = c.getContent().pending.filter((p) => p.kind !== 'joke');
 		expect(pending.map((p) => p.text)).toEqual(['A group of owls is called a parliament.']);
 
 		c.removeKept(quote.id);

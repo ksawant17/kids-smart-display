@@ -30,6 +30,7 @@ night sky, Halloween decorations and witch hats.*
 
 - Raspberry Pi 5 (a Pi 4 should work too) running Raspberry Pi OS Lite (64-bit)
 - Official Raspberry Pi 7" DSI touchscreen (800×480)
+- Optional: a momentary push button on the GPIO header (see [Top button](#top-button))
 - Network access for weather and the school calendar (it keeps working
   offline on the last data it downloaded)
 
@@ -56,7 +57,7 @@ config is used. To run it full-screen on the Pi at boot, see
 | **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), a red **weather alert** when there is one, or a **note from a grown-up** (Grown-ups tab). **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days |
 | **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back. **Tap any day** (or an Up Next row) for a popup with that day's school status, events (with break dates), and, within the week's forecast, the weather and what to wear. Plus "Up Next at School" with **"Tomorrow!" / "N sleeps" countdowns** (breaks under way stay listed until they end) and a **next-break countdown** |
 | **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
-| **QUOTE**  | Message of the day: one encouraging, correctly attributed quote, rotates at midnight (built-in, plus any a grown-up kept from the internet) |
+| **QUOTE**  | Message of the day: one encouraging, correctly attributed quote (100 built in, plus any a grown-up kept from the internet), rotates at midnight |
 | **FUN**    | Five corners, each with a daily pick and an "another!" button: 🦖 **Dino** (how to say it, diet, size, era, fact) · 😂 **Joke** told by a kid's buddy, tap "Tell me!" for the punchline · 🔤 **Word of the day** (picture, pronunciation, meaning, sentence) · ➕ **Math** (Easy / Tricky, tap an answer to check it) · 💡 **Facts** |
 
 The **full weather report** (on TODAY) is a slide-down card. A kid's animal
@@ -83,6 +84,8 @@ outside the card.
   shown ("updated 7:40 AM") and the kiosk keeps retrying every minute.
 - **Idle return:** after `kiosk.idleReturnSeconds` without a touch, the screen
   closes the weather report and goes back to TODAY.
+- **Top button:** an optional push button: tap for screen off / on, hold for
+  the power menu (see [Top button](#top-button)).
 - **Screen control:** **pull down from the top of the screen** (start on
   the greeting/clock bar) to open the quick menu with the
   **brightness slider**
@@ -113,7 +116,15 @@ outside the card.
   day, orange-pink at sunset and a starry navy at night (from the real
   sunrise/sunset times).
 - **Tabs by colour:** the active tab is full colour; the others are a pale
-  version of their own colour, so kids can find them by colour.
+  version of their own colour, so kids can find them by colour. The active
+  tab's icon does a little move every few seconds (the sunglasses wiggle, the
+  calendar flips, the jacket swings, the trophy bounces, the dino stomps), and
+  tabs squish when tapped.
+- **Moving weather:** the big weather icons move with the weather: the sun's
+  rays turn, clouds drift, rain and snow fall, storms flash, the moon rocks
+  (`WeatherIcon.svelte`; small hourly icons stay still). All animations move
+  whole layers only (cheap with software rendering) and pause while the
+  screen is off.
 
 ## Configuration: `config/dashboard.json`
 
@@ -136,6 +147,7 @@ a typo never takes the kiosk down. The kiosk picks up edits within the hour;
 | `screen.minBrightness` | Lowest slider value, so the screen can't be "lost" (default 10) |
 | `screen.dimAfterMinutes` / `dimBrightness` | Dim after this idle time (default 10) to this % (default 10; never brighter than the chosen brightness). `0` = never dim |
 | `screen.offAfterMinutes` | Backlight off after this idle time (default 60); `0` = never |
+| `button.enabled` / `gpio` / `holdSeconds` | The top push button (default on, GPIO17 = pin 11, hold 2 s for the power menu); see [Top button](#top-button) |
 | `bedtime.enabled` / `start` / `end` | Quiet hours, "HH:MM" 24h (default off, 20:30–06:30): dim, off a minute after the last touch, back on at `end` |
 | `location.zip` | Set by the admin tab's Weather Place (informational) |
 
@@ -198,7 +210,7 @@ the idle timer, locks it again. Text is typed on a big on-screen keyboard.
 
 | Tile | What it does |
 | --- | --- |
-| **New Content** | Quotes and fun facts fetched from the internet each day wait here (the tile shows how many). Tap **Keep** (with a sticker) or **Skip**; only kept ones are shown to the kids. **Kept** lists them, ✕ takes one off again. |
+| **New Content** | Quotes, fun facts and jokes fetched from the internet each day wait here (the tile shows how many). Tap **Keep** (with a sticker) or **Skip**; only kept ones are shown to the kids. **Kept** lists them, ✕ takes one off again. |
 | **Notes** | A note in the TODAY banner ("Library day! Bring your books"): pick a ready-made one or type your own, for today, tomorrow (from 6 PM tonight) or every day. Kept in `data/messages.json`; the kiosk checks every minute. |
 | **Kids** | Names, animal buddy and clothes colour; add or remove kids (1–4). |
 | **Weather Place** | Type a ZIP code → it finds the town (Open-Meteo geocoding, Zippopotam.us as a fallback) → "Use this place". Offers to switch the clock if the town is in another time zone. |
@@ -242,23 +254,79 @@ while the old copy keeps running, swap it in (the previous one stays in
 every minute and reloads itself once nobody is touching the screen. A checkout
 with local edits is never updated from the tab (update it by hand).
 
+## Top button
+
+An optional push button (mounted on top of the case, say) for the things you
+want without touching the screen:
+
+| Press | What happens |
+| --- | --- |
+| **Tap** | Screen off; if it's off or dim, wake it up. With the power menu open: close it |
+| **Hold 2 s** | **Power menu** on the screen: Screen Off · Restart · Power Off · Cancel (closes itself after 20 s) |
+| **Hold 10 s** | Restart the kiosk browser (escape hatch if the screen ever freezes) |
+
+**Wiring.** Any *momentary, normally-open* push button with two wires. No
+resistor needed (the Pi's internal pull-up is used). Connect one wire to
+**pin 11 (GPIO17)** and the other to **pin 9 (GND)**, right next to each other
+on the inner row of the 40-pin header:
+
+```
+ (USB ports are at the far end)          inner row  outer row
+                                    3V3  (1)       (2)  5V
+ Pin 1 is the end of the header   GPIO2  (3)       (4)  5V
+ farthest from the USB ports,     GPIO3  (5)       (6)  GND
+ on the inner row (run `pinout`   GPIO4  (7)       (8)  GPIO14
+ on the Pi to see it).              GND  (9) <--+  (10) GPIO15
+                                 GPIO17 (11) <--+  (12) GPIO18
+                                        button between 9 and 11
+```
+
+Female-to-female jumper wires ("Dupont") push straight onto the pins, or solder
+them to the button. These pins don't clash with the 7" touchscreen (its power
+wires, if any, use pins 2/4 and 6). Do the wiring with the Pi unplugged.
+
+Nothing to install: the dashboard server watches the pin with `gpiomon`
+(the `pi` user is in the `gpio` group) and starts automatically. Test it by
+tapping the button and watching `journalctl -u kids-smart-server -f` for
+`[button] tap`. To use another pin, set `button.gpio` in `config/dashboard.json`
+(BCM number) and restart the server; `"enabled": false` turns it off.
+
+**Turning the Pi back on.** After "Power Off" a GPIO button can't wake a Pi 5:
+press the Pi 5's own power button (on the board edge), or unplug and replug it.
+(If you want one button for both, the Pi 5 has a separate power-button header,
+J2 next to the battery connector; a button there turns the Pi on, but only does
+power on/off, not the dashboard features.)
+
+The power menu needs no PIN, since holding the button means being at the
+screen, but its Restart / Power Off only work from the kiosk itself within a
+minute of the hold, and need the same one-time polkit rule as the Grown-ups tab.
+
 ## Content
 
 | File | What |
 |------|------|
-| `src/lib/data/quotes.json` | `{ text, author, emoji }`: real, sourced quotes only |
-| `src/lib/data/facts.json` | `{ text, emoji: [1-2 codes] }`: fact-checked, kid-friendly |
+| `src/lib/data/quotes.json` | 100 × `{ text, author, emoji }`: real, correctly attributed quotes only (children's books, films, proverbs, scientists) |
+| `src/lib/data/facts.json` | 149 × `{ text, emoji: [1-2 codes] }`: fact-checked, kid-friendly |
+| `src/lib/data/jokes.json` | 147 × `{ q, a, emoji }`: question-and-answer kid jokes |
+| `src/lib/data/words.json` | 107 × `{ word, say, emoji, meaning, sentence }` |
 | `src/lib/data/dinos.json` | `{ name, say, means, lengthFt, diet, period, fact }` |
 
 Each rotates once a day (`pickDaily`: days since 1970 % length, so the order
 continues across New Year). Add entries freely; if you use a new emoji code,
 run `npm run emoji` (see below).
 
-**Fresh quotes and facts from the internet, vetted by a grown-up.** Once a
-day the Pi fetches new candidates: quotes from [ZenQuotes](https://zenquotes.io)
-and facts from [Useless Facts](https://uselessfacts.jsph.pl). Neither is
-written for kids (we sampled them: heavy adult quotes, facts about gambling
-or poisons, some plain wrong), so nothing goes on screen by itself:
+So nothing repeats for months (a joke every day for almost five months), with
+no upkeep.
+
+**More from the internet, vetted by a grown-up (optional).** Once a day the Pi
+fetches new candidates: quotes from [ZenQuotes](https://zenquotes.io), facts
+from [Useless Facts](https://uselessfacts.jsph.pl), jokes from
+[JokeAPI](https://jokeapi.dev) (safe mode) and
+[icanhazdadjoke](https://icanhazdadjoke.com). None of them is written for kids
+(we sampled them: heavy adult quotes, facts about gambling or poisons, jokes
+about bosses, in-laws and exorcists, some plain wrong), so nothing goes on
+screen by itself. Up to 30 of each wait, so checking about once a month is
+plenty; if you never do, nothing breaks:
 
 1. a filter drops anything too long or touching blocked topics
    (`kidSafe()` in `src/lib/utils/content.ts`),
@@ -266,6 +334,9 @@ or poisons, some plain wrong), so nothing goes on screen by itself:
    pick a sticker) or **Skip**,
 3. kept ones join the built-in lists on TODAY, QUOTE and FUN (quotes from
    ZenQuotes show a small credit, as its free API asks).
+
+Words have no live source: the free word-of-the-day services need an account
+and pick grown-up vocabulary, with no picture or kid sentence.
 
 Everything lives in `data/content.json` (git-ignored); skipped ones are never
 offered again.
@@ -414,7 +485,7 @@ src/
 │   ├── data/                quotes, facts, dinos, jokes, words, school-calendar.seed.ics
 │   ├── server/              config loader/writer, TTL cache, school feed, backlight control,
 │   │                        admin PIN + sessions, ZIP geocoding, notes, live quotes/facts,
-│   │                        system (power/clock/Wi-Fi/health/updates)
+│   │                        system (power/clock/Wi-Fi/health/updates), top button (GPIO)
 │   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino,
 │                            forecastStory (story/air/alerts), moon, mathPuzzle, admin, messages, content
 └── routes/
@@ -426,6 +497,7 @@ src/
     ├── api/weather/         Open-Meteo proxy (typed, cached, stale fallback)
     ├── api/screen/          backlight on/dim/off + brightness
     ├── api/messages/        grown-up notes for the TODAY banner
+    ├── api/button/          top-button gestures (server-sent events) + power menu
     └── api/admin/           admin: login, settings, zip, time, power, pin, messages, wifi, update, content
 scripts/                     emoji vendoring, blank kiosk cursor, update.sh
 tests/                       vitest suites

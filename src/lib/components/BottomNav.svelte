@@ -21,7 +21,7 @@
 			class="tab {tab.cls} {isActive(tab.path) ? 'active' : ''}"
 			aria-current={isActive(tab.path) ? 'page' : undefined}
 		>
-			<Emoji code={tab.emoji} size={30} alt={tab.label} shadow="none" />
+			<Emoji code={tab.emoji} size={30} alt={tab.label} />
 			<span>{tab.label}</span>
 		</a>
 	{/each}

@@ -5,13 +5,17 @@
  *   kept     approved ones, shown alongside the built-in lists
  *   seen     ids already offered, so nothing comes back after a Skip
  * New candidates are fetched at most once a day (or on "Get more").
+ * Sources: ZenQuotes (quotes), Useless Facts (facts), JokeAPI and
+ * icanhazdadjoke (jokes).
  */
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import {
+	DEFAULT_STICKER,
 	cleanText,
 	contentId,
 	kidSafe,
+	splitJoke,
 	type Candidate,
 	type ContentKind,
 	type KeptContent
@@ -20,8 +24,13 @@ import {
 const FILE = resolve(process.env.DASHBOARD_DATA ?? 'data', 'content.json');
 const ZENQUOTES = process.env.ZENQUOTES_URL ?? 'https://zenquotes.io/api/quotes';
 const USELESS_FACTS = process.env.FACTS_URL ?? 'https://uselessfacts.jsph.pl/api/v2/facts/random?language=en';
+// JokeAPI's "safe mode", two-part jokes only, every flag that could be iffy
+const JOKEAPI =
+	process.env.JOKEAPI_URL ??
+	'https://v2.jokeapi.dev/joke/Pun,Misc?safe-mode&type=twopart&blacklistFlags=nsfw,religious,political,racist,sexist,explicit&amount=10';
+const DADJOKES = process.env.DADJOKES_URL ?? 'https://icanhazdadjoke.com/search?limit=30';
 const PER_FETCH = 6; // new candidates of each kind per fetch
-const MAX_PENDING = 20; // per kind
+const MAX_PENDING = 30; // per kind: about a month of new ones
 const DAY_MS = 24 * 3600_000;
 
 interface Store {
@@ -37,11 +46,11 @@ function load(): Store {
 		return {
 			lastFetch: Number(s.lastFetch) || 0,
 			pending: Array.isArray(s.pending) ? s.pending : [],
-			kept: { quotes: s.kept?.quotes ?? [], facts: s.kept?.facts ?? [] },
+			kept: { quotes: s.kept?.quotes ?? [], facts: s.kept?.facts ?? [], jokes: s.kept?.jokes ?? [] },
 			seen: Array.isArray(s.seen) ? s.seen : []
 		};
 	} catch {
-		return { lastFetch: 0, pending: [], kept: { quotes: [], facts: [] }, seen: [] };
+		return { lastFetch: 0, pending: [], kept: { quotes: [], facts: [], jokes: [] }, seen: [] };
 	}
 }
 
@@ -55,7 +64,10 @@ function save(s: Store) {
 async function getJson(url: string): Promise<unknown> {
 	const res = await fetch(url, {
 		signal: AbortSignal.timeout(10_000),
-		headers: { 'user-agent': 'kids-smart-display (https://github.com/ksawant17/kids-smart-display)' }
+		headers: {
+			accept: 'application/json',
+			'user-agent': 'kids-smart-display (https://github.com/ksawant17/kids-smart-display)'
+		}
 	});
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
 	return res.json();
@@ -68,6 +80,37 @@ async function fetchQuotes(): Promise<Candidate[]> {
 		.map((x) => ({ text: cleanText(x.q!), author: cleanText(x.a!) }))
 		.filter((x) => kidSafe(x.text, 'quote', x.author))
 		.map((x) => ({ id: contentId('quote', x.text), kind: 'quote' as const, ...x, source: 'zenquotes' }));
+}
+
+async function fetchJokes(): Promise<Candidate[]> {
+	const pairs: { q: string; a: string; source: string }[] = [];
+	try {
+		const r = (await getJson(JOKEAPI)) as { jokes?: { setup?: string; delivery?: string }[] };
+		for (const j of r.jokes ?? [])
+			if (typeof j.setup === 'string' && typeof j.delivery === 'string')
+				pairs.push({ q: j.setup, a: j.delivery, source: 'jokeapi' });
+	} catch (err) {
+		console.warn(`[content] JokeAPI: ${err}`);
+	}
+	try {
+		// a random page of dad jokes; only the question-and-answer ones fit the joke corner
+		const page = 1 + Math.floor(Math.random() * 25);
+		const r = (await getJson(`${DADJOKES}&page=${page}`)) as { results?: { joke?: string }[] };
+		for (const j of r.results ?? []) {
+			const qa = typeof j.joke === 'string' ? splitJoke(j.joke) : null;
+			if (qa) pairs.push({ ...qa, source: 'icanhazdadjoke' });
+		}
+	} catch (err) {
+		console.warn(`[content] icanhazdadjoke: ${err}`);
+	}
+	if (!pairs.length) throw new Error('no joke source answered');
+	return pairs
+		// check the raw text first: tidying would hide line breaks the filter looks for
+		.filter((p) => kidSafe(p.q, 'joke', p.a))
+		.map((p) => ({ ...p, q: cleanText(p.q), a: cleanText(p.a) }))
+		.filter((p) => kidSafe(p.q, 'joke', p.a))
+		.sort(() => Math.random() - 0.5)
+		.map((p) => ({ id: contentId('joke', p.q), kind: 'joke' as const, text: p.q, answer: p.a, source: p.source }));
 }
 
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -92,14 +135,15 @@ async function fetchFacts(): Promise<Candidate[]> {
 
 let inflight: Promise<void> | null = null;
 
-/** Fetch new candidates now (both kinds); errors are logged, never thrown. */
+/** Fetch new candidates now (every kind); errors are logged, never thrown. */
 export function refill(): Promise<void> {
 	inflight ??= (async () => {
 		const s = load();
 		const known = new Set([...s.seen, ...s.pending.map((p) => p.id)]);
 		for (const [kind, fetcher] of [
 			['quote', fetchQuotes],
-			['fact', fetchFacts]
+			['fact', fetchFacts],
+			['joke', fetchJokes]
 		] as const) {
 			try {
 				let room = Math.min(PER_FETCH, MAX_PENDING - s.pending.filter((p) => p.kind === kind).length);
@@ -144,8 +188,9 @@ export function decide(id: string, keep: boolean, emoji?: string) {
 	s.pending = s.pending.filter((p) => p.id !== id);
 	s.seen.push(id);
 	if (keep) {
-		const sticker = emoji ?? (c.kind === 'quote' ? '1f31f' : '1f4a1');
+		const sticker = emoji ?? DEFAULT_STICKER[c.kind];
 		if (c.kind === 'quote') s.kept.quotes.push({ id, text: c.text, author: c.author ?? 'Unknown', emoji: sticker, source: c.source });
+		else if (c.kind === 'joke') s.kept.jokes.push({ id, q: c.text, a: c.answer ?? '', emoji: sticker, source: c.source });
 		else s.kept.facts.push({ id, text: c.text, emoji: [sticker], source: c.source });
 	}
 	save(s);
@@ -157,6 +202,7 @@ export function removeKept(id: string) {
 	const s = load();
 	s.kept.quotes = s.kept.quotes.filter((q) => q.id !== id);
 	s.kept.facts = s.kept.facts.filter((f) => f.id !== id);
+	s.kept.jokes = s.kept.jokes.filter((j) => j.id !== id);
 	save(s);
 	return getContent();
 }

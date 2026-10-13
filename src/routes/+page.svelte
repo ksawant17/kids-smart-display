@@ -11,6 +11,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Emoji from '#lib/components/Emoji.svelte';
+	import WeatherIcon from '#lib/components/WeatherIcon.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
 	import KidAvatar from '#lib/components/KidAvatar.svelte';
 	import { openReport } from '#lib/report';
@@ -167,10 +168,10 @@
 				<SectionTitle>{dayIdx === 1 ? "Tomorrow's Weather" : 'Weather'}</SectionTitle>
 				<div class="wx-main">
 					{#if dayIdx === 1}
-						<Emoji code={weatherEmoji(day.code, true)} size={54} alt="" class="anim-pop" />
+						<WeatherIcon code={weatherEmoji(day.code, true)} size={54} class="anim-pop" />
 						<div class="wx-temp">{Math.round(day.temp_max_f)}°</div>
 					{:else}
-						<Emoji code={weatherEmoji(wx.current.weather_code, wx.current.is_day === 1)} size={54} alt="" class="anim-pop" />
+						<WeatherIcon code={weatherEmoji(wx.current.weather_code, wx.current.is_day === 1)} size={54} class="anim-pop" />
 						<div class="wx-temp">{Math.round(wx.current.temp_f)}°</div>
 					{/if}
 				</div>

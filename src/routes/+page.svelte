@@ -209,7 +209,7 @@
 				aria-label="{school.title}. Tap for the school calendar."
 				onclick={() => goto(`/calendar?day=${dayKey}`)}
 			>
-				<SectionTitle>{dayIdx === 1 ? 'School Tomorrow' : 'School'}</SectionTitle>
+				<SectionTitle>School</SectionTitle>
 				<Emoji code={STATUS_EMOJI[school.kind]} size={52} alt="" class="anim-pop" />
 				<div class="school-title">{school.title}</div>
 				{#if school.subtitle}<div class="school-sub">{school.subtitle}</div>{/if}

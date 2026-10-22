@@ -191,6 +191,9 @@
 		font-weight: 800;
 		color: #475569;
 		margin-top: 2px;
+		/* stays readable above the big sun's turning rays */
+		position: relative;
+		z-index: 2;
 	}
 	/* fat-finger day arrows (sample-pages arrow-box style) */
 	.day-arrow {

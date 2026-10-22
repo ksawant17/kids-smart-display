@@ -197,7 +197,7 @@
 							{/each}
 						</p>
 					{/key}
-					<button class="another pressable" onclick={() => another('fact')}>Show me another! <Emoji code="1f4a1" size={18} alt="" shadow="none" /></button>
+					<button class="another pressable" onclick={() => another('fact')}>Show me another! <Emoji code="27a1" size={18} alt="" shadow="none" /></button>
 				</div>
 			{/if}
 		</div>

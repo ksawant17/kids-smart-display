@@ -84,6 +84,15 @@ outside the card.
   shown ("updated 7:40 AM") and the kiosk keeps retrying every minute.
 - **Idle return:** after `kiosk.idleReturnSeconds` without a touch, the screen
   closes the weather report and goes back to TODAY.
+- **Idle screen:** at the same moment (unless turned off with
+  `kiosk.idleScreen`) the whole frame becomes the sky outside, following the
+  live forecast: bright blue with a glowing sun, drifting clouds, rain, snow,
+  fog, a storm flash, or twinkling stars at night. On top: a big clock, the
+  date, the weather now with today's high/low, school today (tomorrow in the
+  evening), tomorrow's forecast or "rain around 3 PM", tonight's moon and a
+  grown-up's note. In festival season a banner counts down ("Diwali in 3
+  sleeps!", then "Happy Diwali!") above a festive garland. A tap anywhere opens
+  TODAY. `/?idle` shows it straight away (handy when testing).
 - **Top button:** an optional push button: tap for screen off / on, hold for
   the power menu (see [Top button](#top-button)).
 - **Screen control:** **pull down from the top of the screen** (start on
@@ -106,10 +115,17 @@ outside the card.
   thunderstorm...) take turns with the school status in the TODAY banner (red /
   orange / yellow by severity) with kid advice ("Bundle up! School might be
   closed, ask a grown-up."), and appear at the top of the weather report.
-- **Holiday themes:** decorations in the header through each season (Halloween
-  🎃 all October, Thanksgiving 🦃, winter ❄️, Valentine's, St. Patrick's, 4th of
-  July), a greeting on the day itself ("Happy Halloween, …!") and seasonal hats
-  on the buddies (witch hats, pom-pom beanies, New Year party hats).
+- **Festival themes, US and Indian:** decorations in the header (and the idle
+  screen garland), a greeting on the day itself ("Happy Diwali, …!") and
+  seasonal hats on the buddies (witch hats, pom-pom beanies, New Year party
+  hats). US: Halloween 🎃 all October, Thanksgiving 🦃, Christmas 🎄 through
+  December, New Year, Valentine's, St. Patrick's, Easter, Mother's and
+  Father's Day, 4th of July. Indian: Makar Sankranti / Pongal, Republic Day,
+  Holi, Gudi Padwa / Ugadi, Eid, Raksha Bandhan, Independence Day,
+  Janmashtami, Ganesh Chaturthi, Navratri, Dussehra and Diwali. A festival's
+  own day wins over another's build-up. The lunar-calendar dates live in a
+  table in `src/lib/themes.ts` (2026–2030, from Drik Panchang); extend it for
+  later years.
 - **The real moon:** at night the header shows tonight's moon phase.
 - **Works offline:** fonts and every icon are served locally.
 - **Sky that follows the day:** the background is peach at sunrise, cyan by
@@ -143,6 +159,7 @@ a typo never takes the kiosk down. The kiosk picks up edits within the hour;
 | `weather.refreshMinutes` | Kiosk weather refresh (default 10) |
 | `wardrobe` | `coldBelowF` (45), `coolUpToF` (60), `mildUpToF` (72), `rainChancePct` (40), `switchToTomorrowHour` (18 = from 6 PM on, show tomorrow's outfit) |
 | `kiosk.idleReturnSeconds` | Return to TODAY after this idle time; `0` = never |
+| `kiosk.idleScreen` | Show the idle screen (clock, weather, festivals) at that moment; default `true` |
 | `screen.brightness` | Starting brightness % (the slider's value is saved in `data/screen.json` and wins after that) |
 | `screen.minBrightness` | Lowest slider value, so the screen can't be "lost" (default 10) |
 | `screen.dimAfterMinutes` / `dimBrightness` | Dim after this idle time (default 10) to this % (default 10; never brighter than the chosen brightness). `0` = never dim |
@@ -217,7 +234,7 @@ the idle timer, locks it again. Text is typed on a big on-screen keyboard.
 | **School** | The school calendar link (.ics / webcal; it is downloaded and checked before it's saved) and the school-day hours. |
 | **What to Wear** | Coat / jacket / long-sleeve temperatures, the umbrella rain chance, and when TODAY switches to tomorrow's outfit. Saves as you tap. |
 | **Bedtime** | Quiet hours: the screen goes dim, turns off a minute after the last touch, and turns itself back on at wake-up time. |
-| **Screen** | Dim after / turn off after / go back to TODAY after. |
+| **Screen** | Dim after / turn off after / go back to TODAY (or the idle screen) after; idle screen on/off. |
 | **Date & Time** | US time zone, automatic internet time on/off, or set the date and time by hand. A new time zone restarts the kiosk browser. |
 | **Wi-Fi** | Nearby networks with signal bars; tap one and type its password to join. |
 | **Power** | Wi-Fi name, address, uptime, CPU temperature, free space; **Reload**, **Restart Pi**, **Power Off**. |
@@ -475,10 +492,10 @@ src/
 │   ├── report.ts            open/close state of the full weather report
 │   ├── screen.ts            idle dim/off rules + brightness panel state
 │   ├── sky.ts               time-of-day background phase
-│   ├── themes.ts            holiday themes (decorations, greetings, buddy hats)
+│   ├── themes.ts            US + Indian festival themes (decorations, greetings, hats, countdown)
 │   ├── buddies.ts           animal buddy list + default clothes colours
 │   ├── components/          Emoji, Buddy (dressed animal SVG), KidAvatar, Header, BottomNav,
-│   │                        SectionTitle, WeatherReport, ScreenControl, Keypad
+│   │                        SectionTitle, WeatherReport, WeatherIcon, IdleScreen, ScreenControl, Keypad, PowerMenu
 │   │   └── admin/           one *Section per admin tile, TextSheet (on-screen keyboard), Stepper
 │   ├── admin.svelte.ts      the admin page's session (API calls, notes, lock)
 │   ├── messages.ts          grown-up notes store (polled every minute)

@@ -45,14 +45,17 @@
 	let lastTouch = $state(Date.now());
 	let sentHome = false; // once per idle stretch
 	$effect(() => {
+		// read the clock and lastTouch first, every run: an early return before
+		// them would drop the effect's dependencies and stop it for good
+		const idle = $now.getTime() - lastTouch;
 		const idleMs = data.kiosk.idleReturnSeconds * 1000;
-		if (!idleMs || sentHome) return;
-		if ($now.getTime() - lastTouch >= idleMs) {
-			sentHome = true;
-			closeReport();
-			screenPanelOpen.set(false);
-			if (page.url.pathname !== '/') goto('/');
-		}
+		if (!idleMs || sentHome || idle < idleMs) return;
+		sentHome = true;
+		closeReport();
+		screenPanelOpen.set(false);
+		powerMenu = false;
+		// a failed navigation (server busy restarting) tries again on the next tick
+		if (page.url.pathname !== '/') goto('/').catch(() => (sentHome = false));
 	});
 
 	/* ---------------- screen: dim -> off when idle, wake on touch ---------------- */

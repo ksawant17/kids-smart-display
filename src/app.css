@@ -121,15 +121,22 @@ img {
 	background: linear-gradient(180deg, #fb923c 0%, #f472b6 45%, #a78bfa 100%);
 }
 #pi-screen.sky-night {
+	/* little 4-point sparkles, kept to the strips above and below the header
+	   text (round dots there read as punctuation: "Wed,. Oct 21") */
 	background:
-		radial-gradient(1.5px 1.5px at 12% 8%, #fff 95%, transparent),
-		radial-gradient(1.5px 1.5px at 33% 4%, #fff 95%, transparent),
-		radial-gradient(2px 2px at 58% 9%, #fef9c3 95%, transparent),
-		radial-gradient(1.5px 1.5px at 71% 3%, #fff 95%, transparent),
-		radial-gradient(1.5px 1.5px at 47% 13%, #fff 95%, transparent),
-		radial-gradient(2px 2px at 88% 12%, #fff 95%, transparent),
-		radial-gradient(1.5px 1.5px at 4% 15%, #fff 95%, transparent),
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0Q5.6 4.4 10 5Q5.6 5.6 5 10Q4.4 5.6 0 5Q4.4 4.4 5 0Z' fill='%23fff'/%3E%3C/svg%3E") 12% 3px / 7px 7px no-repeat,
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0Q5.6 4.4 10 5Q5.6 5.6 5 10Q4.4 5.6 0 5Q4.4 4.4 5 0Z' fill='%23fef9c3'/%3E%3C/svg%3E") 31% 55px / 9px 9px no-repeat,
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0Q5.6 4.4 10 5Q5.6 5.6 5 10Q4.4 5.6 0 5Q4.4 4.4 5 0Z' fill='%23fff'/%3E%3C/svg%3E") 58% 2px / 8px 8px no-repeat,
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0Q5.6 4.4 10 5Q5.6 5.6 5 10Q4.4 5.6 0 5Q4.4 4.4 5 0Z' fill='%23fff'/%3E%3C/svg%3E") 74% 56px / 7px 7px no-repeat,
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0Q5.6 4.4 10 5Q5.6 5.6 5 10Q4.4 5.6 0 5Q4.4 4.4 5 0Z' fill='%23fff'/%3E%3C/svg%3E") 45% 8px / 6px 6px no-repeat,
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0Q5.6 4.4 10 5Q5.6 5.6 5 10Q4.4 5.6 0 5Q4.4 4.4 5 0Z' fill='%23fef9c3'/%3E%3C/svg%3E") 93% 3px / 9px 9px no-repeat,
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0Q5.6 4.4 10 5Q5.6 5.6 5 10Q4.4 5.6 0 5Q4.4 4.4 5 0Z' fill='%23fff'/%3E%3C/svg%3E") 3% 56px / 7px 7px no-repeat,
 		linear-gradient(180deg, #0b1d4d 0%, #1e3a8a 60%, #3b4fa0 100%);
+}
+/* dark stickers (bat, black cat...) vanish on the night sky: light outline */
+#pi-screen.sky-night .decor-item img {
+	filter: drop-shadow(1px 0 0 #e2e8f0) drop-shadow(-1px 0 0 #e2e8f0) drop-shadow(0 1px 0 #e2e8f0)
+		drop-shadow(0 -1px 0 #e2e8f0) !important;
 }
 /* light text on the dark night sky / dusk */
 #pi-screen.sky-night .header-left,

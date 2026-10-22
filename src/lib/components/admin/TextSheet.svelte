@@ -130,7 +130,7 @@
 	input {
 		height: 50px;
 		padding: 0 12px;
-		font: 900 24px 'Nunito', sans-serif;
+		font: 900 24px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		background: var(--card-white);
 		border: 3px solid var(--border-dark);
@@ -153,7 +153,7 @@
 	}
 	.key {
 		flex: 0 0 68px;
-		font: 900 24px 'Nunito', sans-serif;
+		font: 900 24px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		background: var(--card-white);
 		border: 3px solid var(--border-dark);

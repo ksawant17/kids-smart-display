@@ -19,6 +19,7 @@
 	import { messages } from '#lib/messages';
 	import { messagesOn } from '#lib/utils/messages';
 	import { festivalBanner, themeFor } from '#lib/themes';
+	import { place } from '#lib/place';
 	import { weatherEmoji, weatherInfo, weatherLabel } from '#lib/utils/weatherCodes';
 	import { greetingFor, hourLabel } from '#lib/utils/time';
 	import { moonPhase } from '#lib/utils/moon';
@@ -52,7 +53,7 @@
 	// ---- time ----
 	const clock = $derived($now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).split(' '));
 	const longDate = $derived($now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }));
-	const theme = $derived(themeFor($now));
+	const theme = $derived(themeFor($now, $place));
 	const hello = $derived(`${theme?.greeting ?? greetingFor($now)}, ${names}!`);
 	const banner = $derived(theme ? festivalBanner(theme, $now) : null);
 
@@ -144,6 +145,7 @@
 				<span>{banner}</span>
 				<Emoji code={theme.decor[1]} size={30} alt="" />
 			</div>
+			{#if theme.mr}<div class="banner-mr anim-pop">{theme.mr}</div>{/if}
 		{/if}
 
 		<div class="main">
@@ -348,6 +350,11 @@
 		border: 3px solid var(--border-dark);
 		border-radius: 999px;
 		box-shadow: var(--sticker-shadow-sm);
+	}
+	.banner-mr {
+		margin-top: 4px;
+		font-size: 20px;
+		font-weight: 800;
 	}
 	.main {
 		flex: 1;

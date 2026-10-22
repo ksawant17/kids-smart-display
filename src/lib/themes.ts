@@ -1,13 +1,14 @@
 /**
  * Seasonal / festival themes, US and Indian: header decorations, a greeting
  * on the day itself, a hat for the animal buddies, and a banner for the idle
- * screen ("Diwali in 3 sleeps!" / "Happy Diwali!"). Pure, date-based (local
- * time).
+ * screen ("Diwali in 3 sleeps!" / "Happy Diwali! शुभ दीपावली").
  *
- * Indian festivals (and Eid) follow the lunar calendar, so their dates come
- * from a table (Drik Panchang, New Delhi; checked Oct 2026). Years past the
- * table simply have no Indian festival themes until it is extended.
+ * The Hindu festivals come from the Marathi calendar (utils/panchang.ts),
+ * computed for the dashboard's own location, so they work for any year. Eid
+ * (Islamic calendar) uses a small date table (2026-2030).
  */
+import { panchangMonth, type Place } from '#lib/utils/panchang';
+
 export type BuddyHat = 'witch' | 'winter' | 'party' | null;
 
 export interface Theme {
@@ -20,6 +21,8 @@ export interface Theme {
 	greeting: string | null;
 	/** idle screen banner from the main day on ("Happy Diwali!") */
 	cheer: string;
+	/** the Marathi wish under it ("शुभ दीपावली"), if any */
+	mr: string | null;
 	/** the main day, for the countdown before it (null: no countdown) */
 	day: Date | null;
 	hat: BuddyHat;
@@ -51,16 +54,11 @@ export function easter(year: number): Date {
 	return new Date(year, month - 1, day);
 }
 
-// lunar-calendar festivals as MMDD per year
-type Lunar = 'sankranti' | 'holi' | 'padwa' | 'eid' | 'rakhi' | 'janmashtami' | 'ganesh' | 'navratri' | 'dussehra' | 'diwali';
-// prettier-ignore
-const LUNAR: Record<number, Record<Lunar, number>> = {
-	2026: { sankranti: 114, holi: 304, padwa: 319, eid: 320, rakhi: 828, janmashtami: 904, ganesh: 914, navratri: 1011, dussehra: 1020, diwali: 1108 },
-	2027: { sankranti: 115, holi: 322, padwa: 407, eid: 310, rakhi: 817, janmashtami: 825, ganesh: 904, navratri: 930, dussehra: 1009, diwali: 1029 },
-	2028: { sankranti: 115, holi: 311, padwa: 327, eid: 227, rakhi: 805, janmashtami: 813, ganesh: 823, navratri: 919, dussehra: 927, diwali: 1017 },
-	2029: { sankranti: 114, holi: 301, padwa: 414, eid: 214, rakhi: 823, janmashtami: 901, ganesh: 911, navratri: 1008, dussehra: 1016, diwali: 1105 },
-	2030: { sankranti: 114, holi: 320, padwa: 403, eid: 205, rakhi: 813, janmashtami: 821, ganesh: 901, navratri: 928, dussehra: 1006, diwali: 1026 }
-};
+// Eid al-Fitr (Islamic calendar; can move a day with the moon sighting), MMDD
+const EID: Record<number, number> = { 2026: 320, 2027: 310, 2028: 227, 2029: 214, 2030: 205 };
+
+/** where the dashboard is, until the layout says (config default) */
+export const DEFAULT_PLACE: Place = { latitude: 38.85, longitude: -77.31 };
 
 const DAY = 86_400_000;
 const midnight = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -73,9 +71,12 @@ interface Festival {
 	decor: string[];
 	greeting: string | null;
 	cheer: string;
+	mr?: string;
 	hat?: BuddyHat;
-	/** main day this year (null: not this year / unknown) */
-	day: (year: number) => Date | null;
+	/** fixed / rule-based main day in a year (null: not that year) */
+	day?: (year: number) => Date | null;
+	/** or: the Marathi calendar festival (utils/panchang ids) that is the main day */
+	marathi?: string;
 	/** shown from `before` days ahead until `after` days past the main day */
 	before: number;
 	after: number;
@@ -83,11 +84,8 @@ interface Festival {
 	greetAll?: boolean;
 }
 
-const lunar = (key: Lunar) => (year: number) => {
-	const mmdd = LUNAR[year]?.[key];
-	return mmdd ? new Date(year, Math.floor(mmdd / 100) - 1, mmdd % 100) : null;
-};
 const fixed = (month: number, date: number) => (year: number) => new Date(year, month - 1, date);
+const eid = (year: number) => (EID[year] ? new Date(year, Math.floor(EID[year] / 100) - 1, EID[year] % 100) : null);
 
 const INDIA = '1f1ee-1f1f3';
 
@@ -95,18 +93,30 @@ const INDIA = '1f1ee-1f1f3';
 // match wins, so short festivals come before the long seasons around them.
 // prettier-ignore
 const FESTIVALS: Festival[] = [
-	{ id: 'sankranti', name: 'Sankranti', decor: ['1fa81', '1f31e', '1f36c'], greeting: 'Happy Sankranti', cheer: 'Happy Makar Sankranti & Pongal!', day: lunar('sankranti'), before: 2, after: 1 },
-	{ id: 'republic', name: 'Republic Day', decor: [INDIA, '1f54a', '2728'], greeting: 'Happy Republic Day', cheer: 'Happy Republic Day!', day: fixed(1, 26), before: 0, after: 0 },
-	{ id: 'holi', name: 'Holi', decor: ['1f3a8', '1f308', '1f4a6'], greeting: 'Happy Holi', cheer: 'Happy Holi!', day: lunar('holi'), before: 3, after: 0 },
-	{ id: 'padwa', name: 'Gudi Padwa & Ugadi', decor: ['1f6a9', '1f96d', '1f33c'], greeting: 'Happy Padwa & Ugadi', cheer: 'Happy Gudi Padwa & Ugadi!', day: lunar('padwa'), before: 1, after: 0 },
-	{ id: 'eid', name: 'Eid', decor: ['1f319', '1f54c', '2728'], greeting: 'Eid Mubarak', cheer: 'Eid Mubarak!', day: lunar('eid'), before: 1, after: 1, greetAll: true },
-	{ id: 'rakhi', name: 'Raksha Bandhan', decor: ['1f9f5', '1f381', '1f496'], greeting: 'Happy Raksha Bandhan', cheer: 'Happy Raksha Bandhan!', day: lunar('rakhi'), before: 3, after: 0 },
-	{ id: 'janmashtami', name: 'Janmashtami', decor: ['1f99a', '1f9c8', '1f476'], greeting: 'Happy Janmashtami', cheer: 'Happy Janmashtami!', day: lunar('janmashtami'), before: 1, after: 0 },
-	{ id: 'india-independence', name: 'Independence Day', decor: [INDIA, '1fa81', '1f54a'], greeting: 'Happy 15th August', cheer: 'Happy Independence Day, India!', day: fixed(8, 15), before: 1, after: 0 },
-	{ id: 'dussehra', name: 'Dussehra', decor: ['1f3f9', '1f525', '1f31f'], greeting: 'Happy Dussehra', cheer: 'Happy Dussehra!', day: lunar('dussehra'), before: 0, after: 0 },
-	{ id: 'diwali', name: 'Diwali', decor: ['1fa94', '2728', '1f9e8'], greeting: 'Happy Diwali', cheer: 'Happy Diwali!', day: lunar('diwali'), before: 7, after: 3 },
-	{ id: 'ganesh', name: 'Ganesh Chaturthi', decor: ['1f418', '1f33a', '1f941'], greeting: 'Ganpati Bappa Morya', cheer: 'Ganpati Bappa Morya!', day: lunar('ganesh'), before: 3, after: 10 },
-	{ id: 'navratri', name: 'Navratri', decor: ['1f483', '1fa94', '1f33c'], greeting: 'Happy Navratri', cheer: 'Happy Navratri!', day: lunar('navratri'), before: 2, after: 8 },
+	// ---- Marathi calendar ----
+	{ id: 'sankranti', name: 'Makar Sankranti', marathi: 'makar-sankranti', decor: ['1fa81', '1f36c', '1f31e'], greeting: 'Happy Sankranti', cheer: 'Happy Makar Sankranti!', mr: 'तिळगूळ घ्या, गोड गोड बोला', before: 2, after: 1 },
+	{ id: 'maha-shivratri', name: 'Maha Shivratri', marathi: 'maha-shivratri', decor: ['1f531', '1f319', '1f64f'], greeting: 'Happy Maha Shivratri', cheer: 'Happy Maha Shivratri!', mr: 'हर हर महादेव', before: 0, after: 0 },
+	{ id: 'holi', name: 'Holi', marathi: 'dhulivandan', decor: ['1f3a8', '1f308', '1f4a6'], greeting: 'Happy Holi', cheer: 'Happy Holi!', mr: 'होळीच्या हार्दिक शुभेच्छा', before: 3, after: 4 },
+	{ id: 'padwa', name: 'Gudi Padwa', marathi: 'gudi-padwa', decor: ['1f6a9', '1f96d', '1f33c'], greeting: 'Happy Gudi Padwa', cheer: 'Happy Gudi Padwa! Happy New Year!', mr: 'गुढीपाडव्याच्या हार्दिक शुभेच्छा', before: 2, after: 0 },
+	{ id: 'ram-navami', name: 'Ram Navami', marathi: 'ram-navami', decor: ['1f3f9', '1f451', '1f338'], greeting: 'Happy Ram Navami', cheer: 'Happy Ram Navami!', mr: 'जय श्रीराम', before: 0, after: 0 },
+	{ id: 'hanuman-jayanti', name: 'Hanuman Jayanti', marathi: 'hanuman-jayanti', decor: ['1f412', '1f4aa', '1f6a9'], greeting: 'Happy Hanuman Jayanti', cheer: 'Happy Hanuman Jayanti!', mr: 'जय हनुमान', before: 0, after: 0 },
+	{ id: 'akshaya-tritiya', name: 'Akshaya Tritiya', marathi: 'akshaya-tritiya', decor: ['2728', '1fa99', '1f96d'], greeting: 'Happy Akshaya Tritiya', cheer: 'Happy Akshaya Tritiya!', mr: 'अक्षय्य तृतीयेच्या शुभेच्छा', before: 0, after: 0 },
+	{ id: 'ashadhi-ekadashi', name: 'Ashadhi Ekadashi', marathi: 'ashadhi-ekadashi', decor: ['1f6a9', '1f64f', '1f3b6'], greeting: 'Happy Ashadhi Ekadashi', cheer: 'Happy Ashadhi Ekadashi!', mr: 'विठ्ठल विठ्ठल · जय हरी विठ्ठल', before: 1, after: 0 },
+	{ id: 'guru-purnima', name: 'Guru Purnima', marathi: 'guru-purnima', decor: ['1f4da', '1f64f', '1f315'], greeting: 'Happy Guru Purnima', cheer: 'Happy Guru Purnima!', mr: 'गुरुपौर्णिमेच्या शुभेच्छा', before: 0, after: 0 },
+	{ id: 'nag-panchami', name: 'Nag Panchami', marathi: 'nag-panchami', decor: ['1f40d', '1f33c', '1f95b'], greeting: 'Happy Nag Panchami', cheer: 'Happy Nag Panchami!', mr: 'नागपंचमीच्या शुभेच्छा', before: 0, after: 0 },
+	{ id: 'rakhi', name: 'Raksha Bandhan', marathi: 'narali-purnima', decor: ['1f9f5', '1f965', '1f381'], greeting: 'Happy Raksha Bandhan', cheer: 'Happy Raksha Bandhan!', mr: 'नारळी पौर्णिमा · रक्षाबंधन', before: 3, after: 0 },
+	{ id: 'gokulashtami', name: 'Gokulashtami', marathi: 'gokulashtami', decor: ['1f99a', '1f9c8', '1f3fa'], greeting: 'Happy Gokulashtami', cheer: 'Happy Gokulashtami! Dahi Handi!', mr: 'गोविंदा आला रे आला!', before: 1, after: 1 },
+	{ id: 'pola', name: 'Pola', marathi: 'pola', decor: ['1f402', '1f33e', '1f514'], greeting: 'Happy Pola', cheer: 'Happy Pola!', mr: 'बैलपोळ्याच्या शुभेच्छा', before: 0, after: 0 },
+	{ id: 'ganesh', name: 'Ganesh Chaturthi', marathi: 'ganesh-chaturthi', decor: ['1f418', '1f33a', '1f941'], greeting: 'Ganpati Bappa Morya', cheer: 'Ganpati Bappa Morya!', mr: 'गणपती बाप्पा मोरया!', before: 3, after: 10 },
+	{ id: 'navratri', name: 'Navratri', marathi: 'ghatasthapana', decor: ['1f483', '1fa94', '1f33c'], greeting: 'Happy Navratri', cheer: 'Happy Navratri!', mr: 'नवरात्रीच्या हार्दिक शुभेच्छा', before: 2, after: 8 },
+	{ id: 'dasara', name: 'Dasara', marathi: 'dasara', decor: ['1f3f9', '1f343', '1f31f'], greeting: 'Happy Dasara', cheer: 'Happy Dasara!', mr: 'दसऱ्याच्या हार्दिक शुभेच्छा · सोनं घ्या, सोन्यासारखं राहा', before: 0, after: 0 },
+	{ id: 'kojagiri', name: 'Kojagiri Purnima', marathi: 'kojagiri', decor: ['1f315', '1f95b', '2728'], greeting: 'Happy Kojagiri', cheer: 'Happy Kojagiri Purnima!', mr: 'कोजागरी पौर्णिमेच्या शुभेच्छा', before: 0, after: 0 },
+	{ id: 'diwali', name: 'Diwali', marathi: 'lakshmi-pujan', decor: ['1fa94', '2728', '1f9e8'], greeting: 'Happy Diwali', cheer: 'Happy Diwali!', mr: 'शुभ दीपावली', before: 7, after: 3 },
+	{ id: 'tripuri-purnima', name: 'Tripuri Purnima', marathi: 'tripuri-purnima', decor: ['1fa94', '1f315', '2728'], greeting: 'Happy Tripuri Purnima', cheer: 'Happy Tripuri Purnima!', mr: 'त्रिपुरी पौर्णिमेच्या शुभेच्छा', before: 0, after: 0 },
+	// ---- fixed dates ----
+	{ id: 'republic', name: 'Republic Day', decor: [INDIA, '1f54a', '2728'], greeting: 'Happy Republic Day', cheer: 'Happy Republic Day!', mr: 'प्रजासत्ताक दिनाच्या शुभेच्छा', day: fixed(1, 26), before: 0, after: 0 },
+	{ id: 'india-independence', name: 'Independence Day', decor: [INDIA, '1fa81', '1f54a'], greeting: 'Happy 15th August', cheer: 'Happy Independence Day, India!', mr: 'स्वातंत्र्य दिनाच्या शुभेच्छा', day: fixed(8, 15), before: 1, after: 0 },
+	{ id: 'eid', name: 'Eid', decor: ['1f319', '1f54c', '2728'], greeting: 'Eid Mubarak', cheer: 'Eid Mubarak!', day: eid, before: 1, after: 1, greetAll: true },
 	{ id: 'easter', name: 'Easter', decor: ['1f430', '1f95a', '1f337'], greeting: 'Happy Easter', cheer: 'Happy Easter!', day: easter, before: 6, after: 0 },
 	{ id: 'mothers-day', name: "Mother's Day", decor: ['1f490', '1f496', '1f337'], greeting: "Happy Mother's Day", cheer: "Happy Mother's Day!", day: (y) => nthWeekday(y, 4, 0, 2), before: 2, after: 0 },
 	{ id: 'fathers-day', name: "Father's Day", decor: ['1f454', '1f3c6', '1f499'], greeting: "Happy Father's Day", cheer: "Happy Father's Day!", day: (y) => nthWeekday(y, 5, 0, 3), before: 2, after: 0 },
@@ -118,23 +128,43 @@ const FESTIVALS: Festival[] = [
 	{ id: 'thanksgiving', name: 'Thanksgiving', decor: ['1f983', '1f342', '1f967'], greeting: 'Happy Thanksgiving', cheer: 'Happy Thanksgiving!', day: thanksgiving, before: 30, after: 1 }
 ];
 
-export function themeFor(date: Date): Theme | null {
+const LOOK_AHEAD = Math.max(...FESTIVALS.filter((f) => f.marathi).map((f) => f.before));
+const LOOK_BACK = Math.max(...FESTIVALS.filter((f) => f.marathi).map((f) => f.after));
+
+/** Marathi festival days around a date: festival id -> local dates */
+function marathiAround(date: Date, place: Place): Map<string, Date[]> {
+	const out = new Map<string, Date[]>();
+	for (let i = -LOOK_BACK; i <= LOOK_AHEAD; i++) {
+		const day = new Date(date.getFullYear(), date.getMonth(), date.getDate() + i);
+		const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+		for (const f of panchangMonth(day.getFullYear(), day.getMonth(), place).get(key)?.festivals ?? [])
+			out.set(f.id, [...(out.get(f.id) ?? []), day]);
+	}
+	return out;
+}
+
+export function themeFor(date: Date, place: Place = DEFAULT_PLACE): Theme | null {
 	const year = date.getFullYear();
+	const marathi = marathiAround(date, place);
 	const found = (f: Festival, day: Date, diff: number): Theme => ({
 		id: f.id,
 		name: f.name,
 		decor: f.decor,
 		greeting: diff === 0 || f.greetAll ? f.greeting : null,
 		cheer: f.cheer,
+		mr: f.mr ?? null,
 		day,
 		hat: f.hat ?? null
 	});
 	// a window can reach over New Year's (look at last and next year's day too)
+	// diff < 0: before the main day
 	const near = (f: Festival) =>
-		[year, year + 1, year - 1].flatMap((y) => {
-			const day = f.day(y);
-			return day ? [{ day, diff: daysBetween(day, date) }] : []; // diff < 0: before the main day
-		});
+		f.marathi
+			? (marathi.get(f.marathi) ?? []).map((day) => ({ day, diff: daysBetween(day, date) }))
+			: [year, year + 1, year - 1].flatMap((y) => {
+					const day = f.day?.(y);
+					return day ? [{ day, diff: daysBetween(day, date) }] : [];
+				});
 	for (const f of FESTIVALS) {
 		const today = near(f).find((n) => n.diff === 0);
 		if (today) return found(f, today.day, 0);
@@ -152,6 +182,7 @@ export function themeFor(date: Date): Theme | null {
 			decor: ['2744', '26c4', '1f389'],
 			greeting: m === 101 ? 'Happy New Year' : m === 1231 ? "Happy New Year's Eve" : null,
 			cheer: 'Happy New Year!',
+			mr: null,
 			day: new Date(m >= 1227 ? year + 1 : year, 0, 1),
 			hat: m >= 1231 || m <= 101 ? 'party' : 'winter'
 		};

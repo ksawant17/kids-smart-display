@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { easter, festivalBanner, thanksgiving, themeFor } from '../src/lib/themes';
 
 const d = (y: number, m: number, day: number) => new Date(y, m - 1, day, 12);
+// Drik Panchang's dates (the expectations below) are for New Delhi
+const DELHI = { latitude: 28.6139, longitude: 77.209 };
 
 describe('thanksgiving', () => {
 	it('is the 4th Thursday of November', () => {
@@ -22,6 +24,7 @@ describe('easter', () => {
 describe('themeFor: US', () => {
 	it('Halloween all October (around the Indian festivals), greeting on the 31st, witch hats', () => {
 		expect(themeFor(d(2026, 10, 5))).toMatchObject({ id: 'halloween', greeting: null, hat: 'witch' });
+		// ...but Navratri / Dasara / Kojagiri days in October are their own
 		expect(themeFor(d(2026, 10, 31))).toMatchObject({ id: 'halloween', greeting: 'Happy Halloween' });
 		// Diwali 2027 is Oct 29, but Halloween itself still wins on the 31st
 		expect(themeFor(d(2027, 10, 31))?.id).toBe('halloween');
@@ -55,40 +58,42 @@ describe('themeFor: US', () => {
 	});
 });
 
-describe('themeFor: Indian festivals', () => {
-	it('Diwali: a week of build-up, greeting on the day', () => {
-		expect(themeFor(d(2026, 11, 1))).toMatchObject({ id: 'diwali', greeting: null });
-		expect(themeFor(d(2026, 11, 8))).toMatchObject({ id: 'diwali', greeting: 'Happy Diwali' });
-		expect(themeFor(d(2026, 11, 11))?.id).toBe('diwali');
-		expect(themeFor(d(2026, 11, 12))?.id).toBe('thanksgiving');
+describe('themeFor: Indian festivals (Marathi calendar)', () => {
+	it('Diwali: a week of build-up, greeting on Lakshmi Pujan, Marathi wish', () => {
+		expect(themeFor(d(2026, 11, 1), DELHI)).toMatchObject({ id: 'diwali', greeting: null, mr: 'शुभ दीपावली' });
+		expect(themeFor(d(2026, 11, 8), DELHI)).toMatchObject({ id: 'diwali', greeting: 'Happy Diwali' });
+		expect(themeFor(d(2026, 11, 11), DELHI)?.id).toBe('diwali');
+		expect(themeFor(d(2026, 11, 12), DELHI)?.id).toBe('thanksgiving');
 	});
 
-	it('Navratri, Dussehra, Ganesh, Holi and the rest from the date table', () => {
-		expect(themeFor(d(2026, 10, 11))).toMatchObject({ id: 'navratri', greeting: 'Happy Navratri' });
-		expect(themeFor(d(2026, 10, 20))).toMatchObject({ id: 'dussehra', greeting: 'Happy Dussehra' });
-		expect(themeFor(d(2026, 9, 20))?.id).toBe('ganesh');
-		expect(themeFor(d(2027, 3, 22))?.greeting).toBe('Happy Holi');
-		expect(themeFor(d(2027, 4, 7))?.id).toBe('padwa');
-		expect(themeFor(d(2027, 8, 17))?.greeting).toBe('Happy Raksha Bandhan');
-		expect(themeFor(d(2027, 8, 15))?.id).toBe('india-independence');
-		expect(themeFor(d(2027, 1, 26))?.greeting).toBe('Happy Republic Day');
-		expect(themeFor(d(2027, 1, 15))?.id).toBe('sankranti');
+	it('Navratri, Dasara, Ganesh, Holi, Padwa and the rest', () => {
+		expect(themeFor(d(2026, 10, 11), DELHI)).toMatchObject({ id: 'navratri', greeting: 'Happy Navratri' });
+		expect(themeFor(d(2026, 10, 20), DELHI)).toMatchObject({ id: 'dasara', greeting: 'Happy Dasara' });
+		expect(themeFor(d(2026, 9, 20), DELHI)?.id).toBe('ganesh');
+		expect(themeFor(d(2027, 3, 22), DELHI)?.greeting).toBe('Happy Holi');
+		expect(themeFor(d(2027, 4, 7), DELHI)).toMatchObject({ id: 'padwa', greeting: 'Happy Gudi Padwa' });
+		expect(themeFor(d(2027, 8, 17), DELHI)?.greeting).toBe('Happy Raksha Bandhan');
+		expect(themeFor(d(2027, 8, 15), DELHI)?.id).toBe('india-independence');
+		expect(themeFor(d(2027, 1, 26), DELHI)?.greeting).toBe('Happy Republic Day');
+		expect(themeFor(d(2027, 1, 15), DELHI)?.greeting).toBe('Happy Sankranti');
+		expect(themeFor(d(2027, 8, 25), DELHI)?.greeting).toBe('Happy Gokulashtami');
 		// Eid can shift a day with the moon: greeted across its whole window
-		expect(themeFor(d(2027, 3, 9))?.greeting).toBe('Eid Mubarak');
+		expect(themeFor(d(2027, 3, 9), DELHI)?.greeting).toBe('Eid Mubarak');
 	});
 
-	it('no table entry: no lunar festival (fixed-date ones still show)', () => {
-		expect(themeFor(d(2031, 11, 1))?.id).toBe('thanksgiving');
-		expect(themeFor(d(2031, 8, 15))?.id).toBe('india-independence');
+	it('works for any year (computed, no table)', () => {
+		const days = Array.from({ length: 61 }, (_, i) => themeFor(new Date(2031, 9, 1 + i, 12), DELHI)?.greeting);
+		expect(days).toContain('Happy Diwali');
+		expect(days).toContain('Happy Dasara');
 	});
 });
 
 describe('festivalBanner', () => {
 	it('counts down in sleeps, then cheers', () => {
-		expect(festivalBanner(themeFor(d(2026, 11, 5))!, d(2026, 11, 5))).toBe('Diwali in 3 sleeps!');
-		expect(festivalBanner(themeFor(d(2026, 11, 7))!, d(2026, 11, 7))).toBe('Diwali is tomorrow!');
-		expect(festivalBanner(themeFor(d(2026, 11, 8))!, d(2026, 11, 8))).toBe('Happy Diwali!');
-		expect(festivalBanner(themeFor(d(2026, 11, 10))!, d(2026, 11, 10))).toBe('Happy Diwali!');
+		expect(festivalBanner(themeFor(d(2026, 11, 5), DELHI)!, d(2026, 11, 5))).toBe('Diwali in 3 sleeps!');
+		expect(festivalBanner(themeFor(d(2026, 11, 7), DELHI)!, d(2026, 11, 7))).toBe('Diwali is tomorrow!');
+		expect(festivalBanner(themeFor(d(2026, 11, 8), DELHI)!, d(2026, 11, 8))).toBe('Happy Diwali!');
+		expect(festivalBanner(themeFor(d(2026, 11, 10), DELHI)!, d(2026, 11, 10))).toBe('Happy Diwali!');
 		expect(festivalBanner(themeFor(d(2026, 12, 30))!, d(2026, 12, 30))).toBe('New Year in 2 sleeps!');
 	});
 });

@@ -16,10 +16,12 @@
 	import { closeReport } from '#lib/report';
 	import { startWeather, weather } from '#lib/weather';
 	import { skyPhase } from '#lib/sky';
+	import { place } from '#lib/place';
 
 	let { data, children } = $props();
 
 	const names = $derived(kidNames(data.kids));
+	$effect(() => place.set(data.place));
 
 	// background follows the real sky: dawn / day / dusk / starry night
 	const sky = $derived(

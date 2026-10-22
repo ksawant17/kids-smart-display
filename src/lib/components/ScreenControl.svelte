@@ -188,7 +188,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 8px;
-		font: 900 19px 'Nunito', sans-serif;
+		font: 900 19px 'Nunito', 'Baloo 2', sans-serif;
 		white-space: nowrap;
 		border: 3px solid var(--border-dark);
 		border-radius: 14px;

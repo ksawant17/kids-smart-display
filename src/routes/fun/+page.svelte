@@ -244,7 +244,7 @@
 		gap: 6px;
 		height: 40px;
 		padding: 0 14px;
-		font: 900 16px 'Nunito', sans-serif;
+		font: 900 16px 'Nunito', 'Baloo 2', sans-serif;
 		background: var(--card-white);
 		border: 2.5px solid var(--border-dark);
 		border-radius: 999px;
@@ -304,7 +304,7 @@
 		gap: 6px;
 		height: 44px;
 		padding: 0 18px;
-		font: 900 17px 'Nunito', sans-serif;
+		font: 900 17px 'Nunito', 'Baloo 2', sans-serif;
 		background: var(--yellow-banner);
 		border: 3px solid var(--border-dark);
 		border-radius: 999px;
@@ -427,7 +427,7 @@
 	.level {
 		height: 36px;
 		padding: 0 18px;
-		font: 900 15px 'Nunito', sans-serif;
+		font: 900 15px 'Nunito', 'Baloo 2', sans-serif;
 		background: var(--card-white);
 		border: 2.5px solid var(--border-dark);
 		border-radius: 999px;
@@ -451,7 +451,7 @@
 	.choice {
 		width: 96px;
 		height: 64px;
-		font: 900 32px 'Nunito', sans-serif;
+		font: 900 32px 'Nunito', 'Baloo 2', sans-serif;
 		background: var(--yellow-banner);
 		border: 3px solid var(--border-dark);
 		border-radius: 16px;

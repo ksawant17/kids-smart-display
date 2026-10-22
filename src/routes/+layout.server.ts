@@ -11,6 +11,8 @@ export async function load() {
 	return {
 		kids: config.kids,
 		locationName: config.location.name,
+		// the Marathi calendar + festival themes are worked out for here
+		place: { latitude: config.location.latitude, longitude: config.location.longitude },
 		school: { startHour: config.school.startHour, endHour: config.school.endHour },
 		wardrobe: config.wardrobe,
 		weatherRefreshMinutes: config.weather.refreshMinutes,

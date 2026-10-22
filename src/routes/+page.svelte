@@ -288,7 +288,7 @@
 		border: 3px solid var(--border-dark);
 		border-radius: 999px;
 		box-shadow: var(--sticker-shadow-sm);
-		font: 800 15px 'Nunito', sans-serif;
+		font: 800 15px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		text-align: left;
 		width: 100%;
@@ -345,7 +345,7 @@
 		gap: 4px;
 		padding: 10px 10px 8px;
 		overflow: hidden;
-		font-family: 'Nunito', sans-serif;
+		font-family: 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 	}
 	.col :global(.section-title) {

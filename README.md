@@ -55,7 +55,7 @@ config is used. To run it full-screen on the Pi at boot, see
 | Tab        | What it does |
 |------------|--------------|
 | **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), a red **weather alert** when there is one, or a **note from a grown-up** (Grown-ups tab). **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days |
-| **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back. **Tap any day** (or an Up Next row) for a popup with that day's school status, events (with break dates), and, within the week's forecast, the weather and what to wear. Plus "Up Next at School" with **"Tomorrow!" / "N sleeps" countdowns** (breaks under way stay listed until they end) and a **next-break countdown** |
+| **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back. **Tap any day** (or an Up Next row) for a popup with that day's school status, events (with break dates), and, within the week's forecast, the weather and what to wear. Plus "Up Next at School" with **"Tomorrow!" / "N sleeps" countdowns** (breaks under way stay listed until they end) and a **next-break countdown**. **Marathi calendar (पंचांग):** the lunar months and Shaka year under the month name, each day's tithi (शु ५ / व १२, a moon on Purnima / Amavasya) and a sticker on festival days; the day popup gives the full panchang ("आश्विन वद्य अमावास्या · शके १९४८") and the day's festivals; the **सण** switch on the right lists the Marathi festivals coming up |
 | **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
 | **QUOTE**  | Message of the day: one encouraging, correctly attributed quote (100 built in, plus any a grown-up kept from the internet), rotates at midnight |
 | **FUN**    | Five corners, each with a daily pick and an "another!" button: 🦖 **Dino** (how to say it, diet, size, era, fact) · 😂 **Joke** told by a kid's buddy, tap "Tell me!" for the punchline · 🔤 **Word of the day** (picture, pronunciation, meaning, sentence) · ➕ **Math** (Easy / Tricky, tap an answer to check it) · 💡 **Facts** |
@@ -120,12 +120,22 @@ outside the card.
   seasonal hats on the buddies (witch hats, pom-pom beanies, New Year party
   hats). US: Halloween 🎃 all October, Thanksgiving 🦃, Christmas 🎄 through
   December, New Year, Valentine's, St. Patrick's, Easter, Mother's and
-  Father's Day, 4th of July. Indian: Makar Sankranti / Pongal, Republic Day,
-  Holi, Gudi Padwa / Ugadi, Eid, Raksha Bandhan, Independence Day,
-  Janmashtami, Ganesh Chaturthi, Navratri, Dussehra and Diwali. A festival's
-  own day wins over another's build-up. The lunar-calendar dates live in a
-  table in `src/lib/themes.ts` (2026–2030, from Drik Panchang); extend it for
-  later years.
+  Father's Day, 4th of July. Indian, from the Marathi calendar, with a
+  Marathi wish on the idle screen ("शुभ दीपावली"): Makar Sankranti, Maha
+  Shivratri, Holi, Gudi Padwa, Ram Navami, Hanuman Jayanti, Akshaya Tritiya,
+  Ashadhi Ekadashi, Guru Purnima, Nag Panchami, Narali Purnima / Raksha
+  Bandhan, Gokulashtami, Pola, Ganesh Chaturthi (through Anant Chaturdashi),
+  Navratri, Dasara, Kojagiri, Diwali (Vasubaras to Bhaubeej) and Tripuri
+  Purnima; plus Republic Day, Independence Day and Eid (a small date table,
+  2026–2030). A festival's own day wins over another's build-up.
+- **Marathi calendar, computed on the Pi:** `src/lib/utils/panchang.ts` works
+  out the Sun and Moon (Meeus) for the dashboard's location: tithi at
+  sunrise, amanta months with Adhik months, Shaka year, and ~30 Marathi
+  festivals plus every Ekadashi, Sankashti, Purnima and Amavasya, each judged
+  at its traditional time of day (Lakshmi Pujan in the evening, Gokulashtami
+  at sunrise, Raksha Bandhan after Bhadra...). No internet, any year.
+  `tests/panchang.test.ts` checks it against Drik Panchang (New Delhi) for
+  2026–2030; a printed calendar for another city can differ by a day.
 - **The real moon:** at night the header shows tonight's moon phase.
 - **Works offline:** fonts and every icon are served locally.
 - **Sky that follows the day:** the background is peach at sunrise, cyan by
@@ -493,6 +503,7 @@ src/
 │   ├── screen.ts            idle dim/off rules + brightness panel state
 │   ├── sky.ts               time-of-day background phase
 │   ├── themes.ts            US + Indian festival themes (decorations, greetings, hats, countdown)
+│   ├── place.ts             where the dashboard is (for the panchang)
 │   ├── buddies.ts           animal buddy list + default clothes colours
 │   ├── components/          Emoji, Buddy (dressed animal SVG), KidAvatar, Header, BottomNav,
 │   │                        SectionTitle, WeatherReport, WeatherIcon, IdleScreen, ScreenControl, Keypad, PowerMenu
@@ -504,7 +515,8 @@ src/
 │   │                        admin PIN + sessions, ZIP geocoding, notes, live quotes/facts,
 │   │                        system (power/clock/Wi-Fi/health/updates), top button (GPIO)
 │   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino,
-│                            forecastStory (story/air/alerts), moon, mathPuzzle, admin, messages, content
+│                            forecastStory (story/air/alerts), moon, mathPuzzle, admin, messages, content,
+│                            panchang (Marathi calendar: tithi, months, festivals)
 └── routes/
     ├── +layout.server.ts    config + school events for every page
     ├── +layout.svelte       frame, header, nav, polling, idle return, screen dim/off/wake

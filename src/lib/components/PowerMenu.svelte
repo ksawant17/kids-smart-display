@@ -98,7 +98,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 10px;
-		font: 900 22px 'Nunito', sans-serif;
+		font: 900 22px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		border: 3px solid var(--border-dark);
 		border-radius: 20px;
@@ -119,7 +119,7 @@
 	.cancel {
 		height: 50px;
 		padding: 0 40px;
-		font: 900 19px 'Nunito', sans-serif;
+		font: 900 19px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		background: var(--card-white);
 		border: 3px solid var(--border-dark);

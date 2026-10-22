@@ -98,7 +98,7 @@
 		align-items: center;
 		gap: 10px;
 		padding: 0 12px;
-		font: 900 17px 'Nunito', sans-serif;
+		font: 900 17px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		text-align: left;
 		background: var(--card-white);

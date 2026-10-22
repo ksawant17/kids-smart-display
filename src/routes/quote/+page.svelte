@@ -1,8 +1,9 @@
 <script lang="ts">
 	import Emoji from '#lib/components/Emoji.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
+	import KidAvatar from '#lib/components/KidAvatar.svelte';
 	import { now } from '#lib/clock';
-	import { pickDaily } from '#lib/utils/time';
+	import { dayNumber, pickDaily } from '#lib/utils/time';
 	import quotes from '#lib/data/quotes.json';
 
 	let { data } = $props();
@@ -12,18 +13,27 @@
 	const quote = $derived<{ text: string; author: string; emoji: string; source?: string }>(
 		pickDaily([...quotes, ...data.content.quotes], $now)
 	);
+	// a kid's buddy presents it, taking turns day by day
+	const buddy = $derived(data.kids.length ? data.kids[dayNumber($now) % data.kids.length] : null);
 	const size = $derived(quote.text.length < 60 ? 'big' : quote.text.length < 100 ? 'mid' : 'small');
 </script>
 
 <div class="quote-main">
 	<div class="card quote-card anim-pop">
-		<SectionTitle variant="white" big>Message of the Day</SectionTitle>
-		{#key quote.text}
-			<div class="quote-text {size} anim-pop">“{quote.text}”</div>
-		{/key}
-		<div class="quote-author">
-			– {quote.author}
-			<Emoji code={quote.emoji} size={28} alt="" />
+		{#if buddy}
+			<div class="buddy">
+				<KidAvatar kid={buddy} size={200} />
+			</div>
+		{/if}
+		<div class="quote-body">
+			<SectionTitle variant="white" big>Quote of the Day</SectionTitle>
+			{#key quote.text}
+				<div class="quote-text {size} anim-pop">“{quote.text}”</div>
+			{/key}
+			<div class="quote-author">
+				– {quote.author}
+				<Emoji code={quote.emoji} size={32} alt="" />
+			</div>
 		</div>
 		{#if quote.source === 'zenquotes'}
 			<!-- ZenQuotes' free API asks for a credit -->
@@ -42,27 +52,43 @@
 	}
 	.quote-card {
 		flex: 1;
+		flex-direction: row;
 		background-color: #fef9c3;
 		align-items: center;
 		justify-content: center;
+		gap: 10px;
+		padding: 20px 26px 20px 16px;
+	}
+	/* the buddy bobs gently beside the quote */
+	.buddy {
+		flex: 0 0 200px;
+		display: flex;
+		justify-content: center;
+		animation: float 4s ease-in-out infinite;
+		will-change: transform;
+	}
+	.quote-body {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 		text-align: center;
-		padding: 30px;
 	}
 	.quote-text {
-		font-size: 30px;
+		font-size: 34px;
 		font-weight: 900;
 		font-style: italic;
-		line-height: 1.4;
+		line-height: 1.35;
 		color: #334155;
-		margin-top: 20px;
-		max-width: 92%;
+		margin-top: 18px;
 	}
 	.quote-text.big {
-		font-size: 36px;
+		font-size: 40px;
 	}
 	.quote-text.small {
-		font-size: 25px;
-		line-height: 1.35;
+		font-size: 28px;
+		line-height: 1.3;
 	}
 	.credit {
 		position: absolute;
@@ -79,7 +105,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 10px;
-		margin-top: 24px;
+		margin-top: 20px;
 		color: #475569;
 	}
 </style>

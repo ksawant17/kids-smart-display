@@ -104,8 +104,10 @@
 					<button class="another pressable" onclick={() => another('dino')}>Another dino! <Emoji code="27a1" size={18} alt="" shadow="none" /></button>
 				</div>
 			{:else if corner === 'joke'}
-				<div class="teller">
+				<!-- the buddy cracks up when the punchline lands -->
+				<div class="teller" class:laugh={revealed}>
 					<KidAvatar kid={teller} size={160} />
+					{#if revealed}<span class="haha anim-pop"><Emoji code="1f602" size={40} alt="" /></span>{/if}
 				</div>
 				<div class="side">
 					<div class="bubble-box joke-q">
@@ -365,6 +367,35 @@
 		flex: 0.7;
 		display: flex;
 		justify-content: center;
+		position: relative;
+		will-change: transform;
+	}
+	.teller.laugh {
+		animation: laugh 0.9s ease-in-out 3;
+		transform-origin: 50% 100%;
+	}
+	.haha {
+		position: absolute;
+		top: -6px;
+		right: 14%;
+	}
+	@keyframes laugh {
+		0%,
+		100% {
+			transform: rotate(0deg) translateY(0);
+		}
+		20% {
+			transform: rotate(-7deg) translateY(-8px);
+		}
+		40% {
+			transform: rotate(5deg) translateY(0);
+		}
+		60% {
+			transform: rotate(-5deg) translateY(-5px);
+		}
+		80% {
+			transform: rotate(3deg) translateY(0);
+		}
 	}
 	.joke-a {
 		background: #fef08a;

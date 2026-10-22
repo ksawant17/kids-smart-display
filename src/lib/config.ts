@@ -44,6 +44,8 @@ export interface DashboardConfig {
 	kiosk: {
 		/** return to the TODAY tab after this long without a touch (0 = never) */
 		idleReturnSeconds: number;
+		/** when idle, show the big clock + weather screen (idle screen) instead of TODAY */
+		idleScreen: boolean;
 	};
 	screen: {
 		/** brightness (%) until someone sets their own with the slider */
@@ -87,7 +89,7 @@ export const DEFAULT_CONFIG: DashboardConfig = {
 	},
 	weather: { refreshMinutes: 10 },
 	wardrobe: { coldBelowF: 45, coolUpToF: 60, mildUpToF: 72, rainChancePct: 40, switchToTomorrowHour: 18 },
-	kiosk: { idleReturnSeconds: 120 },
+	kiosk: { idleReturnSeconds: 120, idleScreen: true },
 	screen: { brightness: 100, minBrightness: 10, dimAfterMinutes: 10, dimBrightness: 10, offAfterMinutes: 60 },
 	bedtime: { enabled: false, start: '20:30', end: '06:30' },
 	button: { enabled: true, gpio: 17, holdSeconds: 2 }
@@ -157,7 +159,8 @@ export function resolveConfig(raw: unknown): DashboardConfig {
 			switchToTomorrowHour: num(wr.switchToTomorrowHour, d.wardrobe.switchToTomorrowHour, 0, 24)
 		},
 		kiosk: {
-			idleReturnSeconds: num(kiosk.idleReturnSeconds, d.kiosk.idleReturnSeconds, 0)
+			idleReturnSeconds: num(kiosk.idleReturnSeconds, d.kiosk.idleReturnSeconds, 0),
+			idleScreen: typeof kiosk.idleScreen === 'boolean' ? kiosk.idleScreen : d.kiosk.idleScreen
 		},
 		screen: {
 			brightness: num(screen.brightness, d.screen.brightness, minBrightness, 100),

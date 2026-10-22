@@ -5,6 +5,7 @@
 	import { now } from '#lib/clock';
 	import { weather } from '#lib/weather';
 	import { themeFor } from '#lib/themes';
+	import { place } from '#lib/place';
 
 	let { names }: { names: string } = $props();
 
@@ -16,7 +17,7 @@
 	const skyIcon = $derived(isDay ? '1f31e' : moonPhase($now).emoji);
 
 	// holidays: a greeting on the day itself, decorations around it
-	const theme = $derived(themeFor($now));
+	const theme = $derived(themeFor($now, $place));
 </script>
 
 <header>

@@ -46,7 +46,7 @@
 		gap: 8px;
 	}
 	.key {
-		font: 900 26px 'Nunito', sans-serif;
+		font: 900 26px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		background: var(--card-white);
 		border: 3px solid var(--border-dark);

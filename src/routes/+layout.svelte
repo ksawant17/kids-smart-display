@@ -128,12 +128,21 @@
 	});
 
 	/* ---- the top push button (GPIO, see src/lib/server/button.ts) ----
-	   tap: screen off, or wake it up · hold: power menu */
+	   tap: screen off <-> idle screen (from a tab: the idle screen first)
+	   hold: power menu */
 	let powerMenu = $state(false);
 	function wake() {
 		lastTouch = Date.now();
 		sentHome = false;
 		setMode(awake);
+	}
+	// the button's way back: the idle screen over TODAY, like after a quiet spell
+	function showIdle() {
+		wake();
+		closeReport();
+		screenPanelOpen.set(false);
+		idleScreen = true;
+		if (page.url.pathname !== '/') goto('/').catch(() => {});
 	}
 	function onButton(gesture: string) {
 		if (gesture === 'hold') {
@@ -142,7 +151,7 @@
 			powerMenu = true;
 		} else if (gesture === 'tap') {
 			if (powerMenu) powerMenu = false;
-			else if (RANK[screenMode] > RANK[awake]) wake();
+			else if (RANK[screenMode] > RANK[awake] || !idleScreen) showIdle();
 			else setMode('off');
 		}
 	}

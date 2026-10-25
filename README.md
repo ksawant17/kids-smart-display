@@ -87,13 +87,18 @@ outside the card.
 - **Idle screen:** at the same moment (unless turned off with
   `kiosk.idleScreen`) the whole frame becomes the sky outside, following the
   live forecast: bright blue with a glowing sun, drifting clouds, rain, snow,
-  fog, a storm flash, or twinkling stars at night. On top: a big clock, the
+  fog, a storm flash, or stars and tonight's real moon phase at night. On top: a big clock, the
   date, the weather now with today's high/low, school today (tomorrow in the
   evening), tomorrow's forecast or "rain around 3 PM", tonight's moon and a
   grown-up's note. In festival season a banner counts down ("Diwali in 3
-  sleeps!", then "Happy Diwali!") above a festive garland. A tap anywhere opens
+  sleeps!", then "Happy Diwali!") above a festive garland. On the day itself
+  trim is strung across the top: a toran of marigolds and mango leaves for
+  Marathi festivals, bunting in the day's colours (Holi, Independence Day,
+  July 4th...) or string lights at Christmas; akash kandil lanterns hang all
+  through Diwali week, and Diwali nights glow plum and amber. A tap anywhere opens
   TODAY. `/?idle` shows it straight away (handy when testing).
-- **Top button:** an optional push button: tap for screen off / on, hold for
+- **Top button:** an optional push button: tap to switch between the idle
+  screen and screen off, hold for
   the power menu (see [Top button](#top-button)).
 - **Screen control:** **pull down from the top of the screen** (start on
   the greeting/clock bar) to open the quick menu with the
@@ -288,7 +293,7 @@ want without touching the screen:
 
 | Press | What happens |
 | --- | --- |
-| **Tap** | Screen off; if it's off or dim, wake it up. With the power menu open: close it |
+| **Tap** | Switches between the **idle screen** and **screen off**: off or dim, it wakes onto the idle screen; on the idle screen, it turns the screen off; on any other tab, it brings up the idle screen first. With the power menu open: close it |
 | **Hold 2 s** | **Power menu** on the screen: Screen Off · Restart · Power Off · Cancel (closes itself after 20 s) |
 | **Hold 10 s** | Restart the kiosk browser (escape hatch if the screen ever freezes) |
 
@@ -506,7 +511,7 @@ src/
 │   ├── place.ts             where the dashboard is (for the panchang)
 │   ├── buddies.ts           animal buddy list + default clothes colours
 │   ├── components/          Emoji, Buddy (dressed animal SVG), KidAvatar, Header, BottomNav,
-│   │                        SectionTitle, WeatherReport, WeatherIcon, IdleScreen, ScreenControl, Keypad, PowerMenu
+│   │                        SectionTitle, WeatherReport, WeatherIcon, IdleScreen, FestiveTrim, ScreenControl, Keypad, PowerMenu
 │   │   └── admin/           one *Section per admin tile, TextSheet (on-screen keyboard), Stepper
 │   ├── admin.svelte.ts      the admin page's session (API calls, notes, lock)
 │   ├── messages.ts          grown-up notes store (polled every minute)

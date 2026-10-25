@@ -11,9 +11,7 @@
     <circle cx="70" cy="43" r="12"/>
     <rect x="24" y="40" width="54" height="16" rx="8"/>
   </g>
-  <g fill="#3E7FD1" stroke="#334155" stroke-width="6">
-    <circle cx="36" cy="72" r="5"/>
-    <circle cx="52" cy="80" r="5"/>
-    <circle cx="67" cy="72" r="5"/>
+  <g fill="#4FA3F7" stroke="#334155" stroke-width="4" stroke-linejoin="round">
+    <path d="M36,62 C38,67 42,71 42,75 A6,6 0 0 1 30,75 C30,71 34,67 36,62 Z"/><path d="M52,71 C54,76 58,80 58,84 A6,6 0 0 1 46,84 C46,80 50,76 52,71 Z"/><path d="M67,62 C69,67 73,71 73,75 A6,6 0 0 1 61,75 C61,71 65,67 67,62 Z"/>
   </g>
 </svg>

@@ -14,6 +14,7 @@
 	 */
 	import Emoji from '#lib/components/Emoji.svelte';
 	import WeatherIcon from '#lib/components/WeatherIcon.svelte';
+	import FestiveTrim from '#lib/components/FestiveTrim.svelte';
 	import { now, todayKey } from '#lib/clock';
 	import { weather } from '#lib/weather';
 	import { messages } from '#lib/messages';
@@ -22,7 +23,7 @@
 	import { place } from '#lib/place';
 	import { weatherEmoji, weatherInfo, weatherLabel } from '#lib/utils/weatherCodes';
 	import { greetingFor, hourLabel } from '#lib/utils/time';
-	import { moonPhase } from '#lib/utils/moon';
+	import { moonLitPath, moonPhase } from '#lib/utils/moon';
 	import { STATUS_EMOJI, keyOf, parseKey, todayStatus, tomorrowStatus, type SchoolEvent } from '#lib/utils/schoolCalendar';
 
 	let {
@@ -72,6 +73,13 @@
 	// daytime: the next wet hour today, if rain is likely
 	const rainAt = $derived(evening || !wx ? null : (wx.hourly.slice(1, 12).find((h) => h.pop >= 50) ?? null));
 	const moon = $derived(moonPhase($now));
+	// tonight's real moon up in the corner (clouds drift over it; hidden in rain / snow)
+	const MOON_R = 38;
+	const CRATERS = [[0.65, 0.74, 0.2], [1.3, 1.35, 0.15], [1.22, 0.52, 0.1], [0.6, 1.43, 0.11]]; // × radius
+	const skyMoon = $derived(
+		scene.night && moon.illumination > 3 && (scene.kind === 'clear' || scene.kind === 'cloudy')
+			? moonLitPath(moon.fraction, MOON_R) : null
+	);
 
 	// ---- scenery bits: [left %, delay s, duration s] ----
 	const DROPS = Array.from({ length: 18 }, (_, i) => [(i * 37) % 100, -((i * 0.53) % 1.4), 1 + (i % 4) * 0.12]);
@@ -90,6 +98,7 @@
 <div
 	class="idle scene-{scene.kind}"
 	class:night={scene.night}
+	class:diwali={theme?.id === 'diwali'}
 	onclick={onclose}
 	role="button"
 	tabindex="-1"
@@ -103,6 +112,24 @@
 			{/each}
 		{:else if scene.kind === 'clear'}
 			<span class="sunglow"></span>
+		{/if}
+		{#if skyMoon}
+			<svg class="moon" viewBox="-14 -14 {MOON_R * 2 + 28} {MOON_R * 2 + 28}" width={MOON_R * 2 + 28}>
+				<defs>
+					<radialGradient id="moon-halo">
+						<stop offset=".55" stop-color="#FEF3C7" stop-opacity=".35" />
+						<stop offset="1" stop-color="#FEF3C7" stop-opacity="0" />
+					</radialGradient>
+					<clipPath id="moon-lit"><path d={skyMoon} /></clipPath>
+				</defs>
+				<circle cx={MOON_R} cy={MOON_R} r={MOON_R + 14} fill="url(#moon-halo)" />
+				<!-- the dark side, just visible -->
+				<circle cx={MOON_R} cy={MOON_R} r={MOON_R} fill="#fff" fill-opacity=".1" stroke="#fff" stroke-opacity=".2" stroke-width="1.5" />
+				<path d={skyMoon} fill="#FEF3C7" />
+				<g clip-path="url(#moon-lit)" fill="#FDE68A">
+					{#each CRATERS as [x, y, r], i (i)}<circle cx={x * MOON_R} cy={y * MOON_R} r={r * MOON_R} />{/each}
+				</g>
+			</svg>
 		{/if}
 		{#if scene.clouds}
 			{#each CLOUDS as [top, size, delay, dur], i (i)}
@@ -127,6 +154,8 @@
 		{/if}
 		{#if scene.kind === 'storm'}<span class="flash"></span>{/if}
 	</div>
+
+	{#if theme}<FestiveTrim id={theme.id} festiveDay={theme.greeting !== null} />{/if}
 
 	<!-- festive garland along the bottom -->
 	{#if theme}
@@ -214,8 +243,9 @@
 		z-index: 45;
 		overflow: hidden;
 		color: #fff;
-		/* day, clear: bright blue sky */
-		background: linear-gradient(180deg, #0284c7 0%, #38bdf8 55%, #bae6fd 100%);
+		--ink: #1e293b;
+		/* day, clear: a deep summer blue (a pale sky washes out white letters) */
+		background: linear-gradient(180deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%);
 		transition: background 2s ease;
 	}
 	.scene-cloudy {
@@ -237,6 +267,11 @@
 	.idle.night.scene-rain,
 	.idle.night.scene-storm {
 		background: linear-gradient(180deg, #0f172a 0%, #1e293b 60%, #334155 100%);
+	}
+	/* Diwali nights: lamp-lit plum sky glowing warm at the horizon */
+	.idle.night.diwali.scene-clear,
+	.idle.night.diwali.scene-cloudy {
+		background: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 55%, #9a3412 100%);
 	}
 	.idle.night.scene-snow {
 		background: linear-gradient(180deg, #1e293b 0%, #334155 60%, #64748b 100%);
@@ -260,6 +295,11 @@
 		background: #fef9c3;
 		clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
 		animation: twinkle 3.5s ease-in-out infinite;
+	}
+	.moon {
+		top: 6px;
+		right: 18px;
+		animation: moon-glow 6s ease-in-out infinite;
 	}
 	.sunglow {
 		top: -140px;
@@ -335,7 +375,18 @@
 		flex-direction: column;
 		align-items: center;
 		padding: 16px 28px 50px;
-		text-shadow: 2px 2px 0 rgba(15, 23, 42, 0.45);
+	}
+	/* comic lettering, like the stickers: white letters with a thick ink
+	   outline (drawn under the fill) and a hard offset shadow, readable on
+	   any sky — bright sun, snow or stars */
+	.clock,
+	.date,
+	.hello,
+	.banner-mr {
+		paint-order: stroke fill;
+		-webkit-text-stroke: 6px var(--ink);
+		stroke-linejoin: round; /* no spike off the top of a "1" */
+		text-shadow: 3px 4px 0 var(--ink);
 	}
 	.banner {
 		display: flex;
@@ -355,6 +406,8 @@
 		margin-top: 4px;
 		font-size: 20px;
 		font-weight: 800;
+		-webkit-text-stroke-width: 5px;
+		text-shadow: 2px 3px 0 var(--ink);
 	}
 	.main {
 		flex: 1;
@@ -371,8 +424,9 @@
 		font-size: 120px;
 		font-weight: 900;
 		line-height: 1;
-		letter-spacing: -3px;
-		text-shadow: 4px 5px 0 rgba(15, 23, 42, 0.45);
+		letter-spacing: -1px;
+		-webkit-text-stroke-width: 12px;
+		text-shadow: 5px 7px 0 var(--ink);
 	}
 	.ampm {
 		margin-left: 10px;
@@ -387,8 +441,9 @@
 	.hello {
 		margin-top: 4px;
 		font-size: 22px;
-		font-weight: 800;
-		opacity: 0.95;
+		font-weight: 900;
+		-webkit-text-stroke-width: 5px;
+		text-shadow: 2px 3px 0 var(--ink);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -452,9 +507,11 @@
 	}
 	.hint {
 		margin-top: 10px;
+		padding: 2px 14px;
 		font-size: 15px;
 		font-weight: 800;
-		opacity: 0.85;
+		background: rgba(15, 23, 42, 0.55);
+		border-radius: 999px;
 	}
 
 	@keyframes twinkle {
@@ -466,6 +523,15 @@
 		50% {
 			opacity: 0.3;
 			transform: scale(0.6);
+		}
+	}
+	@keyframes moon-glow {
+		0%,
+		100% {
+			opacity: 0.9;
+		}
+		50% {
+			opacity: 1;
 		}
 	}
 	@keyframes glow {

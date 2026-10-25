@@ -4,7 +4,7 @@
  * `gpiomon` (libgpiod) watches the GPIO line with the Pi's internal pull-up,
  * active-low (pressed = pulled to GND), debounced. Gestures (utils/button.ts)
  * go to the kiosk page over /api/button (server-sent events):
- *   tap   -> the page turns the screen off, or wakes it
+ *   tap   -> the page wakes onto the idle screen, or turns the screen off
  *   hold  -> the page opens the power menu
  *   reset -> this server restarts the kiosk browser (escape hatch)
  * With no kiosk page listening, a tap switches the backlight here instead.
@@ -91,7 +91,7 @@ function watch() {
 		retry = setTimeout(watch, RETRY_MS);
 		retry.unref();
 	});
-	console.log(`[button] watching GPIO${gpio} (tap: screen, hold ${holdSeconds}s: power menu, hold 10s: restart screen)`);
+	console.log(`[button] watching GPIO${gpio} (tap: idle screen / off, hold ${holdSeconds}s: power menu, hold 10s: restart screen)`);
 }
 
 /** Start once, when the server starts (hooks.server.ts). */

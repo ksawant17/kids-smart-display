@@ -23,7 +23,7 @@
 		{ id: 'dino', label: 'Dino', emoji: '1f996' },
 		{ id: 'joke', label: 'Joke', emoji: '1f602' },
 		{ id: 'word', label: 'Word', emoji: '1f524' },
-		{ id: 'math', label: 'Math', emoji: '2795' },
+		{ id: 'math', label: 'Math', emoji: '1f522' },
 		{ id: 'fact', label: 'Facts', emoji: '1f4a1' }
 	];
 	let corner = $state<Corner>('dino');

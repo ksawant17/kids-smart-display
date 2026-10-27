@@ -6,20 +6,26 @@
  *   seen     ids already offered, so nothing comes back after a Skip
  * New candidates are fetched at most once a day (or on "Get more").
  * Sources: ZenQuotes (quotes), Useless Facts (facts), JokeAPI and
- * icanhazdadjoke (jokes).
+ * icanhazdadjoke (jokes), and the AI helper when it's on (jokes, facts and
+ * words; see server/ai.ts).
  */
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { KID_VOICE, aiOn, chat, parseJson } from '#lib/server/ai';
 import {
 	DEFAULT_STICKER,
 	cleanText,
 	contentId,
 	kidSafe,
 	splitJoke,
+	wordSafe,
 	type Candidate,
 	type ContentKind,
 	type KeptContent
 } from '#lib/utils/content';
+import builtinFacts from '#lib/data/facts.json';
+import builtinJokes from '#lib/data/jokes.json';
+import builtinWords from '#lib/data/words.json';
 
 const FILE = resolve(process.env.DASHBOARD_DATA ?? 'data', 'content.json');
 const ZENQUOTES = process.env.ZENQUOTES_URL ?? 'https://zenquotes.io/api/quotes';
@@ -46,11 +52,16 @@ function load(): Store {
 		return {
 			lastFetch: Number(s.lastFetch) || 0,
 			pending: Array.isArray(s.pending) ? s.pending : [],
-			kept: { quotes: s.kept?.quotes ?? [], facts: s.kept?.facts ?? [], jokes: s.kept?.jokes ?? [] },
+			kept: {
+				quotes: s.kept?.quotes ?? [],
+				facts: s.kept?.facts ?? [],
+				jokes: s.kept?.jokes ?? [],
+				words: s.kept?.words ?? []
+			},
 			seen: Array.isArray(s.seen) ? s.seen : []
 		};
 	} catch {
-		return { lastFetch: 0, pending: [], kept: { quotes: [], facts: [], jokes: [] }, seen: [] };
+		return { lastFetch: 0, pending: [], kept: { quotes: [], facts: [], jokes: [], words: [] }, seen: [] };
 	}
 }
 
@@ -133,6 +144,68 @@ async function fetchFacts(): Promise<Candidate[]> {
 	return out;
 }
 
+/* ---- the AI helper writes jokes, facts and words (server/ai.ts) ---- */
+
+// a different topic each time, so the AI doesn't keep telling the same few
+const TOPICS = [
+	'animals', 'the ocean', 'space', 'dinosaurs', 'food', 'weather', 'bugs', 'birds', 'the human body', 'plants',
+	'music', 'sports', 'school', 'trains and planes', 'India', 'the seasons', 'colors', 'numbers', 'castles', 'the farm'
+];
+const pickTopic = () => TOPICS[Math.floor(Math.random() * TOPICS.length)];
+
+// the built-in lists, so the AI's offers are new ones
+const BUILTIN = new Set([
+	...builtinFacts.map((f) => contentId('fact', f.text)),
+	...builtinJokes.map((j) => contentId('joke', j.q)),
+	...builtinWords.map((w) => contentId('word', w.word))
+]);
+
+const ASK: Record<'joke' | 'fact' | 'word', (topic: string) => string> = {
+	joke: (t) =>
+		`Write 8 different kid-friendly question-and-answer jokes about ${t} (puns are great). ` +
+		'Answer with JSON only: [{"q": "question?", "a": "punchline"}]',
+	fact: (t) =>
+		`Write 8 different true, surprising facts about ${t} that a 7-year-old would love, ` +
+		'each one sentence of at most 140 characters. Only facts you are sure are true. ' +
+		'Answer with JSON only: ["fact", ...]',
+	word: (t) =>
+		`Pick 8 different interesting words connected to ${t}, one word each, a step up from everyday words ` +
+		'for ages 6 to 10 (like "enormous", "curious", "glimmer"). ' +
+		'For each give how to say it (like "ih-NOR-mus"), a short meaning a kid understands, and a short example sentence. ' +
+		'Answer with JSON only: [{"word": "...", "say": "...", "meaning": "...", "sentence": "..."}]'
+};
+
+async function aiCandidates(kind: 'joke' | 'fact' | 'word'): Promise<Candidate[]> {
+	const reply = await chat(
+		[
+			{ role: 'system', content: KID_VOICE },
+			{ role: 'user', content: ASK[kind](pickTopic()) }
+		],
+		{ maxTokens: 900, temperature: 1, timeoutMs: 90_000 }
+	);
+	const list = parseJson<unknown[]>(reply);
+	if (!Array.isArray(list)) throw new Error('not a list');
+	const out: Candidate[] = [];
+	for (const x of list) {
+		const o = (x ?? {}) as Record<string, unknown>;
+		const str = (v: unknown) => (typeof v === 'string' ? cleanText(v) : '');
+		if (kind === 'fact') {
+			const text = str(x);
+			if (kidSafe(text, 'fact')) out.push({ id: contentId('fact', text), kind, text, source: 'ai' });
+		} else if (kind === 'joke') {
+			const q = str(o.q);
+			const a = str(o.a);
+			if (kidSafe(q, 'joke', a)) out.push({ id: contentId('joke', q), kind, text: q, answer: a, source: 'ai' });
+		} else {
+			const word = str(o.word).toLowerCase();
+			const [say, meaning, sentence] = [str(o.say), str(o.meaning), str(o.sentence)];
+			if (wordSafe(word, say, meaning, sentence))
+				out.push({ id: contentId('word', word), kind, text: word, answer: meaning, say, sentence, source: 'ai' });
+		}
+	}
+	return out.filter((c) => !BUILTIN.has(c.id));
+}
+
 let inflight: Promise<void> | null = null;
 
 /** Fetch new candidates now (every kind); errors are logged, never thrown. */
@@ -140,10 +213,18 @@ export function refill(): Promise<void> {
 	inflight ??= (async () => {
 		const s = load();
 		const known = new Set([...s.seen, ...s.pending.map((p) => p.id)]);
+		const ai = aiOn('content');
 		for (const [kind, fetcher] of [
 			['quote', fetchQuotes],
 			['fact', fetchFacts],
-			['joke', fetchJokes]
+			['joke', fetchJokes],
+			...(ai
+				? ([
+						['joke', () => aiCandidates('joke')],
+						['fact', () => aiCandidates('fact')],
+						['word', () => aiCandidates('word')]
+					] as const)
+				: [])
 		] as const) {
 			try {
 				let room = Math.min(PER_FETCH, MAX_PENDING - s.pending.filter((p) => p.kind === kind).length);
@@ -191,6 +272,16 @@ export function decide(id: string, keep: boolean, emoji?: string) {
 		const sticker = emoji ?? DEFAULT_STICKER[c.kind];
 		if (c.kind === 'quote') s.kept.quotes.push({ id, text: c.text, author: c.author ?? 'Unknown', emoji: sticker, source: c.source });
 		else if (c.kind === 'joke') s.kept.jokes.push({ id, q: c.text, a: c.answer ?? '', emoji: sticker, source: c.source });
+		else if (c.kind === 'word')
+			s.kept.words.push({
+				id,
+				word: c.text,
+				say: c.say ?? '',
+				emoji: sticker,
+				meaning: c.answer ?? '',
+				sentence: c.sentence ?? '',
+				source: c.source
+			});
 		else s.kept.facts.push({ id, text: c.text, emoji: [sticker], source: c.source });
 	}
 	save(s);
@@ -203,6 +294,7 @@ export function removeKept(id: string) {
 	s.kept.quotes = s.kept.quotes.filter((q) => q.id !== id);
 	s.kept.facts = s.kept.facts.filter((f) => f.id !== id);
 	s.kept.jokes = s.kept.jokes.filter((j) => j.id !== id);
+	s.kept.words = s.kept.words.filter((w) => w.id !== id);
 	save(s);
 	return getContent();
 }

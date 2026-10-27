@@ -22,7 +22,8 @@
 		zenquotes: 'zenquotes.io',
 		uselessfacts: 'uselessfacts.jsph.pl',
 		jokeapi: 'jokeapi.dev',
-		icanhazdadjoke: 'icanhazdadjoke.com'
+		icanhazdadjoke: 'icanhazdadjoke.com',
+		ai: 'the AI helper (check it’s true!)'
 	};
 
 	interface ContentState {
@@ -38,7 +39,9 @@
 	const waiting = $derived(content?.pending.filter((p) => p.kind === view) ?? []);
 	const current = $derived(waiting[0] ?? null);
 	const keptCount = $derived(
-		content ? content.kept.quotes.length + content.kept.facts.length + content.kept.jokes.length : 0
+		content
+			? content.kept.quotes.length + content.kept.facts.length + content.kept.jokes.length + content.kept.words.length
+			: 0
 	);
 	const count = (kind: ContentKind) => content?.pending.filter((p) => p.kind === kind).length ?? 0;
 	// suggested sticker for each new card
@@ -72,7 +75,8 @@
 			? [
 					...content.kept.quotes.map((q) => ({ id: q.id, text: q.text, who: `– ${q.author}`, emoji: q.emoji })),
 					...content.kept.facts.map((f) => ({ id: f.id, text: f.text, who: 'Fun fact', emoji: f.emoji[0] })),
-					...content.kept.jokes.map((j) => ({ id: j.id, text: `${j.q} ${j.a}`, who: 'Joke', emoji: j.emoji }))
+					...content.kept.jokes.map((j) => ({ id: j.id, text: `${j.q} ${j.a}`, who: 'Joke', emoji: j.emoji })),
+					...content.kept.words.map((w) => ({ id: w.id, text: `${w.word}: ${w.meaning}`, who: 'Word', emoji: w.emoji }))
 				]
 			: []
 	);
@@ -82,6 +86,9 @@
 	<button class="a-chip pressable" class:on={view === 'quote'} onclick={() => (view = 'quote')}>Quotes ({count('quote')})</button>
 	<button class="a-chip pressable" class:on={view === 'fact'} onclick={() => (view = 'fact')}>Facts ({count('fact')})</button>
 	<button class="a-chip pressable" class:on={view === 'joke'} onclick={() => (view = 'joke')}>Jokes ({count('joke')})</button>
+	{#if count('word') || content?.kept.words.length}
+		<button class="a-chip pressable" class:on={view === 'word'} onclick={() => (view = 'word')}>Words ({count('word')})</button>
+	{/if}
 	<button class="a-chip pressable" class:on={view === 'kept'} onclick={() => (view = 'kept')}>Kept ({keptCount})</button>
 	<div class="a-spacer"></div>
 	<button class="a-btn small pressable" disabled={admin.busy} onclick={() => load(true)}>
@@ -111,7 +118,9 @@
 		{#key current.id}
 			<div class="text">{current.kind === 'quote' ? `“${current.text}”` : current.text}</div>
 			{#if current.author}<div class="who">– {current.author}</div>{/if}
+			{#if current.say}<div class="who left">say “{current.say}”</div>{/if}
 			{#if current.answer}<div class="answer">{current.answer}</div>{/if}
+			{#if current.sentence}<div class="who left"><i>“{current.sentence}”</i></div>{/if}
 		{/key}
 	</div>
 	<div class="a-row stickers">
@@ -162,6 +171,9 @@
 		font-weight: 900;
 		color: #475569;
 		text-align: right;
+	}
+	.who.left {
+		text-align: left;
 	}
 	.stickers {
 		gap: 5px;

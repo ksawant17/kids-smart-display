@@ -2,6 +2,7 @@ import { getConfig } from '#lib/server/config';
 import { getSchoolEvents } from '#lib/server/schoolFeed';
 import { getScreen } from '#lib/server/screen';
 import { getKept, refillIfDue } from '#lib/server/content';
+import { aiOn } from '#lib/server/ai';
 
 /** Config + school calendar for every page (re-run at midnight via invalidateAll). */
 export async function load() {
@@ -21,6 +22,8 @@ export async function load() {
 		bedtime: config.bedtime,
 		// quotes and facts a grown-up kept (Grown-ups tab -> New Content)
 		content: getKept(),
+		// AI helper features that are switched on (Grown-ups tab -> AI Helper)
+		ai: { briefing: aiOn('briefing'), stories: aiOn('stories') },
 		screen: getScreen(),
 		schoolEvents: await getSchoolEvents()
 	};

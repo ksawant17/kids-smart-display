@@ -4,7 +4,8 @@
 	 *   Weather · School · What to Wear
 	 * The top strip is the quote of the day, or a red weather alert, or a note
 	 * from a grown-up (admin tab), or (from 6 PM) a "Getting ready for
-	 * tomorrow" ribbon. In the evening ALL three
+	 * tomorrow" ribbon. With the AI helper on, the day's briefing takes turns
+	 * with the quote / ribbon (tap it to read it all). In the evening ALL three
 	 * columns switch to tomorrow together, so nothing on screen is mixed.
 	 * Every column is one big button.
 	 */
@@ -33,6 +34,7 @@
 	import { moonPhase } from '#lib/utils/moon';
 	import { messagesOn } from '#lib/utils/messages';
 	import { messages } from '#lib/messages';
+	import { festivalBanner, themeFor } from '#lib/themes';
 	import quotes from '#lib/data/quotes.json';
 
 	let { data } = $props();
@@ -104,6 +106,35 @@
 		});
 	});
 
+	// ---- the AI briefing: the facts above, in two friendly sentences ----
+	const facts = $derived.by(() => {
+		if (!data.ai.briefing || !day || !outfit) return '';
+		const theme = themeFor(parseKey(dayKey), data.place);
+		return JSON.stringify({
+			when: dayIdx === 1 ? 'tomorrow' : 'today',
+			dayName,
+			weather: `${weatherLabel(day.code, true)}, high ${Math.round(day.temp_max_f)}°F, low ${Math.round(day.temp_min_f)}°F. ${story}`,
+			school: [school.title, school.subtitle].filter(Boolean).join(', '),
+			wear: outfit.summary,
+			note: notes.map((n) => n.text).join(' / ') || undefined,
+			festival: theme ? festivalBanner(theme, parseKey(dayKey)) : undefined
+		});
+	});
+	let briefing = $state<string | null>(null);
+	let briefingOpen = $state(false);
+	$effect(() => {
+		const body = facts;
+		if (!body) return void (briefing = null);
+		let live = true;
+		fetch('/api/briefing', { method: 'POST', headers: { 'content-type': 'application/json' }, body })
+			.then((r) => (r.ok ? r.json() : null))
+			.then((r) => live && (briefing = r?.text ?? null))
+			.catch(() => {});
+		return () => (live = false);
+	});
+	// takes turns with the quote / evening ribbon
+	const showBriefing = $derived(!!briefing && turn % 2 === 0);
+
 	// swipe down on the weather column opens the full report (a tap does too)
 	let startY: number | null = null;
 	function wxUp(e: PointerEvent) {
@@ -139,6 +170,12 @@
 				{#if dayIdx === 1}<b>Tomorrow:</b>{/if}
 				<span class="strip-text">{note.text}</span>
 			</div>
+		{:else if showBriefing}
+			<button class="strip briefing pressable" onclick={() => (briefingOpen = true)}>
+				<Emoji code="2728" size={22} alt="" shadow="none" />
+				{#if dayIdx === 1}<b>Tomorrow:</b>{/if}
+				<span class="strip-text">{briefing}</span>
+			</button>
 		{:else if dayIdx === 1}
 			<div class="strip ribbon">
 				<Emoji code="1f319" size={22} alt="" shadow="none" />
@@ -252,6 +289,15 @@
 			</button>
 		</div>
 	</div>
+	{#if briefingOpen && briefing}
+		<button class="briefing-full" onclick={() => (briefingOpen = false)} aria-label="Close">
+			<div class="bubble anim-pop">
+				<Emoji code="2728" size={44} alt="" />
+				<div class="bubble-label">{dayIdx === 1 ? 'Getting ready for tomorrow' : 'Today'}</div>
+				<p>{briefing}</p>
+			</div>
+		</button>
+	{/if}
 {/if}
 
 <style>
@@ -314,6 +360,46 @@
 	}
 	.strip.ribbon {
 		background: #e0e7ff;
+	}
+	.strip.briefing {
+		background: #f3e8ff;
+	}
+	.briefing-full {
+		position: fixed;
+		inset: 0;
+		z-index: 40;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(15, 23, 42, 0.45);
+		border: none;
+	}
+	.bubble {
+		max-width: 620px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		padding: 18px 28px 22px;
+		background: #faf5ff;
+		border: 3px solid var(--border-dark);
+		border-radius: 22px;
+		box-shadow: var(--sticker-shadow);
+		font-family: 'Nunito', 'Baloo 2', sans-serif;
+		color: var(--text-dark);
+	}
+	.bubble-label {
+		font-size: 15px;
+		font-weight: 900;
+		color: #7c3aed;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+	.bubble p {
+		font-size: 26px;
+		font-weight: 900;
+		line-height: 1.35;
+		text-align: center;
 	}
 	.strip.note {
 		background: #dcfce7;

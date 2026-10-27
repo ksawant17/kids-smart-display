@@ -10,7 +10,15 @@
 	import PowerMenu from '#lib/components/PowerMenu.svelte';
 	import IdleScreen from '#lib/components/IdleScreen.svelte';
 	import { kidNames } from '#lib/config';
-	import { awakeMode, inBedtime, modeForIdle, screenPanelOpen, type ScreenMode } from '#lib/screen';
+	import {
+		READING_GRACE_MS,
+		awakeMode,
+		inBedtime,
+		modeForIdle,
+		reading,
+		screenPanelOpen,
+		type ScreenMode
+	} from '#lib/screen';
 	import { startMessages } from '#lib/messages';
 	import { now, todayKey } from '#lib/clock';
 	import { closeReport } from '#lib/report';
@@ -49,6 +57,8 @@
 	let lastTouch = $state(Date.now());
 	let sentHome = false; // once per idle stretch
 	let idleScreen = $state(false);
+	// time since the last touch, less a grace while a story is being read
+	const idleFor = (t: number) => Math.max(0, t - lastTouch - ($reading ? READING_GRACE_MS : 0));
 	onMount(() => {
 		// kiosk debugging aid: /?idle shows the idle screen straight away
 		if (new URL(location.href).searchParams.has('idle')) idleScreen = true;
@@ -56,7 +66,7 @@
 	$effect(() => {
 		// read the clock and lastTouch first, every run: an early return before
 		// them would drop the effect's dependencies and stop it for good
-		const idle = $now.getTime() - lastTouch;
+		const idle = idleFor($now.getTime());
 		const idleMs = data.kiosk.idleReturnSeconds * 1000;
 		if (!idleMs || sentHome || idle < idleMs) return;
 		sentHome = true;
@@ -113,7 +123,7 @@
 
 	// idle: only ever go darker here; only a touch brings the screen back
 	$effect(() => {
-		const want = modeForIdle($now.getTime() - lastTouch, data.screenConfig, bedtime);
+		const want = modeForIdle(idleFor($now.getTime()), data.screenConfig, bedtime);
 		if (RANK[want] > RANK[screenMode]) setMode(want);
 	});
 

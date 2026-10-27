@@ -3,6 +3,8 @@
 	 * FUN: five little corners, each with a daily pick and an "another!" button.
 	 *   Dino · Joke (tap to reveal) · Word of the day · Math (tap to check) · Facts
 	 * Everything resets to the daily pick when the tab is opened again.
+	 * With the AI helper on, a sixth corner writes bedtime stories (pick a
+	 * hero, a place and what it's about).
 	 */
 	import Emoji from '#lib/components/Emoji.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
@@ -11,6 +13,8 @@
 	import { dayNumber } from '#lib/utils/time';
 	import { dinoEmoji, dietEmoji, dinoSize, type Dino } from '#lib/utils/dino';
 	import { mathPuzzle, type MathLevel } from '#lib/utils/mathPuzzle';
+	import { STORY_PLACES, STORY_THEMES } from '#lib/utils/story';
+	import { reading } from '#lib/screen';
 	import facts from '#lib/data/facts.json';
 	import dinos from '#lib/data/dinos.json';
 	import jokes from '#lib/data/jokes.json';
@@ -18,19 +22,20 @@
 
 	let { data } = $props();
 
-	type Corner = 'dino' | 'joke' | 'word' | 'math' | 'fact';
-	const CORNERS: { id: Corner; label: string; emoji: string }[] = [
+	type Corner = 'dino' | 'joke' | 'word' | 'math' | 'fact' | 'story';
+	const CORNERS = $derived<{ id: Corner; label: string; emoji: string }[]>([
 		{ id: 'dino', label: 'Dino', emoji: '1f996' },
 		{ id: 'joke', label: 'Joke', emoji: '1f602' },
 		{ id: 'word', label: 'Word', emoji: '1f524' },
 		{ id: 'math', label: 'Math', emoji: '1f522' },
-		{ id: 'fact', label: 'Facts', emoji: '1f4a1' }
-	];
+		{ id: 'fact', label: 'Facts', emoji: '1f4a1' },
+		...(data.ai.stories ? [{ id: 'story' as const, label: 'Story', emoji: '1f4d6' }] : [])
+	]);
 	let corner = $state<Corner>('dino');
 
 	// today's pick + how many times "another!" was pressed, per corner
 	const day = $derived(dayNumber($now));
-	let extra = $state({ dino: 0, joke: 0, word: 0, math: 0, fact: 0 });
+	let extra = $state({ dino: 0, joke: 0, word: 0, math: 0, fact: 0, story: 0 });
 	const pick = <T,>(list: T[], salt: number, n: number) => list[(day + salt + n) % list.length];
 	function another(c: Corner) {
 		extra = { ...extra, [c]: extra[c] + 1 };
@@ -41,7 +46,8 @@
 	const dino = $derived(pick(dinos as Dino[], 0, extra.dino));
 	// built-in jokes + the ones a grown-up kept (Grown-ups tab -> New Content)
 	const joke = $derived(pick([...jokes, ...data.content.jokes], 3, extra.joke));
-	const word = $derived(pick(words, 11, extra.word));
+	// built-in words + the ones a grown-up kept (AI helper -> New Content)
+	const word = $derived(pick([...words, ...data.content.words], 11, extra.word));
 	// built-in facts + the ones a grown-up kept (Grown-ups tab -> New Content)
 	const fact = $derived(pick([...facts, ...data.content.facts], 7, extra.fact));
 
@@ -54,6 +60,37 @@
 	let answered = $state<number | null>(null);
 	const puzzle = $derived(mathPuzzle(day * 10 + extra.math, level));
 	const solved = $derived(answered === puzzle.answer);
+
+	// story: pick who, where and what about; the AI writes it (src/lib/server/story.ts)
+	let storyKid = $state(0);
+	let storyPlace = $state<string>(STORY_PLACES[0].id);
+	let storyTheme = $state<string>(STORY_THEMES[0].id);
+	let story = $state<{ title: string; paragraphs: string[] } | null>(null);
+	let storyBusy = $state(false);
+	let storyMsg = $state('');
+	// an open story holds off the idle timers (see the layout)
+	$effect(() => {
+		reading.set(corner === 'story' && !!story);
+		return () => reading.set(false);
+	});
+	async function tellStory() {
+		storyBusy = true;
+		storyMsg = '';
+		try {
+			const res = await fetch('/api/story', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ kid: storyKid, place: storyPlace, theme: storyTheme })
+			});
+			const body = await res.json().catch(() => null);
+			if (res.ok) story = body;
+			else storyMsg = body?.message ?? "The storyteller isn't answering right now";
+		} catch {
+			storyMsg = "The storyteller isn't answering right now";
+		} finally {
+			storyBusy = false;
+		}
+	}
 
 	const OUTLINE =
 		'2.5px 0 0 rgba(51,65,85,0.85), -2.5px 0 0 rgba(51,65,85,0.85), 0 2.5px 0 rgba(51,65,85,0.85), 0 -2.5px 0 rgba(51,65,85,0.85), 4px 5px 0 rgba(51,65,85,0.3)';
@@ -188,6 +225,57 @@
 						{/if}
 					</div>
 				</div>
+			{:else if corner === 'story'}
+				{#if story}
+					<div class="story-read anim-pop">
+						<div class="story-title">{story.title}</div>
+						<div class="story-text">
+							{#each story.paragraphs as p, i (i)}<p>{p}</p>{/each}
+						</div>
+						<button class="another pressable" onclick={() => (story = null)}>
+							Another story! <Emoji code="1f4d6" size={18} alt="" shadow="none" />
+						</button>
+					</div>
+				{:else if storyBusy}
+					<div class="story-busy">
+						<Emoji code="1f4d6" size={90} alt="" class="anim-float" />
+						<div class="story-title">Writing your story…</div>
+					</div>
+				{:else}
+					<div class="story-pick">
+						<div class="pick-row">
+							<span class="pick-label">Who?</span>
+							{#each data.kids as kid, i (kid.name)}
+								<button class="pick pressable" class:on={storyKid === i} onclick={() => (storyKid = i)}>
+									<KidAvatar {kid} size={30} />
+									{kid.name}
+								</button>
+							{/each}
+						</div>
+						<div class="pick-row">
+							<span class="pick-label">Where?</span>
+							{#each STORY_PLACES as p (p.id)}
+								<button class="pick pressable" class:on={storyPlace === p.id} onclick={() => (storyPlace = p.id)}>
+									<Emoji code={p.emoji} size={20} alt="" shadow="none" />
+									{p.label}
+								</button>
+							{/each}
+						</div>
+						<div class="pick-row">
+							<span class="pick-label">About?</span>
+							{#each STORY_THEMES as t (t.id)}
+								<button class="pick pressable" class:on={storyTheme === t.id} onclick={() => (storyTheme = t.id)}>
+									<Emoji code={t.emoji} size={20} alt="" shadow="none" />
+									{t.label}
+								</button>
+							{/each}
+						</div>
+						<button class="reveal pressable" onclick={tellStory}>
+							<Emoji code="2728" size={26} alt="" shadow="none" /> Tell me a story!
+						</button>
+						{#if storyMsg}<div class="story-msg">{storyMsg}</div>{/if}
+					</div>
+				{/if}
 			{:else}
 				<div class="fact-panel">
 					<SectionTitle variant="white">Did you know?</SectionTitle>
@@ -230,6 +318,9 @@
 	}
 	.fun-card.corner-fact {
 		background-color: #e0f2fe;
+	}
+	.fun-card.corner-story {
+		background-color: #ede9fe;
 	}
 
 	/* corner pills */
@@ -504,6 +595,93 @@
 		margin-left: 4px;
 	}
 	.fact-panel .another {
+		align-self: center;
+	}
+
+	/* story */
+	.story-pick {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+	}
+	.pick-row {
+		align-self: stretch;
+		display: flex;
+		align-items: center;
+		gap: 5px;
+	}
+	.pick-label {
+		flex: 0 0 60px;
+		font-size: 16px;
+		font-weight: 900;
+		color: #6d28d9;
+	}
+	.pick {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		height: 36px;
+		padding: 0 8px;
+		white-space: nowrap;
+		font: 900 14px 'Nunito', 'Baloo 2', sans-serif;
+		background: var(--card-white);
+		border: 2.5px solid var(--border-dark);
+		border-radius: 999px;
+	}
+	.pick.on {
+		background: var(--yellow-banner);
+		box-shadow: var(--sticker-shadow-sm);
+	}
+	.story-msg {
+		font-size: 16px;
+		font-weight: 900;
+		color: #b91c1c;
+	}
+	.story-busy {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+	}
+	.story-read {
+		flex: 1;
+		height: 100%;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+	}
+	.story-title {
+		font-size: 24px;
+		font-weight: 900;
+		color: #4c1d95;
+		text-align: center;
+		line-height: 1.1;
+	}
+	.story-text {
+		flex: 1;
+		min-height: 0;
+		width: 100%;
+		max-width: 700px;
+		overflow-y: auto;
+		touch-action: pan-y;
+		padding: 10px 18px;
+		background: var(--card-white);
+		border: 3px solid var(--border-dark);
+		border-radius: 16px;
+		box-shadow: var(--sticker-shadow-sm);
+		font-size: 19px;
+		font-weight: 800;
+		line-height: 1.45;
+	}
+	.story-text p + p {
+		margin-top: 8px;
+	}
+	.story-read .another {
 		align-self: center;
 	}
 </style>

@@ -257,7 +257,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 4px;
-		font: 900 16px 'Nunito', sans-serif;
+		font: 900 16px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		border: 3px solid var(--border-dark);
 		border-radius: 16px;
@@ -292,7 +292,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 4px;
-		font: 900 14px 'Nunito', sans-serif;
+		font: 900 14px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		background: var(--yellow-banner);
 		border: 3px solid var(--border-dark);

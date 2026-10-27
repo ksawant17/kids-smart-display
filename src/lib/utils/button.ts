@@ -1,6 +1,6 @@
 /**
  * The top button's gestures, from raw press / release edges:
- *   tap            (released before holdMs)  -> screen off / wake up
+ *   tap            (released before holdMs)  -> idle screen / screen off
  *   hold           (still down at holdMs)    -> power menu on the screen
  *   reset          (still down at resetMs)   -> restart the kiosk browser
  * Only one gesture per press. Pure (timers injectable) so it can be tested.

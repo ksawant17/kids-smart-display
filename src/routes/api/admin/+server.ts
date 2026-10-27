@@ -37,7 +37,7 @@ const KID_NAME = /^[\p{L}\p{M}' .-]{1,16}$/u;
 /**
  * POST /api/admin with any of these sections (each replaces what it names):
  *   location { zip, name, latitude, longitude }
- *   screen   { dimAfterMinutes, offAfterMinutes }      kiosk { idleReturnSeconds }
+ *   screen   { dimAfterMinutes, offAfterMinutes }      kiosk { idleReturnSeconds, idleScreen }
  *   bedtime  { enabled, start: "HH:MM", end: "HH:MM" }
  *   kids     [{ name, avatar, color }]                  (1-4 kids)
  *   school   { icsUrl, startHour, endHour }            (the feed is downloaded and checked first)
@@ -65,9 +65,10 @@ export async function POST({ request, cookies }) {
 		patch.screen = { dimAfterMinutes, offAfterMinutes };
 	}
 	if (body.kiosk !== undefined) {
-		const { idleReturnSeconds } = body.kiosk ?? {};
+		const { idleReturnSeconds, idleScreen } = body.kiosk ?? {};
 		if (!whole(idleReturnSeconds, 0, 3600)) error(400, 'bad kiosk.idleReturnSeconds');
-		patch.kiosk = { idleReturnSeconds };
+		if (typeof idleScreen !== 'boolean') error(400, 'bad kiosk.idleScreen');
+		patch.kiosk = { idleReturnSeconds, idleScreen };
 	}
 	if (body.bedtime !== undefined) {
 		const { enabled, start, end } = body.bedtime ?? {};

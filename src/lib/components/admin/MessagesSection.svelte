@@ -181,7 +181,7 @@
 		align-items: center;
 		gap: 5px;
 		padding: 0 6px;
-		font: 900 12.5px 'Nunito', sans-serif;
+		font: 900 12.5px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		text-align: left;
 		background: var(--card-white);

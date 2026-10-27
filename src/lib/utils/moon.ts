@@ -35,3 +35,21 @@ export function moonPhase(date: Date): MoonPhase {
 	const [, name, emoji] = PHASES.find(([upTo]) => fraction < upTo)!;
 	return { fraction, illumination, name, emoji };
 }
+
+/**
+ * SVG path of the lit part of the moon for a phase fraction (0 = new,
+ * 0.5 = full), on a disc of radius r centred at (r, r). Waxing moons are lit
+ * on the right, waning on the left (as seen from the northern hemisphere);
+ * the terminator is a half-ellipse whose width follows cos(2πf).
+ */
+export function moonLitPath(fraction: number, r: number): string {
+	const k = Math.cos(2 * Math.PI * fraction);
+	const rx = Math.abs(k) * r;
+	const waxing = fraction < 0.5;
+	const top = `${r},0`;
+	const bottom = `${r},${2 * r}`;
+	// edge: top -> bottom round the lit side; terminator: back up again
+	const edgeSweep = waxing ? 1 : 0;
+	const termSweep = waxing === k > 0 ? 0 : 1;
+	return `M${top} A${r},${r} 0 0 ${edgeSweep} ${bottom} A${rx.toFixed(2)},${r} 0 0 ${termSweep} ${top} Z`;
+}

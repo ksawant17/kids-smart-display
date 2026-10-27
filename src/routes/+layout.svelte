@@ -8,6 +8,7 @@
 	import WeatherReport from '#lib/components/WeatherReport.svelte';
 	import ScreenControl from '#lib/components/ScreenControl.svelte';
 	import PowerMenu from '#lib/components/PowerMenu.svelte';
+	import IdleScreen from '#lib/components/IdleScreen.svelte';
 	import { kidNames } from '#lib/config';
 	import { awakeMode, inBedtime, modeForIdle, screenPanelOpen, type ScreenMode } from '#lib/screen';
 	import { startMessages } from '#lib/messages';
@@ -15,10 +16,12 @@
 	import { closeReport } from '#lib/report';
 	import { startWeather, weather } from '#lib/weather';
 	import { skyPhase } from '#lib/sky';
+	import { place } from '#lib/place';
 
 	let { data, children } = $props();
 
 	const names = $derived(kidNames(data.kids));
+	$effect(() => place.set(data.place));
 
 	// background follows the real sky: dawn / day / dusk / starry night
 	const sky = $derived(
@@ -41,9 +44,15 @@
 		}
 	});
 
-	// Idle: after a while without touches, close overlays and go back to TODAY.
+	// Idle: after a while without touches, close overlays and go back to TODAY,
+	// with the idle screen (big clock + weather) on top when it is turned on.
 	let lastTouch = $state(Date.now());
 	let sentHome = false; // once per idle stretch
+	let idleScreen = $state(false);
+	onMount(() => {
+		// kiosk debugging aid: /?idle shows the idle screen straight away
+		if (new URL(location.href).searchParams.has('idle')) idleScreen = true;
+	});
 	$effect(() => {
 		// read the clock and lastTouch first, every run: an early return before
 		// them would drop the effect's dependencies and stop it for good
@@ -54,6 +63,7 @@
 		closeReport();
 		screenPanelOpen.set(false);
 		powerMenu = false;
+		if (data.kiosk.idleScreen) idleScreen = true;
 		// a failed navigation (server busy restarting) tries again on the next tick
 		if (page.url.pathname !== '/') goto('/').catch(() => (sentHome = false));
 	});
@@ -118,12 +128,21 @@
 	});
 
 	/* ---- the top push button (GPIO, see src/lib/server/button.ts) ----
-	   tap: screen off, or wake it up · hold: power menu */
+	   tap: screen off <-> idle screen (from a tab: the idle screen first)
+	   hold: power menu */
 	let powerMenu = $state(false);
 	function wake() {
 		lastTouch = Date.now();
 		sentHome = false;
 		setMode(awake);
+	}
+	// the button's way back: the idle screen over TODAY, like after a quiet spell
+	function showIdle() {
+		wake();
+		closeReport();
+		screenPanelOpen.set(false);
+		idleScreen = true;
+		if (page.url.pathname !== '/') goto('/').catch(() => {});
 	}
 	function onButton(gesture: string) {
 		if (gesture === 'hold') {
@@ -132,7 +151,7 @@
 			powerMenu = true;
 		} else if (gesture === 'tap') {
 			if (powerMenu) powerMenu = false;
-			else if (RANK[screenMode] > RANK[awake]) wake();
+			else if (RANK[screenMode] > RANK[awake] || !idleScreen) showIdle();
 			else setMode('off');
 		}
 	}
@@ -189,7 +208,7 @@
 
 	function onTouch(e: PointerEvent) {
 		const top = frame?.getBoundingClientRect().top ?? 0;
-		pullFrom = !$screenPanelOpen && screenMode === awake && e.clientY - top < PULL_ZONE ? e.clientY : null;
+		pullFrom = !idleScreen && !$screenPanelOpen && screenMode === awake && e.clientY - top < PULL_ZONE ? e.clientY : null;
 		lastTouch = Date.now();
 		sentHome = false;
 		if (RANK[screenMode] > RANK[awake]) {
@@ -232,6 +251,15 @@
 		onbrightness={onBrightness}
 		onoff={() => setMode('off')}
 	/>
+	{#if idleScreen}
+		<!-- a tap closes it onto TODAY (the tap itself doesn't press anything) -->
+		<IdleScreen
+			{names}
+			schoolEvents={data.schoolEvents}
+			switchToTomorrowHour={data.wardrobe.switchToTomorrowHour}
+			onclose={() => (idleScreen = false)}
+		/>
+	{/if}
 	{#if powerMenu}
 		<PowerMenu
 			onclose={() => (powerMenu = false)}

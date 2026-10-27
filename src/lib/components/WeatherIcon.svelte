@@ -1,6 +1,7 @@
 <script lang="ts">
 	/**
-	 * A big weather sticker that moves with the weather: the sun's rays turn,
+	 * A big weather sticker that moves with the weather: the sun's rays turn
+	 * (sun-rays.svg behind sun-disc.svg, so the shine never spins),
 	 * clouds drift, rain and snow fall, a storm flashes, the moon rocks.
 	 *
 	 * Kept cheap for the kiosk's software rendering: only whole layers move
@@ -43,9 +44,14 @@
 </script>
 
 <span class="wx wx-{kind}" style="--s:{size}px">
-	{#if kind === 'sun'}<span class="rays" aria-hidden="true"></span>{/if}
 	{#if kind === 'storm'}<span class="flash" aria-hidden="true"></span>{/if}
-	<span class="body"><Emoji {code} {size} {alt} class={className} /></span>
+	{#if kind === 'sun'}
+		<span class="halo" aria-hidden="true"></span>
+		<img class="rays" src="/emoji/sun-rays.svg" width={size} height={size} alt="" aria-hidden="true" />
+		<span class="body"><img class="disc {className}" src="/emoji/sun-disc.svg" width={size} height={size} {alt} /></span>
+	{:else}
+		<span class="body"><Emoji {code} {size} {alt} class={className} /></span>
+	{/if}
 	{#if kind === 'rain' || kind === 'snow' || kind === 'flurry'}
 		{#each BITS as [left, delay], i (i)}
 			<span
@@ -73,6 +79,7 @@
 		display: flex;
 		will-change: transform;
 	}
+	.halo,
 	.rays,
 	.flash,
 	.drop,
@@ -82,13 +89,21 @@
 		will-change: transform, opacity;
 	}
 
-	/* sunny: soft rays turning behind a gently glowing sun */
-	.rays {
-		inset: -18%;
+	/* sunny: pointed rays slowly turning around a gently pulsing gold disc,
+	   in a warm glow (no ink shadow on the turning layer: it would spin too) */
+	.halo {
+		inset: -12%;
 		border-radius: 50%;
-		background: repeating-conic-gradient(rgba(255, 222, 58, 0.55) 0deg 12deg, transparent 12deg 30deg);
-		mask: radial-gradient(circle, transparent 38%, #000 40%, #000 62%, transparent 70%);
-		animation: spin 14s linear infinite;
+		background: radial-gradient(circle, rgba(255, 214, 64, 0.55) 30%, rgba(255, 214, 64, 0) 70%);
+		animation: halo 3s ease-in-out infinite;
+	}
+	.rays {
+		inset: 0;
+		animation: spin 24s linear infinite;
+	}
+	.disc {
+		display: block;
+		filter: drop-shadow(3px 4px 0 rgba(51, 65, 85, 0.25));
 	}
 	.wx-sun .body {
 		animation: glow 3s ease-in-out infinite;
@@ -117,9 +132,9 @@
 		animation: rock 4s ease-in-out infinite;
 	}
 
-	/* rain: drops falling out of the bottom of the cloud */
+	/* rain: drops falling on below the cloud's own teardrops */
 	.drop {
-		top: 68%;
+		top: 84%;
 		width: calc(var(--s) * 0.06);
 		height: calc(var(--s) * 0.16);
 		border-radius: 999px;
@@ -160,6 +175,15 @@
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);
+		}
+	}
+	@keyframes halo {
+		0%,
+		100% {
+			opacity: 0.6;
+		}
+		50% {
+			opacity: 1;
 		}
 	}
 	@keyframes glow {

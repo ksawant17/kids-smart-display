@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<!-- clear night: a gold crescent in the same ink style as sun.svg -->
+<defs><radialGradient id="m" cx="35%" cy="45%" r="70%"><stop offset="0" stop-color="#FFF3A3"/><stop offset=".6" stop-color="#FFD43B"/><stop offset="1" stop-color="#FFB020"/></radialGradient>
+<clipPath id="c"><path d="M47.25,14.1 A38,38 0 1 0 84.67,67.56 A33,33 0 0 1 47.25,14.1 Z"/></clipPath></defs>
+<path d="M47.25,14.1 A38,38 0 1 0 84.67,67.56 A33,33 0 0 1 47.25,14.1 Z" fill="url(#m)"/>
+<g clip-path="url(#c)" fill="#F59E0B" opacity=".55"><circle cx="30" cy="62" r="6"/><circle cx="42" cy="78" r="4"/><circle cx="24" cy="44" r="3.5"/></g>
+<path d="M47.25,14.1 A38,38 0 1 0 84.67,67.56 A33,33 0 0 1 47.25,14.1 Z" fill="none" stroke="#334155" stroke-width="5" stroke-linejoin="round"/>
+<path d="M22,40 A30,30 0 0 1 34,24" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="4.5" stroke-linecap="round"/>
+<path d="M80,30 Q81,37 88,38 Q81,39 80,46 Q79,39 72,38 Q79,37 80,30 Z" fill="#FFD43B" stroke="#334155" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

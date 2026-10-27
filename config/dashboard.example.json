@@ -25,7 +25,8 @@
 		"switchToTomorrowHour": 18
 	},
 	"kiosk": {
-		"idleReturnSeconds": 120
+		"idleReturnSeconds": 120,
+		"idleScreen": true
 	},
 	"screen": {
 		"brightness": 100,

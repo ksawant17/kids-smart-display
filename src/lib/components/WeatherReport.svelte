@@ -317,7 +317,7 @@
 	.day-pill {
 		height: 36px;
 		padding: 0 18px;
-		font: 900 16px 'Nunito', sans-serif;
+		font: 900 16px 'Nunito', 'Baloo 2', sans-serif;
 		border: 2.5px solid var(--border-dark);
 		border-radius: 999px;
 		background: var(--card-white);
@@ -353,7 +353,7 @@
 		opacity: 0.7;
 	}
 	.retry {
-		font: 900 14px 'Nunito', sans-serif;
+		font: 900 14px 'Nunito', 'Baloo 2', sans-serif;
 		background: var(--yellow-banner);
 		border: 2.5px solid var(--border-dark);
 		border-radius: 999px;

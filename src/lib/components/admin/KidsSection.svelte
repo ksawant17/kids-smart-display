@@ -138,7 +138,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0;
-		font: 900 14px 'Nunito', sans-serif;
+		font: 900 14px 'Nunito', 'Baloo 2', sans-serif;
 		color: var(--text-dark);
 		background: var(--bg-light-blue);
 		border: 3px solid var(--border-dark);

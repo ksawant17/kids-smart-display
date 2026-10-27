@@ -6,11 +6,12 @@
 	import type { Kid } from '#lib/config';
 	import { now } from '#lib/clock';
 	import { themeFor } from '#lib/themes';
+	import { place } from '#lib/place';
 
 	let { kid, items = [], size = 140 }: { kid: Kid; items?: string[]; size?: number } = $props();
 
 	// seasonal hat: witch hats in October, pom-poms in winter...
-	const hat = $derived(themeFor($now)?.hat ?? null);
+	const hat = $derived(themeFor($now, $place)?.hat ?? null);
 </script>
 
 {#if isBuddy(kid.avatar)}

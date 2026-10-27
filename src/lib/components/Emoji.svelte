@@ -24,6 +24,7 @@
 		'1f327': 'rain-cloud', // rain
 		'1f328': 'snow-cloud', // snow / freezing rain
 		'2747': 'flake', // flurries
+		'1f319': 'moon', // clear night (the phase moons stay Twemoji)
 		'1f329': 'storm',
 		'26a1': 'storm'
 	};

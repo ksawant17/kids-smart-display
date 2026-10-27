@@ -203,7 +203,7 @@
 		background: var(--yellow-banner);
 		border: 2.5px solid var(--border-dark);
 		border-radius: 10px;
-		font: 900 20px 'Nunito', sans-serif;
+		font: 900 20px 'Nunito', 'Baloo 2', sans-serif;
 		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
 	}
 	.day-arrow:disabled {
@@ -267,7 +267,7 @@
 	.kid-chip {
 		height: 36px;
 		padding: 0 12px;
-		font: 900 15px 'Nunito', sans-serif;
+		font: 900 15px 'Nunito', 'Baloo 2', sans-serif;
 		background: var(--card-white);
 		border: 2.5px solid var(--border-dark);
 		border-radius: 999px;
@@ -295,7 +295,7 @@
 		border: 3px solid var(--border-dark);
 		border-radius: 12px;
 		padding: 8px 16px;
-		font: 900 19px 'Nunito', sans-serif;
+		font: 900 19px 'Nunito', 'Baloo 2', sans-serif;
 		gap: 12px;
 		white-space: nowrap;
 		box-shadow: var(--sticker-shadow-sm);

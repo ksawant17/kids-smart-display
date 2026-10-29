@@ -284,7 +284,7 @@
 	<div class="overlay" onpointerdown={onScrimDown}>
 		<div class="card day-pop kind-{popup.status.kind}" role="dialog" aria-modal="true" aria-label="Day details" tabindex="-1">
 			<button class="close-btn pressable" onclick={() => (openKey = null)} aria-label="Close">
-				<Emoji code="274c" size={26} alt="Close" shadow="none" />
+				<Emoji code="274c" size={18} alt="Close" shadow="none" />
 			</button>
 
 			<div class="pop-body">
@@ -301,7 +301,7 @@
 				<!-- right: school, events, weather -->
 				<div class="pop-info">
 					<div class="status kind-{popup.status.kind}">
-						<Emoji code={STATUS_EMOJI[popup.status.kind]} size={44} alt="" shadow="none" />
+						<Emoji code={STATUS_EMOJI[popup.status.kind]} size={30} alt="" shadow="none" />
 						<div>
 							<div class="status-title">{popup.status.title}</div>
 							{#if popup.status.subtitle}<div class="status-sub">{popup.status.subtitle}</div>{/if}
@@ -310,7 +310,7 @@
 
 					{#if popup.pc}
 						<div class="pop-panchang">
-							<Emoji code={popup.pc.n === 15 ? '1f315' : popup.pc.n === 30 ? '1f311' : popup.pc.n <= 15 ? '1f312' : '1f318'} size={40} alt="" shadow="none" />
+							<Emoji code={popup.pc.n === 15 ? '1f315' : popup.pc.n === 30 ? '1f311' : popup.pc.n <= 15 ? '1f312' : '1f318'} size={30} alt="" shadow="none" />
 							<div class="pc-text">
 								<div class="pc-mr">{popup.pc.marathi} · शके {marathiDigits(popup.pc.shaka)}</div>
 								<div class="pc-en">{popup.pc.english} · {pakshaName(popup.pc.n, 'en')} paksha</div>
@@ -318,7 +318,7 @@
 						</div>
 						{#each popup.pc.festivals as f (f.id)}
 							<div class="pop-fest" class:major={f.major}>
-								<Emoji code={f.emoji} size={f.major ? 46 : 34} alt="" />
+								<Emoji code={f.emoji} size={f.major ? 34 : 24} alt="" />
 								<div>
 									<div class="pf-mr">{f.mr}</div>
 									<div class="pf-en">{f.en}</div>
@@ -340,11 +340,11 @@
 
 					{#if popup.wx}
 						<div class="pop-wx">
-							<WeatherIcon code={weatherEmoji(popup.wx.code, true)} size={64} />
+							<WeatherIcon code={weatherEmoji(popup.wx.code, true)} size={44} />
 							<div class="pop-wx-text">
 								<div class="wx-line"><b>{weatherLabel(popup.wx.code, true)}</b> · H {Math.round(popup.wx.temp_max_f)}° / L {Math.round(popup.wx.temp_min_f)}°</div>
 								<div class="wx-sub">
-									<Emoji code="1f4a7" size={18} alt="" shadow="none" /> Rain {Math.round(popup.wx.rain_max)}%
+									<Emoji code="1f4a7" size={14} alt="" shadow="none" /> Rain {Math.round(popup.wx.rain_max)}%
 								</div>
 							</div>
 						</div>
@@ -352,7 +352,7 @@
 							<div class="pop-outfit">
 								<span>Wear:</span>
 								{#each popup.outfit.items as item (item.name)}
-									<Emoji code={item.emoji} size={34} alt={item.name} shadow="none" />
+									<Emoji code={item.emoji} size={24} alt={item.name} shadow="none" />
 								{/each}
 								<span class="outfit-text">{popup.outfit.summary}</span>
 							</div>
@@ -743,32 +743,27 @@
 	}
 
 	/* --- day popup --- */
-	/* the day popup covers the whole screen (header and tabs too), big enough
-	   to read from across the room */
 	.overlay {
-		position: fixed;
+		position: absolute;
 		inset: 0;
-		z-index: 50;
+		z-index: 20;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		background: rgba(17, 24, 39, 0.35);
 	}
 	.day-pop {
-		width: 770px;
-		max-width: calc(100% - 20px);
-		min-height: 300px;
-		max-height: calc(100% - 20px);
-		overflow-y: auto;
-		padding: 20px 24px;
+		width: 600px;
+		max-height: 100%;
+		padding: 16px 18px;
 		animation: pop-in 0.22s ease-out both;
 	}
 	.close-btn {
 		position: absolute;
-		top: 12px;
-		right: 12px;
-		width: 52px;
-		height: 52px;
+		top: 10px;
+		right: 10px;
+		width: 36px;
+		height: 36px;
 		border: 3px solid var(--border-dark);
 		border-radius: 50%;
 		background: var(--tab-red);
@@ -779,7 +774,7 @@
 	}
 	.pop-body {
 		display: flex;
-		gap: 24px;
+		gap: 18px;
 		align-items: flex-start;
 	}
 	.pop-date {
@@ -790,8 +785,8 @@
 		flex: 0 0 auto;
 	}
 	.big-date {
-		width: 150px;
-		height: 150px;
+		width: 104px;
+		height: 104px;
 		background: var(--card-white);
 		border: 3px solid var(--border-dark);
 		border-radius: 16px;
@@ -807,7 +802,7 @@
 		text-align: center;
 		background: var(--tab-red);
 		color: #ffffff;
-		font-size: 22px;
+		font-size: 16px;
 		font-weight: 900;
 		text-transform: uppercase;
 		border-bottom: 3px solid var(--border-dark);
@@ -817,12 +812,12 @@
 		flex: 1;
 		display: flex;
 		align-items: center;
-		font-size: 76px;
+		font-size: 50px;
 		font-weight: 900;
 		line-height: 1;
 	}
 	.weekday {
-		font-size: 24px;
+		font-size: 17px;
 		font-weight: 900;
 	}
 	.pop-info {
@@ -830,8 +825,8 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
-		padding-right: 52px; /* room for the close button */
+		gap: 10px;
+		padding-right: 34px; /* room for the close button */
 	}
 	.status {
 		display: flex;
@@ -839,8 +834,8 @@
 		gap: 10px;
 		background: var(--yellow-banner);
 		border: 3px solid var(--border-dark);
-		border-radius: 16px;
-		padding: 12px 16px;
+		border-radius: 14px;
+		padding: 8px 12px;
 		box-shadow: var(--sticker-shadow-sm);
 	}
 	.status.kind-no-school {
@@ -854,21 +849,21 @@
 		background: var(--bg-light-blue);
 	}
 	.status-title {
-		font-size: 30px;
+		font-size: 20px;
 		font-weight: 900;
 		line-height: 1.15;
 	}
 	.status-sub {
-		font-size: 19px;
+		font-size: 14px;
 		font-weight: 800;
-		color: #334155;
+		color: #475569;
 	}
 	.events {
 		list-style: none;
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
-		font-size: 19px;
+		gap: 4px;
+		font-size: 14px;
 		font-weight: 800;
 	}
 	.events li::before {
@@ -881,11 +876,11 @@
 		gap: 10px;
 		background: var(--bg-light-blue);
 		border: 3px solid var(--border-dark);
-		border-radius: 16px;
-		padding: 10px 16px;
+		border-radius: 14px;
+		padding: 6px 12px;
 	}
 	.wx-line {
-		font-size: 22px;
+		font-size: 16px;
 		font-weight: 800;
 	}
 	.wx-line b {
@@ -895,44 +890,26 @@
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		font-size: 18px;
+		font-size: 14px;
 		font-weight: 800;
-		color: #334155;
+		color: #475569;
 	}
 	.pop-outfit {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 6px;
-		font-size: 20px;
+		gap: 4px;
+		font-size: 15px;
 		font-weight: 900;
 	}
 	.outfit-text {
 		margin-left: 4px;
-		color: #334155;
+		color: #475569;
 		font-weight: 800;
 	}
 	.no-wx {
-		font-size: 18px;
+		font-size: 14px;
 		font-weight: 800;
-		color: #475569;
-	}
-	/* bigger inside the popup (these are shared with the rest of the page) */
-	.day-pop .sleeps {
-		font-size: 17px;
-		padding: 2px 12px;
-	}
-	.day-pop .pc-mr {
-		font-size: 24px;
-	}
-	.day-pop .pc-en,
-	.day-pop .pf-en {
-		font-size: 16px;
-	}
-	.day-pop .pf-mr {
-		font-size: 22px;
-	}
-	.day-pop .pop-fest.major .pf-mr {
-		font-size: 26px;
+		color: #64748b;
 	}
 </style>

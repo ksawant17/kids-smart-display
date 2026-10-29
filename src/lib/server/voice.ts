@@ -34,6 +34,7 @@ import { createInterface } from 'node:readline';
 import { promisify } from 'node:util';
 import { getAi } from '#lib/server/ai';
 import { sentences } from '#lib/utils/sentences';
+import { withoutEmoji } from '#lib/utils/speech';
 import { FRAME_MS, GATE_DEFAULTS, SpeechGate } from '#lib/utils/vad';
 
 const run = promisify(execFile);
@@ -323,7 +324,7 @@ export function say(text: string): Promise<void> {
 		await setUpMixer();
 		// sentence by sentence, each made while the one before plays
 		let made: Promise<unknown> = Promise.resolve();
-		const wavs = sentences(text).map((s) => (made = made.then(() => wavFor(s))) as Promise<string>);
+		const wavs = sentences(withoutEmoji(text)).map((s) => (made = made.then(() => wavFor(s))) as Promise<string>);
 		for (const w of wavs) w.catch(() => {}); // a failure is reported where it's awaited
 		if (!wavs.length) return;
 		const first = await wavs[0];

@@ -11,6 +11,7 @@ import { KID_VOICE, aiTextOk, chat, type ChatMessage } from '#lib/server/ai';
 import { getConfig } from '#lib/server/config';
 import type { BriefingFacts } from '#lib/server/briefing';
 import { hasBlockedWords } from '#lib/utils/content';
+import { withoutEmoji } from '#lib/utils/speech';
 
 export const ASK_A_GROWN_UP = "That's a great one to ask a grown-up! They'll know just what to say.";
 const MAX_LEN = 360;
@@ -88,12 +89,12 @@ export async function answer(question: string, facts: BriefingFacts | null): Pro
 		'Only use the facts below for questions about today, the weather, school or clothes; never make up plans. ' +
 		"If you don't know, say so kindly. If the question is about something not right for a child, " +
 		'or about their body, health, safety, or feelings that sound worrying, gently say to ask a grown-up. ' +
-		'Plain text only: no emoji, no lists, no links. ' +
+		'Plain words only: never use emoji or smileys like :) (they would be read out loud), no lists, no links. ' +
 		'If you have already talked with the child, the new question may follow on from that ' +
 		'(like "why?" or "what about tomorrow?"): answer it in that light.\n\n' +
 		context(facts, new Date());
 	for (let attempt = 0; attempt < 2; attempt++) {
-		const text = (
+		const text = withoutEmoji(
 			await chat(
 				[
 					{ role: 'system', content: system },
@@ -102,9 +103,7 @@ export async function answer(question: string, facts: BriefingFacts | null): Pro
 				],
 				{ maxTokens: 200, temperature: 0.5, timeoutMs: 30_000 }
 			)
-		)
-			.replace(/\s+/g, ' ')
-			.trim();
+		);
 		if (text.length <= MAX_LEN + 60 && aiTextOk(text)) {
 			remember(question, text, now);
 			return text;

@@ -108,7 +108,7 @@ img {
 	background: var(--sky-day);
 	display: flex;
 	flex-direction: column;
-	padding: 14px 16px;
+	padding: 14px 12px 10px 16px; /* + main's 4px shadow room: 16px on every side */
 	gap: 14px;
 	overflow: hidden;
 }
@@ -198,6 +198,9 @@ main {
 	gap: 14px;
 	position: relative;
 	overflow: hidden;
+	/* room for the sticker shadows (4px right and down) of the cards along
+	   the right and bottom edges, which overflow: hidden would cut off */
+	padding: 0 4px 4px 0;
 }
 
 .card {

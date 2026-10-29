@@ -333,16 +333,16 @@
 		text-overflow: ellipsis;
 	}
 	.strip.quote {
-		background: #fef9c3;
+		background: #fde68a;
 	}
 	.strip.quote .who {
-		color: #475569;
+		color: #334155;
 	}
 	.strip.ribbon {
-		background: #e0e7ff;
+		background: #c7d2fe;
 	}
 	.strip.briefing {
-		background: #f3e8ff;
+		background: #e9d5ff;
 	}
 	.briefing-full {
 		position: fixed;
@@ -447,7 +447,7 @@
 		font-size: 13px;
 		font-weight: 800;
 		font-style: italic;
-		color: #475569;
+		color: #334155;
 		line-height: 1.25;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -507,7 +507,7 @@
 		background: #bbf7d0;
 	}
 	.school-col.kind-regular {
-		background: #fef9c3;
+		background: #fef08a;
 	}
 	.school-title {
 		font-size: 22px;
@@ -517,7 +517,7 @@
 	.school-sub {
 		font-size: 14px;
 		font-weight: 800;
-		color: #475569;
+		color: #334155;
 	}
 	.next-up {
 		margin-top: auto;
@@ -549,7 +549,7 @@
 		gap: 6px;
 		font-size: 13px;
 		font-weight: 800;
-		color: #475569;
+		color: #334155;
 		margin-top: 2px;
 	}
 	.sleeps {
@@ -565,7 +565,7 @@
 
 	/* wear */
 	.wear-col {
-		background: #f3e8ff;
+		background: #e9d5ff;
 	}
 	.avatars {
 		display: flex;

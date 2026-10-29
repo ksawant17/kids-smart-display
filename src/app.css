@@ -14,11 +14,13 @@
 
 :root {
 	--bg-cyan: #4bd8f6;
+	/* the daytime sky behind the cards: deep enough that they stand out */
+	--sky-day: linear-gradient(180deg, #0ea5e9 0%, #0284c7 60%, #0369a1 100%);
 	--card-white: #ffffff;
 	--border-dark: #111827;
 	--text-dark: #111827;
 	--yellow-banner: #ffde3a;
-	--bg-light-blue: #f0f9ff;
+	--bg-light-blue: #e0f2fe;
 
 	/* Tab colors */
 	--tab-orange: #ffab3b;
@@ -32,9 +34,10 @@
 	--event-holiday: #ff6b6b;
 	--event-early: #ffde3a;
 
-	/* Playful solid (non-blurred) "sticker" shadows */
-	--sticker-shadow: 4px 4px 0px rgba(0, 0, 0, 0.12);
-	--sticker-shadow-sm: 2px 2px 0px rgba(0, 0, 0, 0.1);
+	/* Playful solid (non-blurred) "sticker" shadows, dark enough to lift
+	   things off the sky */
+	--sticker-shadow: 4px 4px 0px rgba(17, 24, 39, 0.7);
+	--sticker-shadow-sm: 2px 2px 0px rgba(17, 24, 39, 0.55);
 }
 
 * {
@@ -102,7 +105,7 @@ img {
 	height: 100vh;
 	max-width: 800px;
 	max-height: 480px;
-	background-color: var(--bg-cyan);
+	background: var(--sky-day);
 	display: flex;
 	flex-direction: column;
 	padding: 14px 16px 0 16px;
@@ -115,10 +118,10 @@ img {
 	transition: background-color 2s ease;
 }
 #pi-screen.sky-dawn {
-	background: linear-gradient(180deg, #ffd6a5 0%, #9be7f7 55%, var(--bg-cyan) 100%);
+	background: linear-gradient(180deg, #fdba74 0%, #38bdf8 55%, #0284c7 100%);
 }
 #pi-screen.sky-day {
-	background: var(--bg-cyan);
+	background: var(--sky-day);
 }
 #pi-screen.sky-dusk {
 	background: linear-gradient(180deg, #fb923c 0%, #f472b6 45%, #a78bfa 100%);
@@ -256,12 +259,12 @@ nav.tabs {
 	/* inactive: a pale version of the tab's own colour (kids find tabs by
 	   colour), sitting slightly lower; dark label so it reads from afar */
 	--tab-color: var(--tab-gray);
-	background-color: color-mix(in srgb, var(--tab-color) 38%, #ffffff);
-	color: #334155;
+	background-color: color-mix(in srgb, var(--tab-color) 58%, #ffffff);
+	color: #1f2937;
 	transform: translateY(6px);
 }
 .tab:not(.active) img {
-	opacity: 0.75;
+	opacity: 0.95;
 }
 
 .tab.active {

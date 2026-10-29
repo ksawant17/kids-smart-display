@@ -270,24 +270,34 @@
 		overflow: hidden;
 		color: #fff;
 		--ink: #1e293b;
+		/* the greeting pill takes a colour that suits the sky (and stands out on it) */
+		--hello-bg: #fde047;
+		--hello-fg: var(--text-dark);
 		/* day, clear: a deep summer blue (a pale sky washes out white letters) */
-		background: linear-gradient(180deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%);
+		background: linear-gradient(180deg, #0c4a6e 0%, #075985 50%, #0369a1 100%);
 		transition: background 2s ease;
 	}
 	.scene-cloudy {
 		background: linear-gradient(180deg, #475569 0%, #64748b 55%, #94a3b8 100%);
+		--hello-bg: #ffffff;
 	}
 	.scene-rain {
 		background: linear-gradient(180deg, #334155 0%, #475569 60%, #64748b 100%);
+		--hello-bg: #bae6fd;
 	}
 	.scene-snow {
 		background: linear-gradient(180deg, #475569 0%, #7c8ea8 55%, #cbd5e1 100%);
+		--hello-bg: #1e293b;
+		--hello-fg: #ffffff;
 	}
 	.scene-storm {
 		background: linear-gradient(180deg, #1e1b4b 0%, #312e81 55%, #475569 100%);
+		--hello-bg: #fcd34d;
 	}
 	.idle.night {
 		background: linear-gradient(180deg, #0b1d4d 0%, #1e3a8a 60%, #3b4fa0 100%);
+		--hello-bg: #fef9c3;
+		--hello-fg: var(--text-dark);
 	}
 	.idle.night.scene-cloudy,
 	.idle.night.scene-rain,
@@ -298,6 +308,7 @@
 	.idle.night.diwali.scene-clear,
 	.idle.night.diwali.scene-cloudy {
 		background: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 55%, #9a3412 100%);
+		--hello-bg: #fdba74;
 	}
 	.idle.night.scene-snow {
 		background: linear-gradient(180deg, #1e293b 0%, #334155 60%, #64748b 100%);
@@ -333,7 +344,7 @@
 		width: 420px;
 		height: 420px;
 		border-radius: 50%;
-		background: radial-gradient(circle, rgba(254, 240, 138, 0.75) 0%, rgba(254, 240, 138, 0.25) 45%, transparent 70%);
+		background: radial-gradient(circle, rgba(254, 240, 138, 0.5) 0%, rgba(254, 240, 138, 0.15) 45%, transparent 70%);
 		animation: glow 6s ease-in-out infinite;
 	}
 	.cloud {
@@ -407,7 +418,6 @@
 	   any sky — bright sun, snow or stars */
 	.clock,
 	.date,
-	.hello,
 	.banner-mr {
 		paint-order: stroke fill;
 		-webkit-text-stroke: 6px var(--ink);
@@ -463,13 +473,23 @@
 		margin-top: 6px;
 		font-size: 32px;
 		font-weight: 900;
+		-webkit-text-stroke-width: 8px;
 	}
+	/* the greeting: a sticker pill with dark letters, so it reads on any sky */
 	.hello {
-		margin-top: 4px;
+		display: inline-block;
+		max-width: 100%;
+		margin-top: 10px;
+		padding: 4px 16px;
 		font-size: 22px;
 		font-weight: 900;
-		-webkit-text-stroke-width: 5px;
-		text-shadow: 2px 3px 0 var(--ink);
+		color: var(--hello-fg);
+		text-shadow: none;
+		background: var(--hello-bg);
+		border: 3px solid var(--border-dark);
+		border-radius: 999px;
+		box-shadow: var(--sticker-shadow-sm);
+		transition: background-color 2s ease, color 2s ease;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;

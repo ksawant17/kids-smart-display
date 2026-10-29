@@ -3,13 +3,14 @@
  *
  * The Pi fetches candidates every day (ZenQuotes for quotes, Useless Facts
  * for facts, JokeAPI and icanhazdadjoke for jokes; see
- * src/lib/server/content.ts). Neither source is written for
+ * src/lib/server/content.ts), and the AI helper, when it is on, writes
+ * jokes, facts and words too. None of it is vetted for
  * kids, so candidates first go through `kidSafe()` (length + blocked words),
  * then wait in the Grown-ups tab ("New Content") until someone taps Keep or
  * Skip. Only kept ones are shown, mixed in with the built-in lists.
  */
 
-export type ContentKind = 'quote' | 'fact' | 'joke';
+export type ContentKind = 'quote' | 'fact' | 'joke' | 'word';
 
 export interface Candidate {
 	id: string;
@@ -17,9 +18,12 @@ export interface Candidate {
 	text: string;
 	/** quotes only */
 	author?: string;
-	/** jokes only: the punchline (`text` is the question) */
+	/** jokes: the punchline (`text` is the question); words: the meaning (`text` is the word) */
 	answer?: string;
-	/** "zenquotes" | "uselessfacts" | "jokeapi" | "icanhazdadjoke" */
+	/** words only: how to say it, and the word in a sentence */
+	say?: string;
+	sentence?: string;
+	/** "zenquotes" | "uselessfacts" | "jokeapi" | "icanhazdadjoke" | "ai" */
 	source: string;
 }
 
@@ -47,14 +51,26 @@ export interface KeptJoke {
 	source: string;
 }
 
+/** same shape as src/lib/data/words.json */
+export interface KeptWord {
+	id: string;
+	word: string;
+	say: string;
+	emoji: string;
+	meaning: string;
+	sentence: string;
+	source: string;
+}
+
 export interface KeptContent {
 	quotes: KeptQuote[];
 	facts: KeptFact[];
 	jokes: KeptJoke[];
+	words: KeptWord[];
 }
 
-/** longest text that still fits the TODAY banner / FUN card nicely */
-export const MAX_LENGTH = { quote: 120, fact: 150, joke: 100 } as const;
+/** longest text that still fits the TODAY banner / FUN card nicely (words: the meaning) */
+export const MAX_LENGTH = { quote: 120, fact: 150, joke: 100, word: 80 } as const;
 
 // Topics a kids' screen shouldn't raise on its own. Deliberately broad: a
 // false alarm only costs one candidate, and a grown-up still checks the rest.
@@ -92,6 +108,17 @@ export function kidSafe(text: string, kind: ContentKind, extra = ''): boolean {
 	if (kind === 'joke' && GROWN_UP.test(t + ' ' + extra)) return false;
 	return !BLOCKED.test(t) && !BLOCKED.test(extra);
 }
+
+/** A word of the day: one plain word, a short meaning and sentence, nothing blocked. */
+export function wordSafe(word: string, say: string, meaning: string, sentence: string): boolean {
+	if (!/^[a-z][a-z-]{2,17}$/i.test(word) || say.length < 2 || say.length > 30) return false;
+	if (meaning.length < 5 || meaning.length > MAX_LENGTH.word || sentence.length < 10 || sentence.length > 110) return false;
+	const all = [word, say, meaning, sentence].join(' ');
+	return !/https?:|www\.|[<>{}]|@/.test(all) && !BLOCKED.test(all) && !GROWN_UP.test(all);
+}
+
+/** Any topic from the blocked list? (for longer AI-written text: stories, the briefing) */
+export const hasBlockedWords = (text: string) => BLOCKED.test(text);
 
 /** "What do you call a sleeping bull? A bulldozer!" -> question + answer (null if it isn't one) */
 export function splitJoke(joke: string): { q: string; a: string } | null {
@@ -150,7 +177,7 @@ const STICKERS: [RegExp, string][] = [
 	[/\bbody\b|\bbones?\b/, '1f9b4']
 ];
 
-export const DEFAULT_STICKER: Record<ContentKind, string> = { quote: '1f31f', fact: '1f4a1', joke: '1f602' };
+export const DEFAULT_STICKER: Record<ContentKind, string> = { quote: '1f31f', fact: '1f4a1', joke: '1f602', word: '1f4da' };
 
 /** a sticker that matches the text (grown-ups can pick another) */
 export function suggestEmoji(text: string, kind: ContentKind): string {

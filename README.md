@@ -54,11 +54,11 @@ config is used. To run it full-screen on the Pi at boot, see
 
 | Tab        | What it does |
 |------------|--------------|
-| **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), a red **weather alert** when there is one, or a **note from a grown-up** (Grown-ups tab). **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days |
+| **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), a red **weather alert** when there is one, or a **note from a grown-up** (Grown-ups tab); with the [AI helper](#ai-helper) on, a ✨ **daily briefing** takes turns with the quote (tap it to read it big). **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days |
 | **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back. **Tap any day** (or an Up Next row) for a popup with that day's school status, events (with break dates), and, within the week's forecast, the weather and what to wear. Plus "Up Next at School" with **"Tomorrow!" / "N sleeps" countdowns** (breaks under way stay listed until they end) and a **next-break countdown**. **Marathi calendar (पंचांग):** the lunar months and Shaka year under the month name, each day's tithi (शु ५ / व १२, a moon on Purnima / Amavasya) and a sticker on festival days; the day popup gives the full panchang ("आश्विन वद्य अमावास्या · शके १९४८") and the day's festivals; the **सण** switch on the right lists the Marathi festivals coming up |
 | **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
 | **QUOTE**  | Message of the day: one encouraging, correctly attributed quote (100 built in, plus any a grown-up kept from the internet), rotates at midnight |
-| **FUN**    | Five corners, each with a daily pick and an "another!" button: 🦖 **Dino** (how to say it, diet, size, era, fact) · 😂 **Joke** told by a kid's buddy, tap "Tell me!" for the punchline · 🔤 **Word of the day** (picture, pronunciation, meaning, sentence) · ➕ **Math** (Easy / Tricky, tap an answer to check it) · 💡 **Facts** |
+| **FUN**    | Five corners, each with a daily pick and an "another!" button: 🦖 **Dino** (how to say it, diet, size, era, fact) · 😂 **Joke** told by a kid's buddy, tap "Tell me!" for the punchline · 🔤 **Word of the day** (picture, pronunciation, meaning, sentence) · ➕ **Math** (Easy / Tricky, tap an answer to check it) · 💡 **Facts** · 📖 **Story** (with the [AI helper](#ai-helper) on: pick who, where and what about, and it writes a bedtime story; the screen waits 10 extra minutes before dimming or going home while one is open) |
 
 The **full weather report** (on TODAY) is a slide-down card. A kid's animal
 buddy (the kids take turns) "reports" the day, dressed for it, with a speech
@@ -242,7 +242,8 @@ the idle timer, locks it again. Text is typed on a big on-screen keyboard.
 
 | Tile | What it does |
 | --- | --- |
-| **New Content** | Quotes, fun facts and jokes fetched from the internet each day wait here (the tile shows how many). Tap **Keep** (with a sticker) or **Skip**; only kept ones are shown to the kids. **Kept** lists them, ✕ takes one off again. |
+| **New Content** | Quotes, fun facts and jokes fetched from the internet each day (and jokes, facts and words from the AI helper) wait here (the tile shows how many). Tap **Keep** (with a sticker) or **Skip**; only kept ones are shown to the kids. **Kept** lists them, ✕ takes one off again. |
+| **AI Helper** | The AI chat server's address, key and model, a **Test** button, and which features may use it (see [AI helper](#ai-helper)). |
 | **Notes** | A note in the TODAY banner ("Library day! Bring your books"): pick a ready-made one or type your own, for today, tomorrow (from 6 PM tonight) or every day. Kept in `data/messages.json`; the kiosk checks every minute. |
 | **Kids** | Names, animal buddy and clothes colour; add or remove kids (1–4). |
 | **Weather Place** | Type a ZIP code → it finds the town (Open-Meteo geocoding, Zippopotam.us as a fallback) → "Use this place". Offers to switch the clock if the town is in another time zone. |
@@ -256,7 +257,7 @@ the idle timer, locks it again. Text is typed on a big on-screen keyboard.
 | **Updates** | Shows the installed version and new commits on GitHub; **Update now** runs `scripts/update.sh`. |
 | **PIN** | Change the PIN. |
 
-Everything except Notes, New Content and the PIN is saved in `config/dashboard.json`.
+Everything except Notes, New Content, the AI helper and the PIN is saved in `config/dashboard.json`.
 
 **One-time permission.** Restart / power off, the clock and Wi-Fi go through
 systemd and NetworkManager, which need permission for the dashboard's user (a
@@ -367,8 +368,9 @@ plenty; if you never do, nothing breaks:
 3. kept ones join the built-in lists on TODAY, QUOTE and FUN (quotes from
    ZenQuotes show a small credit, as its free API asks).
 
-Words have no live source: the free word-of-the-day services need an account
-and pick grown-up vocabulary, with no picture or kid sentence.
+Words have no live source on the internet (the free word-of-the-day services
+need an account and pick grown-up vocabulary); with the [AI helper](#ai-helper)
+on, the AI writes some instead.
 
 Everything lives in `data/content.json` (git-ignored); skipped ones are never
 offered again.
@@ -491,6 +493,28 @@ chromium --headless=new --no-sandbox --disable-gpu \
   --virtual-time-budget=8000 --screenshot=/tmp/today.png http://localhost:3001/
 ```
 
+## AI helper
+
+Optional. Point the dashboard at any OpenAI-style chat server on your home
+network (llama.cpp, Ollama, LM Studio...) in **Grown-ups → AI Helper**: type
+the address (`http://<ai-box>:8080`) and key, tap **Test** (it lists the
+models and says hello), pick a model, switch it on and **Save**. The settings,
+key included, stay on the Pi in `data/ai.json` (git-ignored, readable only by
+the dashboard's user); the admin tab only shows the key's last 4 letters, and
+the kiosk browser never sees it.
+
+| Feature | What it does |
+| --- | --- |
+| **Daily briefing** | TODAY sends the facts already on screen (weather, school, what to wear, a grown-up's note, a festival countdown) and gets back two friendly sentences, with the kids' names. The same facts give the same briefing (cached), so it is only rewritten when something changes. |
+| **Bedtime stories** | A 📖 corner on FUN: pick a kid, a place and a theme from fixed lists (nothing a kid types is sent) and get a short, calm story. |
+| **New jokes, facts, words** | With the daily fetch, the AI writes jokes, facts and words of the day on a random topic. They go through the same filter and still wait in **New Content** for your OK (check facts: small models can be wrong). |
+
+Everything the AI writes passes the blocked-words filter (`hasBlockedWords()`
+/ `wordSafe()` in `src/lib/utils/content.ts`); a reply that fails is retried
+once, then dropped. When the AI box is off or slow, the dashboard just shows
+what it always did. "Thinking" is turned off for Qwen-style models
+(`chat_template_kwargs`), so answers take a second or two.
+
 ## Source map
 
 ```
@@ -518,9 +542,10 @@ src/
 │   ├── data/                quotes, facts, dinos, jokes, words, school-calendar.seed.ics
 │   ├── server/              config loader/writer, TTL cache, school feed, backlight control,
 │   │                        admin PIN + sessions, ZIP geocoding, notes, live quotes/facts,
+│   │                        AI helper (ai.ts: settings + chat; briefing.ts, story.ts),
 │   │                        system (power/clock/Wi-Fi/health/updates), top button (GPIO)
 │   └── utils/               ics, schoolCalendar, wardrobe, weatherCodes, time, dino,
-│                            forecastStory (story/air/alerts), moon, mathPuzzle, admin, messages, content,
+│                            forecastStory (story/air/alerts), moon, mathPuzzle, admin, messages, content, story,
 │                            panchang (Marathi calendar: tithi, months, festivals)
 └── routes/
     ├── +layout.server.ts    config + school events for every page
@@ -532,7 +557,8 @@ src/
     ├── api/screen/          backlight on/dim/off + brightness
     ├── api/messages/        grown-up notes for the TODAY banner
     ├── api/button/          top-button gestures (server-sent events) + power menu
-    └── api/admin/           admin: login, settings, zip, time, power, pin, messages, wifi, update, content
+    ├── api/briefing/ api/story/   AI helper: TODAY's briefing, FUN's bedtime stories
+    └── api/admin/           admin: login, settings, zip, time, power, pin, messages, wifi, update, content, ai
 scripts/                     emoji vendoring, blank kiosk cursor, update.sh
 tests/                       vitest suites
 systemd/                     kids-smart-server.service, kids-smart-kiosk.service

@@ -68,3 +68,10 @@ export function rawLevel(percent: number, max: number): number {
 
 /** Open/closed state of the quick menu (pulled down from the top of the screen). */
 export const screenPanelOpen = writable(false);
+
+/**
+ * A story is open on FUN: someone is reading, not touching. The idle timers
+ * (back to TODAY, dim, off, bedtime's one minute) wait this much longer.
+ */
+export const reading = writable(false);
+export const READING_GRACE_MS = 10 * 60_000;

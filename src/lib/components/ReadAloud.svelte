@@ -4,8 +4,10 @@
 	 * which only reads text the dashboard wrote itself). Tap again to stop.
 	 * Only shown when the voice is installed and switched on. `round`: just the
 	 * 🔊 sign in a circle (the label is still there for screen readers), `size`
-	 * px across. When the text changes (another card) it stops talking.
+	 * px across. When the text changes (another card), or the button goes away
+	 * (another page, the idle screen closing), it stops talking.
 	 */
+	import { onDestroy } from 'svelte';
 	import SoundIcon from '#lib/components/SoundIcon.svelte';
 
 	let {
@@ -16,26 +18,33 @@
 		talking = $bindable(false)
 	}: { text: string; label?: string; round?: boolean; size?: number; talking?: boolean } = $props();
 
+	let ticket = 0; // a reply to an older tap must not reset a newer one
+
+	const hush = () =>
+		fetch('/api/speak', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"stop":true}' }).catch(
+			() => {}
+		);
+
+	function stop() {
+		talking = false;
+		ticket++;
+		hush();
+	}
+
 	// another card while it's talking: stop reading the old one
 	let said = '';
 	$effect(() => {
-		if (talking && said && text !== said) {
-			talking = false;
-			ticket++;
-			fetch('/api/speak', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"stop":true}' });
-		}
+		if (talking && said && text !== said) stop();
 	});
-
-	let ticket = 0; // a reply to an older tap must not reset a newer one
+	// left the page (or the idle screen closed) mid-story: don't keep talking to nobody
+	onDestroy(() => {
+		if (talking) hush();
+	});
 
 	async function speak(e: Event) {
 		e.stopPropagation(); // the idle screen / bubble behind closes on a tap
+		if (talking) return stop();
 		const mine = ++ticket;
-		if (talking) {
-			talking = false;
-			fetch('/api/speak', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"stop":true}' });
-			return;
-		}
 		talking = true;
 		said = text;
 		try {

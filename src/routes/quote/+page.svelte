@@ -2,6 +2,8 @@
 	import Emoji from '#lib/components/Emoji.svelte';
 	import SectionTitle from '#lib/components/SectionTitle.svelte';
 	import KidAvatar from '#lib/components/KidAvatar.svelte';
+	import ReadAloud from '#lib/components/ReadAloud.svelte';
+	import { quoteSpeech } from '#lib/utils/readAloud';
 	import { now } from '#lib/clock';
 	import { dayNumber, pickDaily } from '#lib/utils/time';
 	import quotes from '#lib/data/quotes.json';
@@ -20,6 +22,9 @@
 
 <div class="quote-main">
 	<div class="card quote-card anim-pop">
+		{#if data.voice.installed && data.voice.enabled}
+			<div class="read"><ReadAloud text={quoteSpeech(quote)} label="Read the quote" round size={56} /></div>
+		{/if}
 		{#if buddy}
 			<div class="buddy">
 				<KidAvatar kid={buddy} size={200} />
@@ -51,6 +56,7 @@
 		height: 100%;
 	}
 	.quote-card {
+		position: relative;
 		flex: 1;
 		flex-direction: row;
 		background-color: #fef9c3;
@@ -58,6 +64,11 @@
 		justify-content: center;
 		gap: 10px;
 		padding: 20px 26px 20px 16px;
+	}
+	.read {
+		position: absolute;
+		top: 12px;
+		right: 12px;
 	}
 	/* the buddy bobs gently beside the quote */
 	.buddy {

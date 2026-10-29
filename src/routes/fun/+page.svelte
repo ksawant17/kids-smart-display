@@ -14,6 +14,8 @@
 	import { dinoEmoji, dietEmoji, dinoSize, type Dino } from '#lib/utils/dino';
 	import { mathPuzzle, type MathLevel } from '#lib/utils/mathPuzzle';
 	import { STORY_PLACES, STORY_THEMES } from '#lib/utils/story';
+	import ReadAloud from '#lib/components/ReadAloud.svelte';
+	import { dinoSpeech, factSpeech, jokeSpeech, storySpeech, wordSpeech } from '#lib/utils/readAloud';
 	import { reading } from '#lib/screen';
 	import facts from '#lib/data/facts.json';
 	import dinos from '#lib/data/dinos.json';
@@ -92,6 +94,21 @@
 		}
 	}
 
+	// 🔊: what the corner on show reads aloud (not the math puzzle, or a story not written yet)
+	const readText = $derived(
+		corner === 'dino'
+			? dinoSpeech(dino)
+			: corner === 'joke'
+				? jokeSpeech(joke, revealed)
+				: corner === 'word'
+					? wordSpeech(word)
+					: corner === 'fact'
+						? factSpeech(fact)
+						: corner === 'story' && story
+							? storySpeech(story)
+							: ''
+	);
+
 	const OUTLINE =
 		'2.5px 0 0 rgba(51,65,85,0.85), -2.5px 0 0 rgba(51,65,85,0.85), 0 2.5px 0 rgba(51,65,85,0.85), 0 -2.5px 0 rgba(51,65,85,0.85), 4px 5px 0 rgba(51,65,85,0.3)';
 </script>
@@ -116,6 +133,10 @@
 				</button>
 			{/each}
 		</div>
+
+		{#if readText && data.voice.installed && data.voice.enabled}
+			<div class="read"><ReadAloud text={readText} label="Read it to me" round size={46} /></div>
+		{/if}
 
 		<div class="panel">
 			{#if corner === 'dino'}
@@ -302,6 +323,7 @@
 		height: 100%;
 	}
 	.fun-card {
+		position: relative;
 		flex: 1;
 		padding: 10px 16px 14px;
 		gap: 10px;
@@ -324,6 +346,12 @@
 	}
 
 	/* corner pills */
+	.read {
+		position: absolute;
+		top: 7px;
+		right: 10px;
+		z-index: 1;
+	}
 	.corners {
 		display: flex;
 		gap: 8px;

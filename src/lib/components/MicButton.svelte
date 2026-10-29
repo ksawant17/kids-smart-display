@@ -5,7 +5,7 @@
 	 * The let-go is watched on the whole window, since the sheet opens on top
 	 * of the button while the finger is still down.
 	 */
-	import Emoji from '#lib/components/Emoji.svelte';
+	import SoundIcon from '#lib/components/SoundIcon.svelte';
 	import { askOpen, micHeld } from '#lib/screen';
 
 	let {
@@ -41,7 +41,7 @@
 	onclick={(e) => e.stopPropagation()}
 	oncontextmenu={(e) => e.preventDefault()}
 >
-	<Emoji code="1f3a4" size={look === 'small' ? 26 : look === 'round' ? 34 : 26} alt="" shadow="none" />
+	<SoundIcon kind="mic" size={look === 'small' ? 24 : look === 'round' ? 34 : 26} />
 	{#if look === 'pill' && label}{label}{/if}
 </button>
 
@@ -56,7 +56,7 @@
 		color: var(--text-dark);
 		text-shadow: none;
 		white-space: nowrap;
-		background: #a5f3fc;
+		background: #67e8f9;
 		border: 3px solid var(--border-dark);
 		border-radius: 999px;
 		box-shadow: var(--sticker-shadow-sm);

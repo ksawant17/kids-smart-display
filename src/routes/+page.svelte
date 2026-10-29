@@ -34,7 +34,8 @@
 	import { moonPhase } from '#lib/utils/moon';
 	import { messagesOn } from '#lib/utils/messages';
 	import { messages } from '#lib/messages';
-	import { festivalBanner, themeFor } from '#lib/themes';
+	import ReadAloud from '#lib/components/ReadAloud.svelte';
+	import { briefing } from '#lib/briefing';
 	import quotes from '#lib/data/quotes.json';
 
 	let { data } = $props();
@@ -106,34 +107,11 @@
 		});
 	});
 
-	// ---- the AI briefing: the facts above, in two friendly sentences ----
-	const facts = $derived.by(() => {
-		if (!data.ai.briefing || !day || !outfit) return '';
-		const theme = themeFor(parseKey(dayKey), data.place);
-		return JSON.stringify({
-			when: dayIdx === 1 ? 'tomorrow' : 'today',
-			dayName,
-			weather: `${weatherLabel(day.code, true)}, high ${Math.round(day.temp_max_f)}°F, low ${Math.round(day.temp_min_f)}°F. ${story}`,
-			school: [school.title, school.subtitle].filter(Boolean).join(', '),
-			wear: outfit.summary,
-			note: notes.map((n) => n.text).join(' / ') || undefined,
-			festival: theme ? festivalBanner(theme, parseKey(dayKey)) : undefined
-		});
-	});
-	let briefing = $state<string | null>(null);
+	// ---- the AI briefing (the layout fetches it: the idle screen reads it out too) ----
 	let briefingOpen = $state(false);
-	$effect(() => {
-		const body = facts;
-		if (!body) return void (briefing = null);
-		let live = true;
-		fetch('/api/briefing', { method: 'POST', headers: { 'content-type': 'application/json' }, body })
-			.then((r) => (r.ok ? r.json() : null))
-			.then((r) => live && (briefing = r?.text ?? null))
-			.catch(() => {});
-		return () => (live = false);
-	});
+	const briefingText = $derived(data.ai.briefing ? ($briefing?.text ?? null) : null);
 	// takes turns with the quote / evening ribbon
-	const showBriefing = $derived(!!briefing && turn % 2 === 0);
+	const showBriefing = $derived(!!briefingText && turn % 2 === 0);
 
 	// swipe down on the weather column opens the full report (a tap does too)
 	let startY: number | null = null;
@@ -174,7 +152,7 @@
 			<button class="strip briefing pressable" onclick={() => (briefingOpen = true)}>
 				<Emoji code="2728" size={22} alt="" shadow="none" />
 				{#if dayIdx === 1}<b>Tomorrow:</b>{/if}
-				<span class="strip-text">{briefing}</span>
+				<span class="strip-text">{briefingText}</span>
 			</button>
 		{:else if dayIdx === 1}
 			<div class="strip ribbon">
@@ -289,14 +267,16 @@
 			</button>
 		</div>
 	</div>
-	{#if briefingOpen && briefing}
-		<button class="briefing-full" onclick={() => (briefingOpen = false)} aria-label="Close">
+	{#if briefingOpen && briefingText}
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div class="briefing-full" onclick={() => (briefingOpen = false)} role="button" tabindex="-1" aria-label="Close">
 			<div class="bubble anim-pop">
 				<Emoji code="2728" size={44} alt="" />
 				<div class="bubble-label">{dayIdx === 1 ? 'Getting ready for tomorrow' : 'Today'}</div>
-				<p>{briefing}</p>
+				<p>{briefingText}</p>
+				{#if data.voice.installed && data.voice.enabled}<ReadAloud text={briefingText} />{/if}
 			</div>
-		</button>
+		</div>
 	{/if}
 {/if}
 
@@ -373,6 +353,7 @@
 		justify-content: center;
 		background: rgba(15, 23, 42, 0.45);
 		border: none;
+		cursor: pointer;
 	}
 	.bubble {
 		max-width: 620px;

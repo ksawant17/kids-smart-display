@@ -53,9 +53,9 @@ export async function POST({ request, cookies }) {
 	}
 	if (body.features !== undefined) {
 		const f = body.features ?? {};
-		for (const k of ['briefing', 'stories', 'content'])
+		for (const k of ['briefing', 'stories', 'content', 'ask'])
 			if (typeof f[k] !== 'boolean') error(400, `bad features.${k}`);
-		patch.features = { briefing: f.briefing, stories: f.stories, content: f.content };
+		patch.features = { briefing: f.briefing, stories: f.stories, content: f.content, ask: f.ask };
 	}
 	if (patch.enabled && (!url || !(patch.model ?? saved.model))) error(400, 'Test the server and pick a model first');
 	saveAi(patch);

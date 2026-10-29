@@ -15,6 +15,9 @@
 	import Emoji from '#lib/components/Emoji.svelte';
 	import WeatherIcon from '#lib/components/WeatherIcon.svelte';
 	import FestiveTrim from '#lib/components/FestiveTrim.svelte';
+	import ReadAloud from '#lib/components/ReadAloud.svelte';
+	import { briefing } from '#lib/briefing';
+	import { askOpen } from '#lib/screen';
 	import { now, todayKey } from '#lib/clock';
 	import { weather } from '#lib/weather';
 	import { messages } from '#lib/messages';
@@ -30,12 +33,18 @@
 		names,
 		schoolEvents,
 		switchToTomorrowHour,
+		readAloud,
+		ask,
 		onclose
 	}: {
 		names: string;
 		schoolEvents: SchoolEvent[];
 		/** from this hour on, school + weather talk about tomorrow (as on TODAY) */
 		switchToTomorrowHour: number;
+		/** the audio HAT is there: offer to read the day's briefing aloud */
+		readAloud: boolean;
+		/** offer the 🎤 Ask button */
+		ask: boolean;
 		onclose: () => void;
 	} = $props();
 
@@ -73,6 +82,8 @@
 	// daytime: the next wet hour today, if rain is likely
 	const rainAt = $derived(evening || !wx ? null : (wx.hourly.slice(1, 12).find((h) => h.pop >= 50) ?? null));
 	const moon = $derived(moonPhase($now));
+	// 🔊 Read me: the AI briefing, shown as a caption while it's being said
+	let talking = $state(false);
 	// tonight's real moon up in the corner (clouds drift over it; hidden in rain / snow)
 	const MOON_R = 38;
 	const CRATERS = [[0.65, 0.74, 0.2], [1.3, 1.35, 0.15], [1.22, 0.52, 0.1], [0.6, 1.43, 0.11]]; // × radius
@@ -232,7 +243,26 @@
 				</div>
 			{/if}
 		</div>
-		<div class="hint">Tap anywhere to start</div>
+		{#if talking && $briefing}
+			<div class="caption anim-pop">{$briefing.text}</div>
+		{/if}
+		<div class="foot">
+			{#if readAloud && $briefing}
+				<ReadAloud text={$briefing.text} label={$briefing.when === 'tomorrow' ? 'Read tomorrow' : 'Read me'} bind:talking />
+			{/if}
+			{#if ask}
+				<button
+					class="ask pressable"
+					onclick={(e) => {
+						e.stopPropagation();
+						askOpen.set(true);
+					}}
+				>
+					<Emoji code="1f3a4" size={30} alt="" shadow="none" /> Ask me
+				</button>
+			{/if}
+			<div class="hint">Tap anywhere to start</div>
+		</div>
 	</div>
 </div>
 
@@ -505,8 +535,46 @@
 	.chip.note {
 		background: #dcfce7;
 	}
-	.hint {
+	.ask {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 54px;
+		padding: 0 20px 0 12px;
+		font: 900 21px 'Nunito', 'Baloo 2', sans-serif;
+		color: var(--text-dark);
+		text-shadow: none;
+		background: #a5f3fc;
+		border: 3px solid var(--border-dark);
+		border-radius: 999px;
+		box-shadow: var(--sticker-shadow-sm);
+	}
+	.foot {
+		display: flex;
+		align-items: center;
+		gap: 16px;
 		margin-top: 10px;
+	}
+	/* the briefing, while it's being read out */
+	.caption {
+		position: absolute;
+		left: 50px;
+		right: 50px;
+		bottom: 112px;
+		z-index: 2;
+		padding: 14px 22px;
+		font-size: 24px;
+		font-weight: 900;
+		line-height: 1.3;
+		text-align: center;
+		color: var(--text-dark);
+		text-shadow: none;
+		background: #fffbeb;
+		border: 3px solid var(--border-dark);
+		border-radius: 20px;
+		box-shadow: var(--sticker-shadow);
+	}
+	.hint {
 		padding: 2px 14px;
 		font-size: 15px;
 		font-weight: 800;

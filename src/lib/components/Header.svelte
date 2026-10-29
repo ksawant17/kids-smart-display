@@ -6,8 +6,10 @@
 	import { weather } from '#lib/weather';
 	import { themeFor } from '#lib/themes';
 	import { place } from '#lib/place';
+	import { askOpen } from '#lib/screen';
 
-	let { names }: { names: string } = $props();
+	/** ask: show the 🎤 Ask button (audio HAT + AI helper) */
+	let { names, ask = false }: { names: string; ask?: boolean } = $props();
 
 	// Sun by day, tonight's real moon phase at night; the forecast knows
 	// (is_day), the clock is the fallback.
@@ -34,10 +36,29 @@
 			{/each}
 		</div>
 	{/if}
+	{#if ask}
+		<button class="ask pressable" onclick={() => askOpen.set(true)}>
+			<Emoji code="1f3a4" size={24} alt="" shadow="none" /> Ask
+		</button>
+	{/if}
 	<div class="header-right">{clockTime($now)}</div>
 </header>
 
 <style>
+	.ask {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		height: 38px;
+		margin-right: 10px;
+		padding: 0 14px 0 8px;
+		font: 900 20px 'Nunito', 'Baloo 2', sans-serif;
+		color: var(--text-dark);
+		background: #a5f3fc;
+		border: 3px solid var(--border-dark);
+		border-radius: 20px;
+		box-shadow: 3px 3px 0 var(--border-dark);
+	}
 	/* takes only the leftover room; icons that don't fully fit wrap onto a
 	   hidden second line instead of overlapping the date or the clock */
 	.decor {

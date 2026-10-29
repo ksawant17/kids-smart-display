@@ -16,6 +16,7 @@
 		briefing: boolean;
 		stories: boolean;
 		content: boolean;
+		ask: boolean;
 	}
 	interface AiState {
 		enabled: boolean;
@@ -28,7 +29,8 @@
 	const FEATURES: { id: keyof Features; label: string; emoji: string; hint: string }[] = [
 		{ id: 'briefing', label: 'Daily briefing', emoji: '2728', hint: 'on TODAY' },
 		{ id: 'stories', label: 'Bedtime stories', emoji: '1f4d6', hint: 'on FUN' },
-		{ id: 'content', label: 'New jokes, facts, words', emoji: '1f4e5', hint: 'wait for your OK' }
+		{ id: 'content', label: 'New jokes, facts, words', emoji: '1f4e5', hint: 'wait for your OK' },
+		{ id: 'ask', label: 'Ask questions', emoji: '1f3a4', hint: 'out loud, with the mic' }
 	];
 
 	let saved = $state<AiState | null>(null);
@@ -37,7 +39,7 @@
 	let url = $state('');
 	let key = $state<string | null>(null);
 	let model = $state('');
-	let features = $state<Features>({ briefing: true, stories: true, content: true });
+	let features = $state<Features>({ briefing: true, stories: true, content: true, ask: true });
 	let models = $state<string[]>([]);
 	let reply = $state('');
 	let editing = $state<'url' | 'key' | null>(null);

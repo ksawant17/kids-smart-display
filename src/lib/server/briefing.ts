@@ -75,6 +75,9 @@ async function write(f: BriefingFacts): Promise<string | null> {
 	return null;
 }
 
+/** Did the briefing say exactly this? (only its own words may be read aloud) */
+export const isBriefingText = (text: string) => !!text && [...cache.values()].includes(text);
+
 /** The briefing for these facts (cached), or null if the AI couldn't write a good one. */
 export function briefing(f: BriefingFacts): Promise<string | null> {
 	const key = JSON.stringify(f);

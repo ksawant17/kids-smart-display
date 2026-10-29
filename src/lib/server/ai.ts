@@ -22,6 +22,8 @@ export interface AiFeatures {
 	stories: boolean;
 	/** new jokes, facts and words for the New Content queue */
 	content: boolean;
+	/** 🎤 Ask: answers to the kids' spoken questions (needs the audio HAT) */
+	ask: boolean;
 }
 
 export interface AiSettings {
@@ -38,7 +40,7 @@ const DEFAULTS: AiSettings = {
 	url: '',
 	key: '',
 	model: '',
-	features: { briefing: true, stories: true, content: true }
+	features: { briefing: true, stories: true, content: true, ask: true }
 };
 
 export function getAi(): AiSettings {

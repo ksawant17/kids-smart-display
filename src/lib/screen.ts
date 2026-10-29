@@ -74,4 +74,6 @@ export const screenPanelOpen = writable(false);
  * (back to TODAY, dim, off, bedtime's one minute) wait this much longer.
  */
 export const reading = writable(false);
+/** the 🎤 Ask sheet (header / idle screen button) */
+export const askOpen = writable(false);
 export const READING_GRACE_MS = 10 * 60_000;

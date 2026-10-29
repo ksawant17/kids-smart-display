@@ -6,7 +6,7 @@
 	import { weather } from '#lib/weather';
 	import { themeFor } from '#lib/themes';
 	import { place } from '#lib/place';
-	import { askOpen } from '#lib/screen';
+	import MicButton from '#lib/components/MicButton.svelte';
 
 	/** ask: show the 🎤 Ask button (audio HAT + AI helper) */
 	let { names, ask = false }: { names: string; ask?: boolean } = $props();
@@ -37,27 +37,12 @@
 		</div>
 	{/if}
 	{#if ask}
-		<button class="ask pressable" aria-label="Ask a question" onclick={() => askOpen.set(true)}>
-			<Emoji code="1f3a4" size={26} alt="" shadow="none" />
-		</button>
+		<MicButton look="small" />
 	{/if}
 	<div class="header-right">{clockTime($now)}</div>
 </header>
 
 <style>
-	.ask {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 42px;
-		height: 42px;
-		margin-right: 10px;
-		padding: 0;
-		background: #a5f3fc;
-		border: 3px solid var(--border-dark);
-		border-radius: 50%;
-		box-shadow: 3px 3px 0 var(--border-dark);
-	}
 	/* takes only the leftover room; icons that don't fully fit wrap onto a
 	   hidden second line instead of overlapping the date or the clock */
 	.decor {

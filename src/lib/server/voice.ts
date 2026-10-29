@@ -368,10 +368,17 @@ export const micOn = () => canListen() && getVoice().mic;
 const RATE = 16000;
 const FRAME_BYTES = (RATE * FRAME_MS) / 1000 * 2;
 let recorder: ChildProcess | null = null;
+let listeningId = '';
+/** let go before the listening even started (a quick tap): don't start it */
+const letGo = new Set<string>();
 
-/** End the question now (the "I'm done" button): what was heard so far is used. */
-export function stopListening() {
-	recorder?.kill();
+/** The 🎤 button was let go: the question ends, and what was heard so far is used. */
+export function stopListening(id = '') {
+	if (recorder && (!id || id === listeningId)) return void recorder.kill();
+	if (id) {
+		letGo.add(id);
+		if (letGo.size > 10) letGo.delete(letGo.values().next().value!);
+	}
 }
 
 function wavHeader(bytes: number) {
@@ -395,18 +402,24 @@ function wavHeader(bytes: number) {
  * Listen for one question: the speakers are muted and the mic opened, it
  * records until the kid stops talking, then turns it into text.
  * '' when nobody said anything. `hint`: words it should spell right (names).
+ * `hold`: the kid holds the 🎤 button while talking, so only letting go
+ * (stopListening(id)) ends it, not a pause; there are still time limits in
+ * case the let-go never arrives.
  */
-export async function listen(hint = ''): Promise<string> {
+export async function listen(hint = '', { hold = false, id = '' } = {}): Promise<string> {
 	if (recorder) throw new Error('Already listening');
+	listeningId = id;
 	stopSpeaking();
 	await queue; // never listen while it's talking
 	await setUpMixer();
 	if (!server()) stt.start().catch(() => {}); // warm up while the kid talks
-	const gate = new SpeechGate();
+	const gate = new SpeechGate(hold ? { endSilenceMs: Infinity, noSpeechMs: 8000, maxMs: 20_000 } : {});
 	const frames: Buffer[] = [];
+	if (id && letGo.delete(id)) return '';
 	try {
 		await amixer('Speaker', '0');
 		await amixer('Capture', 'cap');
+		if (id && letGo.delete(id)) return '';
 		await new Promise<void>((done) => {
 			const r = spawn('arecord', ['-q', '-D', `plughw:${CARD}`, '-f', 'S16_LE', '-r', String(RATE), '-c', '1', '-t', 'raw'], {
 				stdio: ['ignore', 'pipe', 'ignore']
@@ -432,12 +445,15 @@ export async function listen(hint = ''): Promise<string> {
 	}
 	const levels = `${frames.length} frames, speech above ${Math.round(gate.level)}, loudest ${Math.round(gate.loudest)}`;
 	let from: number;
-	if (gate.speechStart >= 0) from = Math.max(0, gate.speechStart - 15); // a little before the speech started
+	// holding the button: all of it (kids talk straight away), but the mic's first click
+	if (hold) from = gate.heardSomething ? 5 : -1;
+	else if (gate.speechStart >= 0) from = Math.max(0, gate.speechStart - 15); // a little before the speech started
 	else if (gate.heardSomething) {
 		// stopped ("I'm done", or the time ran out) before it counted as speech: let speech to text decide
 		console.log(`[voice] no clear speech, trying anyway (${levels})`);
 		from = GATE_DEFAULTS.settleMs / FRAME_MS;
-	} else {
+	} else from = -1;
+	if (from < 0) {
 		console.log(`[voice] heard nothing (${levels})`);
 		return '';
 	}

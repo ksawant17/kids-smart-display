@@ -82,6 +82,14 @@ describe('SpeechGate', () => {
 		expect(g.heardSomething).toBe(true);
 	});
 
+	it('keeps listening through pauses while the button is held', () => {
+		const g = new SpeechGate({ settleMs: 0, endSilenceMs: Infinity, noSpeechMs: 8000, maxMs: 20_000 });
+		feed(g, 100, 300);
+		expect(feed(g, 3000, 500)).toBe('speech');
+		expect(feed(g, 100, 3000)).toBe('speech'); // thinking of the rest of the question
+		expect(feed(g, 100, 17_000)).toBe('done'); // the let-go never came
+	});
+
 	it('does not count a steady offset as sound', () => {
 		const g = new SpeechGate({ settleMs: 0 });
 		const offset = Int16Array.from({ length: 320 }, () => -1200);

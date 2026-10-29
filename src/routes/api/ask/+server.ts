@@ -8,8 +8,9 @@ import { allowSpeech, listen, micOn, stopListening } from '#lib/server/voice';
 
 /**
  * 🎤 Ask, in two steps so the kiosk can show what's happening:
- *   POST /api/ask { action: "listen" }   records one question -> { question } ('' = heard nothing)
- *   POST /api/ask { action: "stop" }     "I'm done": ends the recording now
+ *   POST /api/ask { action: "listen", hold?, id? }  records one question -> { question } ('' = heard nothing)
+ *     hold: the kid holds the 🎤 button while talking; letting go sends "stop" with the same id
+ *   POST /api/ask { action: "stop", id? }  ends the recording now
  *   POST /api/ask { action: "answer", question, facts?, fresh? } -> { answer } (then /api/speak reads it)
  *     fresh: the first question since the sheet opened (forget the last conversation)
  * Only the kiosk itself (or an unlocked Grown-ups tab) may use the mic.
@@ -22,13 +23,14 @@ export async function POST({ request, cookies, getClientAddress }) {
 		case 'listen':
 			try {
 				const hint = getConfig().kids.map((k) => k.name).join(', ');
-				return json({ question: readQuestion(await listen(hint)) });
+				const id = typeof body.id === 'string' ? body.id.slice(0, 40) : '';
+				return json({ question: readQuestion(await listen(hint, { hold: body.hold === true, id })) });
 			} catch (err) {
 				console.warn(`[ask] ${err}`);
 				error(502, 'The microphone could not listen');
 			}
 		case 'stop':
-			stopListening();
+			stopListening(typeof body.id === 'string' ? body.id.slice(0, 40) : '');
 			return json({ ok: true });
 		case 'answer': {
 			const question = readQuestion(body.question);

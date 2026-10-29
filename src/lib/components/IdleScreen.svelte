@@ -17,7 +17,7 @@
 	import FestiveTrim from '#lib/components/FestiveTrim.svelte';
 	import ReadAloud from '#lib/components/ReadAloud.svelte';
 	import { briefing } from '#lib/briefing';
-	import { askOpen } from '#lib/screen';
+	import MicButton from '#lib/components/MicButton.svelte';
 	import { now, todayKey } from '#lib/clock';
 	import { weather } from '#lib/weather';
 	import { messages } from '#lib/messages';
@@ -256,18 +256,8 @@
 				/>
 			{/if}
 			{#if ask}
-				<button
-					class="ask pressable"
-					aria-label="Ask a question"
-					onclick={(e) => {
-						e.stopPropagation();
-						askOpen.set(true);
-					}}
-				>
-					<Emoji code="1f3a4" size={34} alt="" shadow="none" />
-				</button>
+				<MicButton />
 			{/if}
-			<div class="hint">Tap anywhere to start</div>
 		</div>
 	</div>
 </div>
@@ -541,18 +531,6 @@
 	.chip.note {
 		background: #dcfce7;
 	}
-	.ask {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 64px;
-		height: 64px;
-		padding: 0;
-		background: #a5f3fc;
-		border: 3px solid var(--border-dark);
-		border-radius: 999px;
-		box-shadow: var(--sticker-shadow-sm);
-	}
 	.foot {
 		display: flex;
 		align-items: center;
@@ -577,13 +555,6 @@
 		border: 3px solid var(--border-dark);
 		border-radius: 20px;
 		box-shadow: var(--sticker-shadow);
-	}
-	.hint {
-		padding: 2px 14px;
-		font-size: 15px;
-		font-weight: 800;
-		background: rgba(15, 23, 42, 0.55);
-		border-radius: 999px;
 	}
 
 	@keyframes twinkle {

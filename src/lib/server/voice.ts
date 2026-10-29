@@ -22,8 +22,11 @@
  * speakers are muted and the mic input is off except while something is
  * being said, or a kid is asking a question (never both at once).
  *
- * Settings in data/voice.json: { enabled, volume (0-100), mic } (volume and
- * the mic switch are in the quick menu that pulls down from the header).
+ * Settings in data/voice.json: { enabled, volume (0-100), mic, voice, speed }
+ * (volume and the mic switch are in the quick menu that pulls down from the
+ * header; the voice and its speed in Grown-ups -> Voice). Other voices than
+ * Amy, including the funny ones, come from the voice server; without it the
+ * Pi speaks as Amy.
  */
 import { execFile, spawn, type ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -55,9 +58,17 @@ export interface VoiceSettings {
 	volume: number;
 	/** may the dashboard listen at all (push-to-talk)? off: the mic input stays off */
 	mic: boolean;
+	/** a voice server voice id (see ai-box/voice-server.py) */
+	voice: string;
+	/** 0.7 (slower) - 1.4 (faster) */
+	speed: number;
 }
 
-const DEFAULTS: VoiceSettings = { enabled: true, volume: 70, mic: true };
+export const DEFAULT_VOICE = 'amy';
+export const SPEEDS = { min: 0.7, max: 1.4 };
+const DEFAULTS: VoiceSettings = { enabled: true, volume: 70, mic: true, voice: DEFAULT_VOICE, speed: 1 };
+export const voiceIdOk = (v: unknown): v is string => typeof v === 'string' && /^[a-z0-9_-]{1,40}$/.test(v);
+const clampSpeed = (n: number) => Math.round(Math.min(SPEEDS.max, Math.max(SPEEDS.min, n)) * 100) / 100;
 
 export function getVoice(): VoiceSettings {
 	try {
@@ -65,7 +76,9 @@ export function getVoice(): VoiceSettings {
 		return {
 			enabled: s.enabled !== false,
 			volume: Number.isFinite(s.volume) ? Math.min(100, Math.max(0, Math.round(s.volume))) : DEFAULTS.volume,
-			mic: s.mic !== false
+			mic: s.mic !== false,
+			voice: voiceIdOk(s.voice) ? s.voice : DEFAULTS.voice,
+			speed: Number.isFinite(s.speed) ? clampSpeed(s.speed) : DEFAULTS.speed
 		};
 	} catch {
 		return { ...DEFAULTS };
@@ -241,12 +254,33 @@ async function viaServer<T>(
 	}
 }
 
-async function synth(text: string, out: string) {
-	const wav = await viaServer('/tts', JSON.stringify({ text }), { 'content-type': 'application/json' }, async (r) =>
-		Buffer.from(await r.arrayBuffer())
+/** the voice server's voices (null: no voice server, or it can't be reached) */
+export async function serverVoices(): Promise<{ id: string; name: string; funny: boolean }[] | null> {
+	const s = server();
+	if (!s) return null;
+	try {
+		const res = await fetch(`${s.url}/voices`, { signal: AbortSignal.timeout(5000) });
+		if (!res.ok) return null;
+		const body = (await res.json()) as { voices?: { id?: unknown; name?: unknown; funny?: unknown }[] };
+		return (body.voices ?? [])
+			.filter((v) => voiceIdOk(v.id) && typeof v.name === 'string')
+			.map((v) => ({ id: v.id as string, name: v.name as string, funny: v.funny === true }));
+	} catch {
+		return null;
+	}
+}
+
+/** makes the WAV; false when the Pi's own voice (Amy) had to stand in */
+async function synth(text: string, out: string, voice: string, speed: number): Promise<boolean> {
+	const wav = await viaServer(
+		'/tts',
+		JSON.stringify({ text, voice, speed }),
+		{ 'content-type': 'application/json' },
+		async (r) => Buffer.from(await r.arrayBuffer())
 	);
-	if (wav) writeFileSync(out, wav);
-	else await tts.ask({ text, out });
+	if (wav) return writeFileSync(out, wav), true;
+	await tts.ask({ text, out, speed }); // the Pi's own voice: Amy
+	return false;
 }
 
 /** the recording (a WAV) as text, on the voice server or the Pi */
@@ -269,14 +303,20 @@ async function transcribe(wav: Buffer, hint: string): Promise<string> {
 	}
 }
 
-/** the spoken text as a WAV file, made once per text */
+/** the spoken text as a WAV file, made once per text, voice and speed */
 async function wavFor(text: string): Promise<string> {
 	mkdirSync(CACHE, { recursive: true });
-	const file = resolve(CACHE, `${createHash('sha256').update(text).digest('hex').slice(0, 16)}.wav`);
+	const { voice, speed } = getVoice();
+	const name = (v: string) => resolve(CACHE, `${createHash('sha256').update(`${v}|${speed}|${text}`).digest('hex').slice(0, 16)}.wav`);
+	const file = name(voice);
 	if (!existsSync(file)) {
-		await synth(text, `${file}.tmp`);
-		renameSync(`${file}.tmp`, file);
+		// Amy standing in for another voice is kept under Amy's name, not that voice's
+		const fallback = name(`pi:${DEFAULT_VOICE}`);
+		if (existsSync(fallback) && !server()) return fallback;
+		const made = (await synth(text, `${file}.tmp`, voice, speed)) || voice === DEFAULT_VOICE ? file : fallback;
+		renameSync(`${file}.tmp`, made);
 		trimCache();
+		return made;
 	}
 	return file;
 }

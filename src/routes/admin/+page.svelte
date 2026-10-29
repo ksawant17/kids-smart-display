@@ -24,6 +24,7 @@
 	import PinSection from '#lib/components/admin/PinSection.svelte';
 	import ContentSection from '#lib/components/admin/ContentSection.svelte';
 	import AiSection from '#lib/components/admin/AiSection.svelte';
+	import VoiceSection from '#lib/components/admin/VoiceSection.svelte';
 
 	const admin = new AdminSession();
 
@@ -31,6 +32,7 @@
 		{ id: 'messages', label: 'Notes', emoji: '1f4e3', color: '#dcfce7', component: MessagesSection },
 		{ id: 'content', label: 'New Content', emoji: '1f4e5', color: '#fef3c7', component: ContentSection },
 		{ id: 'ai', label: 'AI Helper', emoji: '1f916', color: '#f3e8ff', component: AiSection },
+		{ id: 'voice', label: 'Voice', emoji: '1f5e3', color: '#cffafe', component: VoiceSection },
 		{ id: 'kids', label: 'Kids', emoji: '1f9d2', color: '#fce7f3', component: KidsSection },
 		{ id: 'place', label: 'Weather Place', emoji: '1f4cd', color: '#e0f2fe', component: PlaceSection },
 		{ id: 'school', label: 'School', emoji: '1f3eb', color: '#fee2e2', component: SchoolSection },

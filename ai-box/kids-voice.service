@@ -10,7 +10,8 @@ EnvironmentFile=/etc/kids-ai/voice.env
 # faster-whisper needs the CUDA 12 libraries installed in the venv
 Environment=LD_LIBRARY_PATH=/opt/kids-voice/venv/lib/python3.13/site-packages/nvidia/cublas/lib:/opt/kids-voice/venv/lib/python3.13/site-packages/nvidia/cudnn/lib
 Environment=STT_MODEL=/opt/kids-voice/whisper/small.en
-Environment=TTS_VOICE=/opt/kids-voice/voices/en_US-amy-medium.onnx
+Environment=VOICE_DIR=/opt/kids-voice/voices
+Environment=KOKORO_DIR=/opt/kids-voice/kokoro
 ExecStart=/opt/kids-voice/venv/bin/python -I /opt/kids-voice/voice-server.py
 Restart=on-failure
 RestartSec=5

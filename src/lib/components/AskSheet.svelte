@@ -12,6 +12,8 @@
 	import MicButton from '#lib/components/MicButton.svelte';
 	import ReadAloud from '#lib/components/ReadAloud.svelte';
 	import { askOpen, micHeld, reading } from '#lib/screen';
+	import { weather } from '#lib/weather';
+	import { weatherLabel } from '#lib/utils/weatherCodes';
 
 	let { facts }: { facts: string } = $props();
 
@@ -27,6 +29,14 @@
 	let listenId = ''; // this recording: letting go stops exactly this one
 	let pressedAt = 0;
 	let quickTap = false;
+
+	/** the weather right now, as the big number on TODAY shows it (facts only has the day's high and low) */
+	function weatherNow(): string {
+		const c = $weather.data?.current;
+		if (!c) return '';
+		const sky = weatherLabel(c.weather_code, c.is_day === 1).toLowerCase();
+		return `${Math.round(c.temp_f)}°F, feels like ${Math.round(c.feels_f)}°F, ${sky}, wind ${Math.round(c.wind_mph)} mph`;
+	}
 
 	const post = (body: object) =>
 		fetch('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -59,6 +69,7 @@
 				action: 'answer',
 				question,
 				facts: facts ? JSON.parse(facts) : null,
+				weatherNow: weatherNow(),
 				fresh: answered === 0
 			});
 			if (closed) return;

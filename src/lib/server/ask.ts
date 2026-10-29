@@ -56,16 +56,22 @@ export function readQuestion(v: unknown): string {
 	return /^[\s.,!?-]*$|^(thank you|thanks for watching|you)[.!]?$/i.test(q) ? '' : q;
 }
 
-function context(f: BriefingFacts | null, now: Date): string {
+/** the weather right now as the screen shows it, e.g. "69°F, feels like 67°F, sunny" */
+export function readWeatherNow(v: unknown): string {
+	return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, 120) : '';
+}
+
+function context(f: BriefingFacts | null, now: Date, weatherNow: string): string {
 	const kids = getConfig().kids.map((k) => k.name);
 	const lines = [
 		`The kids here are ${kids.join(' and ')}.`,
 		`Right now it is ${now.toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}.`
 	];
+	if (weatherNow) lines.push(`The weather right now (the big number on the screen): ${weatherNow}.`);
 	if (f) {
 		lines.push(
 			`What the screen shows about ${f.when} (${f.dayName}):`,
-			`- Weather: ${f.weather}`,
+			`- Weather for the whole day: ${f.weather}`,
 			`- School: ${f.school}`,
 			`- What to wear: ${f.wear}`
 		);
@@ -76,7 +82,7 @@ function context(f: BriefingFacts | null, now: Date): string {
 }
 
 /** An answer for a kid's question; null when the AI couldn't give a good one. */
-export async function answer(question: string, facts: BriefingFacts | null): Promise<string | null> {
+export async function answer(question: string, facts: BriefingFacts | null, weatherNow = ''): Promise<string | null> {
 	// a grown-up topic is neither sent nor remembered
 	if (hasBlockedWords(question)) return ASK_A_GROWN_UP;
 	const now = Date.now();
@@ -87,12 +93,13 @@ export async function answer(question: string, facts: BriefingFacts | null): Pro
 		`Answer in 1 to 3 short sentences (under ${MAX_LEN} characters), simply and correctly, ` +
 		'like a friendly teacher. For a math question, give the answer and one tiny tip. ' +
 		'Only use the facts below for questions about today, the weather, school or clothes; never make up plans. ' +
+		'For the weather or temperature now, give the temperature right now; the high and low are for the whole day. ' +
 		"If you don't know, say so kindly. If the question is about something not right for a child, " +
 		'or about their body, health, safety, or feelings that sound worrying, gently say to ask a grown-up. ' +
 		'Plain words only: never use emoji or smileys like :) (they would be read out loud), no lists, no links. ' +
 		'If you have already talked with the child, the new question may follow on from that ' +
 		'(like "why?" or "what about tomorrow?"): answer it in that light.\n\n' +
-		context(facts, new Date());
+		context(facts, new Date(), weatherNow);
 	for (let attempt = 0; attempt < 2; attempt++) {
 		const text = withoutEmoji(
 			await chat(

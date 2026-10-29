@@ -49,6 +49,11 @@ describe('Ask: the conversation', () => {
 		expect(past(1)).toEqual(['Why?']);
 	});
 
+	it('tells the AI the weather right now, apart from the day', async () => {
+		await answer("What's the weather?", null, '69°F, feels like 67°F, sunny, wind 5 mph');
+		expect(sent[0][0].content).toContain('The weather right now (the big number on the screen): 69°F, feels like 67°F');
+	});
+
 	it('neither sends nor remembers a grown-up topic', async () => {
 		await answer('Why is the sky blue?', null);
 		const blocked = 'what is a gun';

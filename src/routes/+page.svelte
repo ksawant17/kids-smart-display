@@ -305,6 +305,8 @@
 	/* --- top strip: quote / evening ribbon / alert --- */
 	.strip {
 		flex: 0 0 auto;
+		/* right under the header: a swipe down starting here is the quick menu's */
+		touch-action: none;
 		display: flex;
 		align-items: center;
 		gap: 8px;

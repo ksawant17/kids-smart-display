@@ -258,19 +258,30 @@
 	}
 
 	/* --- quick menu: pull down from the top of the screen (like a phone) --- */
-	const PULL_ZONE = 64; // px from the top of the frame: the header band
+	// anywhere across the width, from the top edge down to just under the
+	// header (the .pull-grab strips keep the browser from taking those swipes)
+	const PULL_ZONE = 72; // px from the top of the frame
+	const PULL_DISTANCE = 35; // px down
 	let frame: HTMLElement | undefined = $state();
-	let pullFrom: number | null = null;
+	let pullFrom: { x: number; y: number } | null = null;
 	function pullMove(e: PointerEvent) {
-		if (pullFrom !== null && e.clientY - pullFrom > 45) {
+		if (!pullFrom) return;
+		const dy = e.clientY - pullFrom.y;
+		// mostly downwards (a sideways swipe isn't a pull)
+		if (dy > PULL_DISTANCE && dy > Math.abs(e.clientX - pullFrom.x)) {
 			pullFrom = null;
 			screenPanelOpen.set(true);
 		}
 	}
+	// holding 🎤 means "talk", not "pull"
+	const startsOnMic = (e: PointerEvent) => e.target instanceof Element && !!e.target.closest(".mic");
 
 	function onTouch(e: PointerEvent) {
 		const top = frame?.getBoundingClientRect().top ?? 0;
-		pullFrom = !idleScreen && !$screenPanelOpen && screenMode === awake && e.clientY - top < PULL_ZONE ? e.clientY : null;
+		pullFrom =
+			!idleScreen && !$screenPanelOpen && screenMode === awake && e.clientY - top < PULL_ZONE && !startsOnMic(e)
+				? { x: e.clientX, y: e.clientY }
+				: null;
 		lastTouch = Date.now();
 		sentHome = false;
 		if (RANK[screenMode] > RANK[awake]) {
@@ -300,6 +311,9 @@
 />
 
 <div id="pi-screen" class="sky-{sky}" bind:this={frame}>
+	<!-- invisible: the bands above and below the header belong to the pull-down -->
+	<div class="pull-grab top" aria-hidden="true"></div>
+	<div class="pull-grab under" aria-hidden="true"></div>
 	<Header {names} ask={canAsk} />
 	<main>
 		{@render children()}

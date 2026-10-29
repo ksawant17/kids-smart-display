@@ -151,6 +151,24 @@ img {
 	text-shadow: 2px 2px 0 rgba(17, 24, 39, 0.45);
 }
 
+/* the bands above and below the header: a swipe down there is always the
+   quick menu's, never a scroll for the browser (which would cancel it) */
+.pull-grab {
+	position: absolute;
+	left: 0;
+	right: 0;
+	z-index: 5;
+	touch-action: none;
+}
+.pull-grab.top {
+	top: 0;
+	height: 14px;
+}
+.pull-grab.under {
+	top: 52px;
+	height: 14px;
+}
+
 /* --- Header ------------------------------------------------------------- */
 header {
 	touch-action: none; /* pull-down for the quick menu starts here */

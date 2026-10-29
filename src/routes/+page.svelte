@@ -29,7 +29,7 @@
 		tomorrowStatus,
 		upNext
 	} from '#lib/utils/schoolCalendar';
-	import { clockTime, hourLabel, pickDaily } from '#lib/utils/time';
+	import { clockTime, dayNumber, hourLabel, pickDaily } from '#lib/utils/time';
 	import { alertAdvice, alertLevel, skyStory } from '#lib/utils/forecastStory';
 	import { moonPhase } from '#lib/utils/moon';
 	import { messagesOn } from '#lib/utils/messages';
@@ -37,6 +37,8 @@
 	import ReadAloud from '#lib/components/ReadAloud.svelte';
 	import { briefing } from '#lib/briefing';
 	import quotes from '#lib/data/quotes.json';
+	import { funPicks } from '#lib/utils/funPicks';
+	import { dinoEmoji } from '#lib/utils/dino';
 
 	let { data } = $props();
 
@@ -69,6 +71,18 @@
 	const note = $derived(notes.length ? notes[turn % notes.length] : null);
 	// built-in quotes + the ones a grown-up kept (Grown-ups tab -> New Content)
 	const quote = $derived(pickDaily([...quotes, ...data.content.quotes], $now));
+
+	// the fun strip (there is no tab bar): today's picks, each opening its page
+	const fun = $derived(funPicks(dayNumber($now), data.content));
+	const funLinks = $derived([
+		{ to: '/fun?corner=dino', emoji: dinoEmoji(fun.dino), label: fun.dino.name },
+		{ to: '/fun?corner=joke', emoji: '1f602', label: 'Joke' },
+		{ to: '/fun?corner=word', emoji: fun.word.emoji, label: fun.word.word },
+		data.ai.stories
+			? { to: '/fun?corner=story', emoji: '1f4d6', label: 'Story' }
+			: { to: '/fun?corner=fact', emoji: fun.fact.emoji[0], label: 'Fun fact' },
+		{ to: '/quote', emoji: '1f3c6', label: 'Quote' }
+	]);
 
 	// ---- weather column ----
 	// today: now + the coming hours; evening: tomorrow + tomorrow morning
@@ -266,6 +280,16 @@
 				{/if}
 			</button>
 		</div>
+
+		<!-- fun strip: today's dino, joke, word... straight into FUN / QUOTE -->
+		<nav class="fun-strip" aria-label="Fun things">
+			{#each funLinks as f (f.to)}
+				<button class="fun-link pressable" onclick={() => goto(f.to)}>
+					<Emoji code={f.emoji} size={30} alt="" shadow="none" />
+					<span>{f.label}</span>
+				</button>
+			{/each}
+		</nav>
 	</div>
 	{#if briefingOpen && briefingText}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -396,6 +420,46 @@
 	}
 	.strip.alert-yellow {
 		background: #fde047;
+	}
+
+	/* --- fun strip --- */
+	.fun-strip {
+		flex: 0 0 auto;
+		display: grid;
+		grid-template-columns: 1.3fr 1fr 1.2fr 1fr 1fr;
+		gap: 10px;
+	}
+	.fun-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		min-width: 0;
+		height: 54px;
+		padding: 0 12px;
+		font: 900 19px 'Nunito', 'Baloo 2', sans-serif;
+		color: var(--text-dark);
+		background: #f5d0fe;
+		border: 3px solid var(--border-dark);
+		border-radius: 16px;
+		box-shadow: var(--sticker-shadow);
+	}
+	.fun-link:nth-child(2) {
+		background: #fde68a;
+	}
+	.fun-link:nth-child(3) {
+		background: #c7d2fe;
+	}
+	.fun-link:nth-child(4) {
+		background: #bbf7d0;
+	}
+	.fun-link:nth-child(5) {
+		background: #fed7aa;
+	}
+	.fun-link span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	/* --- three answers --- */

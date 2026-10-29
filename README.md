@@ -50,11 +50,15 @@ kids' names and location never end up in the repo. Without it, the example
 config is used. To run it full-screen on the Pi at boot, see
 [Running on the Pi](#running-on-the-pi).
 
-## The five tabs
+## The pages
 
-| Tab        | What it does |
+There is no tab bar: TODAY is the home page, its tiles open the other pages,
+and every other page has a big 🏠 **Home** button in the header (the screen also
+goes back to TODAY by itself after a while untouched).
+
+| Page       | What it does |
 |------------|--------------|
-| **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), a red **weather alert** when there is one, or a **note from a grown-up** (Grown-ups tab); with the [AI helper](#ai-helper) on, a ✨ **daily briefing** takes turns with the quote (tap it to read it big). **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days |
+| **TODAY**  | Three big answers, one column each, every column a button: **Weather** (temperature, a kid-language sentence, the next hours, tomorrow at a glance; tap or swipe down for the full report), **School** (today's status, the next school event with a "sleeps" countdown; tap for that day in CALENDAR) and **What to Wear** (each kid's animal buddy dressed in the outfit, the outfit icons, and each kid's progress from the WARDROBE checklist; tap for WARDROBE). The top strip shows the quote of the day (tap for QUOTE), a red **weather alert** when there is one, or a **note from a grown-up** (Grown-ups tab); with the [AI helper](#ai-helper) on, a ✨ **daily briefing** takes turns with the quote (tap it to read it big). **From 6 PM all three columns switch to tomorrow together** under a "Getting ready for tomorrow" ribbon, so the screen never mixes days. Along the bottom, the **fun strip** shows today's dino, word and more: each opens FUN on that corner (Story with the AI helper, otherwise Facts), and **Quote** opens QUOTE |
 | **CALENDAR** | School month grid (red = no school, yellow = early release, green = first/last day, grey = weekend), swipe or ‹ › to change month, **Today** to jump back. **Tap any day** (or an Up Next row) for a popup with that day's school status, events (with break dates), and, within the week's forecast, the weather and what to wear. Plus "Up Next at School" with **"Tomorrow!" / "N sleeps" countdowns** (breaks under way stay listed until they end) and a **next-break countdown**. **Marathi calendar (पंचांग):** the lunar months and Shaka year under the month name, each day's tithi (शु ५ / व १२, a moon on Purnima / Amavasya) and a sticker on festival days; the day popup gives the full panchang ("आश्विन वद्य अमावास्या · शके १९४८") and the day's festivals; the **सण** switch on the right lists the Marathi festivals coming up |
 | **WARDROBE** | Outfit planner for **today and the next 6 days** (‹ › arrows; opens on today, or tomorrow after 6 PM): the day's weather + a tap-to-check checklist **per kid**, saved per date. The kid's buddy **gets dressed as each item is ticked off** |
 | **QUOTE**  | Message of the day: one encouraging, correctly attributed quote (100 built in, plus any a grown-up kept from the internet), rotates at midnight |
@@ -146,11 +150,8 @@ outside the card.
 - **Sky that follows the day:** the background is peach at sunrise, cyan by
   day, orange-pink at sunset and a starry navy at night (from the real
   sunrise/sunset times).
-- **Tabs by colour:** the active tab is full colour; the others are a pale
-  version of their own colour, so kids can find them by colour. The active
-  tab's icon does a little move every few seconds (the sunglasses wiggle, the
-  calendar flips, the jacket swings, the trophy bounces, the dino stomps), and
-  tabs squish when tapped.
+- **Fun strip and Home button:** TODAY's bottom strip is five coloured sticker
+  buttons with today's picks; the other pages have a yellow 🏠 Home pill.
 - **Moving weather:** the big weather icons move with the weather: the sun's
   rays turn, clouds drift, rain and snow fall, storms flash, the moon rocks
   (`WeatherIcon.svelte`; small hourly icons stay still). All animations move
@@ -401,10 +402,9 @@ missing SVG; `tests/emoji.test.ts` fails if one is missing.
 
 ```
 #pi-screen  — fixed 800×480 frame, edge to edge (sky background)
-├── Header      greeting + date (left), live clock pill (right)
-├── main        the active page
-└── nav.tabs    five flush "file-folder" tabs; active tab is coloured,
-                the rest are dimmed grey and sit slightly lower
+├── Header      greeting + date on TODAY, 🏠 Home + the page's name elsewhere
+│               (left); 🎤 and the live clock pill (right)
+└── main        the active page (TODAY's tiles and fun strip lead to the others)
 ```
 
 ## Running on the Pi
@@ -523,7 +523,7 @@ config/
 └── dashboard.json           your settings (git-ignored)
 docs/screenshots/            README screenshots (taken with the example config)
 src/
-├── app.css                  the whole sticker theme (frame, header, cards, tabs)
+├── app.css                  the whole sticker theme (frame, header, cards)
 ├── lib/
 │   ├── config.ts            config shape, defaults, validation
 │   ├── clock.ts             shared ticking clock + todayKey (midnight rollover)
@@ -534,7 +534,7 @@ src/
 │   ├── themes.ts            US + Indian festival themes (decorations, greetings, hats, countdown)
 │   ├── place.ts             where the dashboard is (for the panchang)
 │   ├── buddies.ts           animal buddy list + default clothes colours
-│   ├── components/          Emoji, Buddy (dressed animal SVG), KidAvatar, Header, BottomNav,
+│   ├── components/          Emoji, Buddy (dressed animal SVG), KidAvatar, Header, MicButton,
 │   │                        SectionTitle, WeatherReport, WeatherIcon, IdleScreen, FestiveTrim, ScreenControl, Keypad, PowerMenu
 │   │   └── admin/           one *Section per admin tile, TextSheet (on-screen keyboard), Stepper
 │   ├── admin.svelte.ts      the admin page's session (API calls, notes, lock)

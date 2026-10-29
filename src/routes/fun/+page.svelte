@@ -2,7 +2,8 @@
 	/**
 	 * FUN: five little corners, each with a daily pick and an "another!" button.
 	 *   Dino · Joke (tap to reveal) · Word of the day · Math (tap to check) · Facts
-	 * Everything resets to the daily pick when the tab is opened again.
+	 * Everything resets to the daily pick when the tab is opened again; TODAY's
+	 * fun strip opens it on a corner (/fun?corner=joke) and shows the same picks.
 	 * With the AI helper on, a sixth corner writes bedtime stories (pick a
 	 * hero, a place and what it's about).
 	 */
@@ -11,20 +12,17 @@
 	import KidAvatar from '#lib/components/KidAvatar.svelte';
 	import { now } from '#lib/clock';
 	import { dayNumber } from '#lib/utils/time';
-	import { dinoEmoji, dietEmoji, dinoSize, type Dino } from '#lib/utils/dino';
+	import { page } from '$app/state';
+	import { dinoEmoji, dietEmoji, dinoSize } from '#lib/utils/dino';
+	import { funPicks, isCorner, type Corner } from '#lib/utils/funPicks';
 	import { mathPuzzle, type MathLevel } from '#lib/utils/mathPuzzle';
 	import { STORY_PLACES, STORY_THEMES } from '#lib/utils/story';
 	import ReadAloud from '#lib/components/ReadAloud.svelte';
 	import { dinoSpeech, factSpeech, jokeSpeech, storySpeech, wordSpeech } from '#lib/utils/readAloud';
 	import { reading } from '#lib/screen';
-	import facts from '#lib/data/facts.json';
-	import dinos from '#lib/data/dinos.json';
-	import jokes from '#lib/data/jokes.json';
-	import words from '#lib/data/words.json';
 
 	let { data } = $props();
 
-	type Corner = 'dino' | 'joke' | 'word' | 'math' | 'fact' | 'story';
 	const CORNERS = $derived<{ id: Corner; label: string; emoji: string }[]>([
 		{ id: 'dino', label: 'Dino', emoji: '1f996' },
 		{ id: 'joke', label: 'Joke', emoji: '1f602' },
@@ -33,25 +31,25 @@
 		{ id: 'fact', label: 'Facts', emoji: '1f4a1' },
 		...(data.ai.stories ? [{ id: 'story' as const, label: 'Story', emoji: '1f4d6' }] : [])
 	]);
-	let corner = $state<Corner>('dino');
+	const asked = page.url.searchParams.get('corner');
+	// svelte-ignore state_referenced_locally (just the corner to start on)
+	let corner = $state<Corner>(isCorner(asked) && (asked !== 'story' || data.ai.stories) ? asked : 'dino');
 
 	// today's pick + how many times "another!" was pressed, per corner
 	const day = $derived(dayNumber($now));
 	let extra = $state({ dino: 0, joke: 0, word: 0, math: 0, fact: 0, story: 0 });
-	const pick = <T,>(list: T[], salt: number, n: number) => list[(day + salt + n) % list.length];
 	function another(c: Corner) {
 		extra = { ...extra, [c]: extra[c] + 1 };
 		revealed = false;
 		answered = null;
 	}
 
-	const dino = $derived(pick(dinos as Dino[], 0, extra.dino));
-	// built-in jokes + the ones a grown-up kept (Grown-ups tab -> New Content)
-	const joke = $derived(pick([...jokes, ...data.content.jokes], 3, extra.joke));
-	// built-in words + the ones a grown-up kept (AI helper -> New Content)
-	const word = $derived(pick([...words, ...data.content.words], 11, extra.word));
-	// built-in facts + the ones a grown-up kept (Grown-ups tab -> New Content)
-	const fact = $derived(pick([...facts, ...data.content.facts], 7, extra.fact));
+	// built-in lists + what a grown-up kept (Grown-ups tab -> New Content)
+	const picks = $derived(funPicks(day, data.content, extra));
+	const dino = $derived(picks.dino);
+	const joke = $derived(picks.joke);
+	const word = $derived(picks.word);
+	const fact = $derived(picks.fact);
 
 	// joke: the punchline waits for a tap; a kid's buddy tells it
 	let revealed = $state(false);

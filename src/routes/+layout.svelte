@@ -4,7 +4,6 @@
 	import { page, updated } from '$app/state';
 	import '../app.css';
 	import Header from '#lib/components/Header.svelte';
-	import BottomNav from '#lib/components/BottomNav.svelte';
 	import WeatherReport from '#lib/components/WeatherReport.svelte';
 	import ScreenControl from '#lib/components/ScreenControl.svelte';
 	import PowerMenu from '#lib/components/PowerMenu.svelte';
@@ -304,7 +303,6 @@
 	<main>
 		{@render children()}
 	</main>
-	<BottomNav />
 	<!-- Full-frame weather report panel (opened from the TODAY tab) -->
 	<WeatherReport kids={data.kids} wardrobe={data.wardrobe} />
 	<ScreenControl

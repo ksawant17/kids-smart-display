@@ -2,6 +2,8 @@
 Description=Kids Smart Display - AI helper (llama.cpp, Qwen3 14B) on :8080
 After=network-online.target
 Wants=network-online.target
+# keep trying after a reboot or a crash, however long the GPU takes to show up
+StartLimitIntervalSec=0
 
 [Service]
 User=kids-ai
@@ -10,8 +12,10 @@ ExecStart=/opt/kids-ai/llama.cpp/build/bin/llama-server \
   -m /opt/kids-ai/models/Qwen3-14B-Q4_K_M.gguf --alias qwen3-14b \
   --host 0.0.0.0 --port 8080 --api-key ${AI_KEY} \
   -ngl 99 -c 8192 -np 1 -fa on --no-webui
-Restart=on-failure
-RestartSec=5
+# wait (up to 2 minutes) for the NVIDIA card before loading the model onto it
+ExecStartPre=/bin/sh -c 'for i in $$(seq 60); do nvidia-smi -L >/dev/null 2>&1 && exit 0; sleep 2; done; echo "no GPU yet"; exit 1'
+Restart=always
+RestartSec=10
 # home network only (plus this machine)
 IPAddressDeny=any
 IPAddressAllow=localhost 192.168.10.0/24

@@ -2,15 +2,17 @@
 	/**
 	 * 🔊 Read me: says `text` through the audio HAT's speakers (POST /api/speak,
 	 * which only reads text the dashboard wrote itself). Tap again to stop.
-	 * Only shown when the voice is installed and switched on.
+	 * Only shown when the voice is installed and switched on. `round`: just the
+	 * 🔊 sign in a circle (the label is still there for screen readers).
 	 */
 	import Emoji from '#lib/components/Emoji.svelte';
 
 	let {
 		text,
 		label = 'Read me',
+		round = false,
 		talking = $bindable(false)
-	}: { text: string; label?: string; talking?: boolean } = $props();
+	}: { text: string; label?: string; round?: boolean; talking?: boolean } = $props();
 
 	let ticket = 0; // a reply to an older tap must not reset a newer one
 
@@ -36,9 +38,16 @@
 	}
 </script>
 
-<button class="read pressable" class:talking onclick={speak} aria-pressed={talking}>
-	<span class="icon"><Emoji code={talking ? '23f9' : '1f50a'} size={30} alt="" shadow="none" /></span>
-	{talking ? 'Stop' : label}
+<button
+	class="read pressable"
+	class:talking
+	class:round
+	onclick={speak}
+	aria-pressed={talking}
+	aria-label={round ? (talking ? 'Stop' : label) : undefined}
+>
+	<span class="icon"><Emoji code={talking ? '23f9' : '1f50a'} size={round ? 34 : 30} alt="" shadow="none" /></span>
+	{#if !round}{talking ? 'Stop' : label}{/if}
 </button>
 
 <style>
@@ -56,6 +65,12 @@
 		border-radius: 999px;
 		box-shadow: var(--sticker-shadow-sm);
 		cursor: pointer;
+	}
+	.read.round {
+		width: 64px;
+		height: 64px;
+		padding: 0;
+		justify-content: center;
 	}
 	.read.talking {
 		background: #fecaca;

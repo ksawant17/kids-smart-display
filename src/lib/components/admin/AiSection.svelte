@@ -3,6 +3,8 @@
 	 * AI Helper: the address and key of an AI chat server on the home network
 	 * (see src/lib/server/ai.ts), a Test button that lists its models, and
 	 * which features may use it. The key is never shown again, only "…abcd".
+	 * Optionally a voice server (ai-box/voice-server.py) that listens and
+	 * speaks for the Pi, with its own key and Test button.
 	 */
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
@@ -24,6 +26,8 @@
 		keyHint: string;
 		model: string;
 		features: Features;
+		voiceUrl: string;
+		voiceKeyHint: string;
 	}
 
 	const FEATURES: { id: keyof Features; label: string; emoji: string; hint: string }[] = [
@@ -42,7 +46,10 @@
 	let features = $state<Features>({ briefing: true, stories: true, content: true, ask: true });
 	let models = $state<string[]>([]);
 	let reply = $state('');
-	let editing = $state<'url' | 'key' | null>(null);
+	let voiceUrl = $state('');
+	let voiceKey = $state<string | null>(null);
+	let voiceReply = $state('');
+	let editing = $state<'url' | 'key' | 'voiceUrl' | 'voiceKey' | null>(null);
 
 	function take(s: AiState) {
 		saved = s;
@@ -51,6 +58,8 @@
 		key = null;
 		model = s.model;
 		features = { ...s.features };
+		voiceUrl = s.voiceUrl;
+		voiceKey = null;
 	}
 	onMount(() => admin.attempt(async () => take(await admin.api<AiState>('/api/admin/ai'))));
 
@@ -60,6 +69,8 @@
 				url !== saved.url ||
 				key !== null ||
 				model !== saved.model ||
+				voiceUrl !== saved.voiceUrl ||
+				voiceKey !== null ||
 				FEATURES.some((f) => features[f.id] !== saved!.features[f.id]))
 	);
 
@@ -78,6 +89,18 @@
 		});
 	}
 
+	async function testVoice() {
+		voiceReply = '';
+		await admin.attempt(async () => {
+			const r = await admin.api<{ stt: string; tts: string }>('/api/admin/ai', 'POST', {
+				action: 'test-voice',
+				voiceUrl,
+				...(voiceKey !== null ? { voiceKey } : {})
+			});
+			voiceReply = `Working: listens with ${r.stt}, speaks as ${r.tts}`;
+		});
+	}
+
 	async function save() {
 		const ok = await admin.attempt(async () =>
 			take(
@@ -87,7 +110,9 @@
 					url,
 					model,
 					features,
-					...(key !== null ? { key } : {})
+					voiceUrl,
+					...(key !== null ? { key } : {}),
+					...(voiceKey !== null ? { voiceKey } : {})
 				})
 			)
 		);
@@ -130,6 +155,24 @@
 			{#if reply}
 				<div class="reply anim-pop"><Emoji code="1f916" size={24} alt="" shadow="none" /> “{reply}”</div>
 			{/if}
+			<div class="a-row voice-head">
+				<span class="a-label">Voice server <small>(optional, faster listening and speaking)</small></span>
+				<div class="a-spacer"></div>
+				<button class="a-btn small pressable" disabled={admin.busy || !voiceUrl} onclick={testVoice}>Test</button>
+			</div>
+			<button class="a-box field pressable" onclick={() => (editing = 'voiceUrl')}>
+				<span class="a-label">Server</span>
+				<span class="val">{voiceUrl || 'none: the Pi does it'}</span>
+			</button>
+			<button class="a-box field pressable" onclick={() => (editing = 'voiceKey')}>
+				<span class="a-label">Key</span>
+				<span class="val"
+					>{voiceKey !== null ? (voiceKey ? 'new key typed' : 'no key') : saved.voiceKeyHint || 'none (tap to add)'}</span
+				>
+			</button>
+			{#if voiceReply}
+				<div class="reply anim-pop"><Emoji code="1f50a" size={24} alt="" shadow="none" /> {voiceReply}</div>
+			{/if}
 		</div>
 		<div class="a-col">
 			{#each FEATURES as f (f.id)}
@@ -162,6 +205,24 @@
 		maxLength={200}
 		placeholder="http://192.168.1.20:8080"
 		onsave={(t) => ((url = t.trim()), (editing = null), (models = []), (reply = ''))}
+		oncancel={() => (editing = null)}
+	/>
+{:else if editing === 'voiceUrl'}
+	<TextSheet
+		title="Voice server address (leave empty to use the Pi)"
+		value={voiceUrl || 'http://'}
+		maxLength={200}
+		minLength={0}
+		placeholder="http://192.168.1.20:8090"
+		onsave={(t) => ((voiceUrl = t.trim() === 'http://' ? '' : t.trim()), (editing = null), (voiceReply = ''))}
+		oncancel={() => (editing = null)}
+	/>
+{:else if editing === 'voiceKey'}
+	<TextSheet
+		title="Voice server key (leave empty for none)"
+		maxLength={200}
+		minLength={0}
+		onsave={(t) => ((voiceKey = t.trim()), (editing = null))}
 		oncancel={() => (editing = null)}
 	/>
 {:else if editing === 'key'}
@@ -226,5 +287,12 @@
 	}
 	.off {
 		opacity: 0.5;
+	}
+	.voice-head {
+		margin-top: 6px;
+	}
+	.voice-head small {
+		font-weight: 700;
+		color: #64748b;
 	}
 </style>

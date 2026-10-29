@@ -37,8 +37,8 @@
 		</div>
 	{/if}
 	{#if ask}
-		<button class="ask pressable" onclick={() => askOpen.set(true)}>
-			<Emoji code="1f3a4" size={24} alt="" shadow="none" /> Ask
+		<button class="ask pressable" aria-label="Ask a question" onclick={() => askOpen.set(true)}>
+			<Emoji code="1f3a4" size={26} alt="" shadow="none" />
 		</button>
 	{/if}
 	<div class="header-right">{clockTime($now)}</div>
@@ -48,15 +48,14 @@
 	.ask {
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		height: 38px;
+		justify-content: center;
+		width: 42px;
+		height: 42px;
 		margin-right: 10px;
-		padding: 0 14px 0 8px;
-		font: 900 20px 'Nunito', 'Baloo 2', sans-serif;
-		color: var(--text-dark);
+		padding: 0;
 		background: #a5f3fc;
 		border: 3px solid var(--border-dark);
-		border-radius: 20px;
+		border-radius: 50%;
 		box-shadow: 3px 3px 0 var(--border-dark);
 	}
 	/* takes only the leftover room; icons that don't fully fit wrap onto a

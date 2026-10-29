@@ -10,8 +10,9 @@ export function GET({ cookies }) {
 
 /**
  * POST /api/admin/ai, one of:
- *   { action: "save", enabled?, url?, key?, model?, features? }  -> settings
+ *   { action: "save", enabled?, url?, key?, model?, features?, voiceUrl?, voiceKey? }  -> settings
  *   { action: "test", url?, key? }  -> { models, reply } (unsaved url/key are tried as typed)
+ *   { action: "test-voice", voiceUrl?, voiceKey? }  -> { stt, tts } (the voice server says a word)
  */
 export async function POST({ request, cookies }) {
 	requireAdmin(cookies);
@@ -20,6 +21,32 @@ export async function POST({ request, cookies }) {
 	const url = typeof body?.url === 'string' ? body.url.trim() : saved.url;
 	const key = typeof body?.key === 'string' ? body.key.trim() : saved.key;
 	if (url && !/^https?:\/\/[^\s/]+/i.test(url)) error(400, 'The address should start with http://');
+	const voiceUrl = typeof body?.voiceUrl === 'string' ? body.voiceUrl.trim() : saved.voiceUrl;
+	const voiceKey = typeof body?.voiceKey === 'string' ? body.voiceKey.trim() : saved.voiceKey;
+	if (voiceUrl && !/^https?:\/\/[^\s/]+/i.test(voiceUrl))
+		error(400, 'The voice server address should start with http://');
+
+	if (body?.action === 'test-voice') {
+		if (!voiceUrl) error(400, 'Type the voice server address first');
+		const base = voiceUrl.replace(/\/+$/, '');
+		try {
+			const health = await fetch(`${base}/health`, { signal: AbortSignal.timeout(8000) });
+			if (!health.ok) throw new Error(`it answered ${health.status}`);
+			const info = (await health.json()) as { stt?: string; tts?: string };
+			// saying a word checks the key too
+			const res = await fetch(`${base}/tts`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json', ...(voiceKey ? { authorization: `Bearer ${voiceKey}` } : {}) },
+				body: JSON.stringify({ text: 'Hello!' }),
+				signal: AbortSignal.timeout(8000)
+			});
+			if (res.status === 401) throw new Error('the key is wrong');
+			if (!res.ok) throw new Error(`it answered ${res.status}`);
+			return json({ stt: info.stt ?? '', tts: info.tts ?? '' });
+		} catch (err) {
+			error(502, `Couldn't reach the voice server: ${err instanceof Error ? err.message : err}`);
+		}
+	}
 
 	if (body?.action === 'test') {
 		if (!url) error(400, 'Type the AI server address first');
@@ -42,7 +69,7 @@ export async function POST({ request, cookies }) {
 	}
 	if (body?.action !== 'save') error(400, 'unknown action');
 
-	const patch: Partial<AiSettings> = { url, key };
+	const patch: Partial<AiSettings> = { url, key, voiceUrl, voiceKey };
 	if (body.enabled !== undefined) {
 		if (typeof body.enabled !== 'boolean') error(400, 'bad enabled');
 		patch.enabled = body.enabled;

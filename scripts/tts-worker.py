@@ -14,8 +14,8 @@ import wave
 from piper import PiperVoice, SynthesisConfig
 
 voice = PiperVoice.load(sys.argv[1])
-# a touch slower than normal: easier for young listeners
-config = SynthesisConfig(length_scale=1.08)
+# normal speed: 1.08 (a touch slower) sounded sluggish on the kiosk
+config = SynthesisConfig(length_scale=1.0)
 print(json.dumps({"ok": True, "ready": True}), flush=True)
 
 for line in sys.stdin:

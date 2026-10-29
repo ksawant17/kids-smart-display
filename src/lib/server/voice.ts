@@ -10,8 +10,13 @@
  *
  * Listening (push-to-talk "Ask"): faster-whisper, in the same venv
  * (`pip install faster-whisper`), with the model in <VOICE_DIR>/whisper/base.en;
- * scripts/stt-worker.py keeps it loaded. The recording never leaves the Pi
- * and is deleted as soon as it has been turned into text.
+ * scripts/stt-worker.py keeps it loaded.
+ *
+ * A voice server on a stronger machine at home (ai-box/voice-server.py, set
+ * in Grown-ups -> AI Helper) can do both instead, several times faster. The
+ * HAT still records and plays here; only the recording and the words to say
+ * go to it, over the home network. If it can't be reached, the Pi's own
+ * helpers take over (loaded only then). Recordings are never kept anywhere.
  *
  * The HAT hisses a little whenever its speaker amplifier is open, so the
  * speakers are muted and the mic input is off except while something is
@@ -27,7 +32,9 @@ import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { promisify } from 'node:util';
-import { FRAME_MS, SpeechGate } from '#lib/utils/vad';
+import { getAi } from '#lib/server/ai';
+import { sentences } from '#lib/utils/sentences';
+import { FRAME_MS, GATE_DEFAULTS, SpeechGate } from '#lib/utils/vad';
 
 const run = promisify(execFile);
 
@@ -39,7 +46,7 @@ const PYTHON = resolve(VOICE_DIR, 'venv/bin/python');
 const MODEL = resolve(VOICE_DIR, 'voices', `${process.env.VOICE ?? 'en_US-amy-medium'}.onnx`);
 const STT_MODEL = resolve(VOICE_DIR, 'whisper', process.env.VOICE_STT ?? 'base.en');
 const CARD = process.env.VOICE_CARD ?? 'wm8960soundcard';
-const MAX_CACHED = 40;
+const MAX_CACHED = 80; // sentences
 
 export interface VoiceSettings {
 	enabled: boolean;
@@ -195,7 +202,71 @@ class Helper {
 const tts = new Helper('voice', [resolve('scripts/tts-worker.py'), MODEL]);
 const stt = new Helper('listener', [resolve('scripts/stt-worker.py'), STT_MODEL]);
 
-const synth = (text: string, out: string) => tts.ask({ text, out });
+// ---------------- the voice server (optional) ----------------
+
+/** after a failure the Pi's own helpers are used for a while */
+const SERVER_RETRY_MS = 60_000;
+let serverDownUntil = 0;
+
+/** the voice server's address and key, or null for "do it on the Pi" */
+function server() {
+	const { voiceUrl, voiceKey } = getAi();
+	return voiceUrl && Date.now() >= serverDownUntil ? { url: voiceUrl.replace(/\/+$/, ''), key: voiceKey } : null;
+}
+const usesServer = () => !!getAi().voiceUrl;
+
+/** a request to the voice server; null when there is none or it failed */
+async function viaServer<T>(
+	path: string,
+	body: string | Buffer,
+	headers: Record<string, string>,
+	read: (res: Response) => Promise<T>
+): Promise<T | null> {
+	const s = server();
+	if (!s) return null;
+	try {
+		const res = await fetch(`${s.url}${path}`, {
+			method: 'POST',
+			headers: { ...headers, ...(s.key ? { authorization: `Bearer ${s.key}` } : {}) },
+			body: new Uint8Array(Buffer.from(body)),
+			signal: AbortSignal.timeout(8000)
+		});
+		if (!res.ok) throw new Error(`it answered ${res.status}`);
+		return await read(res);
+	} catch (err) {
+		serverDownUntil = Date.now() + SERVER_RETRY_MS;
+		console.warn(`[voice] voice server: ${err}; using the Pi's own for a minute`);
+		return null;
+	}
+}
+
+async function synth(text: string, out: string) {
+	const wav = await viaServer('/tts', JSON.stringify({ text }), { 'content-type': 'application/json' }, async (r) =>
+		Buffer.from(await r.arrayBuffer())
+	);
+	if (wav) writeFileSync(out, wav);
+	else await tts.ask({ text, out });
+}
+
+/** the recording (a WAV) as text, on the voice server or the Pi */
+async function transcribe(wav: Buffer, hint: string): Promise<string> {
+	const heard = await viaServer(
+		'/stt',
+		wav,
+		// a header can only carry plain ASCII
+		{ 'content-type': 'audio/wav', 'x-hint': hint.replace(/[^\x20-\x7e]/g, '') },
+		async (r) => String(((await r.json()) as { text?: unknown }).text ?? '')
+	);
+	if (heard !== null) return heard.trim();
+	mkdirSync(CACHE, { recursive: true });
+	const file = resolve(CACHE, `heard-${Date.now()}.wav`);
+	writeFileSync(file, wav);
+	try {
+		return ((await stt.ask({ wav: file, prompt: hint })).text ?? '').trim();
+	} finally {
+		unlinkSync(file);
+	}
+}
 
 /** the spoken text as a WAV file, made once per text */
 async function wavFor(text: string): Promise<string> {
@@ -221,6 +292,7 @@ function trimCache() {
 
 let player: ChildProcess | null = null;
 let current: string | null = null;
+let stopped = false;
 let queue: Promise<void> = Promise.resolve();
 
 /** What is being said right now (null: nothing). */
@@ -228,7 +300,18 @@ export const speaking = () => current;
 
 /** Stop talking straight away. */
 export function stopSpeaking() {
+	if (current) stopped = true;
 	player?.kill();
+}
+
+function play(wav: string) {
+	return new Promise<void>((done) => {
+		// plughw: plays the voice at its own rate (22 kHz), which sounds cleanest
+		const p = spawn('aplay', ['-q', '-D', `plughw:${CARD}`, wav], { stdio: 'ignore' });
+		player = p;
+		p.on('exit', () => done());
+		p.on('error', () => done());
+	});
 }
 
 /**
@@ -238,17 +321,24 @@ export function stopSpeaking() {
 export function say(text: string): Promise<void> {
 	const job = async () => {
 		await setUpMixer();
-		const wav = await wavFor(text);
+		// sentence by sentence, each made while the one before plays
+		let made: Promise<unknown> = Promise.resolve();
+		const wavs = sentences(text).map((s) => (made = made.then(() => wavFor(s))) as Promise<string>);
+		for (const w of wavs) w.catch(() => {}); // a failure is reported where it's awaited
+		if (!wavs.length) return;
+		const first = await wavs[0];
 		current = text;
+		stopped = false;
 		try {
+			// the speakers only open once there is something to say
 			await amixer('Speaker', String(speakerLevel(getVoice().volume)));
-			await new Promise<void>((done) => {
-				// plughw: plays the voice at its own rate (22 kHz), which sounds cleanest
-				const p = spawn('aplay', ['-q', '-D', `plughw:${CARD}`, wav], { stdio: 'ignore' });
-				player = p;
-				p.on('exit', () => done());
-				p.on('error', () => done());
-			});
+			await play(first);
+			for (const w of wavs.slice(1)) {
+				if (stopped) break;
+				const wav = await w;
+				if (stopped) break;
+				await play(wav);
+			}
 		} finally {
 			player = null;
 			current = null;
@@ -271,7 +361,7 @@ export const maySay = (text: string) => speakable.has(text);
 // ---------------- listening ----------------
 
 /** Is the speech-to-text model there (and the voice on)? */
-export const canListen = () => voiceOn() && existsSync(resolve(STT_MODEL, 'model.bin'));
+export const canListen = () => voiceOn() && (usesServer() || existsSync(resolve(STT_MODEL, 'model.bin')));
 /** ...and the mic switched on in the quick menu (the AI part is checked separately) */
 export const micOn = () => canListen() && getVoice().mic;
 
@@ -311,7 +401,7 @@ export async function listen(hint = ''): Promise<string> {
 	stopSpeaking();
 	await queue; // never listen while it's talking
 	await setUpMixer();
-	stt.start().catch(() => {}); // warm up while the kid talks
+	if (!server()) stt.start().catch(() => {}); // warm up while the kid talks
 	const gate = new SpeechGate();
 	const frames: Buffer[] = [];
 	try {
@@ -340,29 +430,29 @@ export async function listen(hint = ''): Promise<string> {
 		recorder = null;
 		await quiet();
 	}
-	if (gate.speechStart < 0) {
-		console.log(`[voice] heard nothing (${frames.length} frames, speech above ${Math.round(gate.level)}, loudest ${Math.round(gate.loudest)})`);
+	const levels = `${frames.length} frames, speech above ${Math.round(gate.level)}, loudest ${Math.round(gate.loudest)}`;
+	let from: number;
+	if (gate.speechStart >= 0) from = Math.max(0, gate.speechStart - 15); // a little before the speech started
+	else if (gate.heardSomething) {
+		// stopped ("I'm done", or the time ran out) before it counted as speech: let speech to text decide
+		console.log(`[voice] no clear speech, trying anyway (${levels})`);
+		from = GATE_DEFAULTS.settleMs / FRAME_MS;
+	} else {
+		console.log(`[voice] heard nothing (${levels})`);
 		return '';
 	}
-	// from a little before the speech started
-	const audio = Buffer.concat(frames.slice(Math.max(0, gate.speechStart - 15)));
-	mkdirSync(CACHE, { recursive: true });
-	const file = resolve(CACHE, `heard-${Date.now()}.wav`);
-	writeFileSync(file, Buffer.concat([wavHeader(audio.length), audio]));
-	try {
-		return ((await stt.ask({ wav: file, prompt: hint })).text ?? '').trim();
-	} finally {
-		unlinkSync(file);
-	}
+	const audio = Buffer.concat(frames.slice(from));
+	return transcribe(Buffer.concat([wavHeader(audio.length), audio]), hint);
 }
 
 /** At server start: put the HAT in its quiet state and load the voice in the background. */
 export function startVoice() {
 	if (!voiceInstalled()) return;
+	// with a voice server the Pi's own helpers stay unloaded (about 500 MB) until needed
 	setUpMixer()
-		.then(() => (getVoice().enabled ? tts.start() : undefined))
-		.then(() => console.log('[voice] ready'))
-		.then(() => (micOn() ? stt.start() : undefined))
+		.then(() => (getVoice().enabled && !usesServer() ? tts.start() : undefined))
+		.then(() => console.log(`[voice] ready${usesServer() ? ` (voice server ${getAi().voiceUrl})` : ''}`))
+		.then(() => (micOn() && !usesServer() ? stt.start() : undefined))
 		.catch((err) => console.warn(`[voice] ${err}`));
 	const stop = () => {
 		player?.kill();

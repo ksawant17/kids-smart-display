@@ -248,17 +248,23 @@
 		{/if}
 		<div class="foot">
 			{#if readAloud && $briefing}
-				<ReadAloud text={$briefing.text} label={$briefing.when === 'tomorrow' ? 'Read tomorrow' : 'Read me'} bind:talking />
+				<ReadAloud
+					text={$briefing.text}
+					label={$briefing.when === 'tomorrow' ? 'Read tomorrow' : 'Read me'}
+					round
+					bind:talking
+				/>
 			{/if}
 			{#if ask}
 				<button
 					class="ask pressable"
+					aria-label="Ask a question"
 					onclick={(e) => {
 						e.stopPropagation();
 						askOpen.set(true);
 					}}
 				>
-					<Emoji code="1f3a4" size={30} alt="" shadow="none" /> Ask me
+					<Emoji code="1f3a4" size={34} alt="" shadow="none" />
 				</button>
 			{/if}
 			<div class="hint">Tap anywhere to start</div>
@@ -538,12 +544,10 @@
 	.ask {
 		display: inline-flex;
 		align-items: center;
-		gap: 8px;
-		height: 54px;
-		padding: 0 20px 0 12px;
-		font: 900 21px 'Nunito', 'Baloo 2', sans-serif;
-		color: var(--text-dark);
-		text-shadow: none;
+		justify-content: center;
+		width: 64px;
+		height: 64px;
+		padding: 0;
 		background: #a5f3fc;
 		border: 3px solid var(--border-dark);
 		border-radius: 999px;

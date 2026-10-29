@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { aiOn } from '#lib/server/ai';
 import { isAdmin, isLocal } from '#lib/server/admin';
-import { ASK_A_GROWN_UP, answer, readQuestion } from '#lib/server/ask';
+import { ASK_A_GROWN_UP, answer, newConversation, readQuestion } from '#lib/server/ask';
 import { readFacts } from '#lib/server/briefing';
 import { getConfig } from '#lib/server/config';
 import { allowSpeech, listen, micOn, stopListening } from '#lib/server/voice';
@@ -10,7 +10,8 @@ import { allowSpeech, listen, micOn, stopListening } from '#lib/server/voice';
  * 🎤 Ask, in two steps so the kiosk can show what's happening:
  *   POST /api/ask { action: "listen" }   records one question -> { question } ('' = heard nothing)
  *   POST /api/ask { action: "stop" }     "I'm done": ends the recording now
- *   POST /api/ask { action: "answer", question, facts? } -> { answer } (then /api/speak reads it)
+ *   POST /api/ask { action: "answer", question, facts?, fresh? } -> { answer } (then /api/speak reads it)
+ *     fresh: the first question since the sheet opened (forget the last conversation)
  * Only the kiosk itself (or an unlocked Grown-ups tab) may use the mic.
  */
 export async function POST({ request, cookies, getClientAddress }) {
@@ -32,6 +33,7 @@ export async function POST({ request, cookies, getClientAddress }) {
 		case 'answer': {
 			const question = readQuestion(body.question);
 			if (!question) error(400, 'No question');
+			if (body.fresh === true) newConversation();
 			try {
 				const text = (await answer(question, readFacts(body.facts))) ?? ASK_A_GROWN_UP;
 				allowSpeech(text);

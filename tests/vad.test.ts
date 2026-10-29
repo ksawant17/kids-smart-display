@@ -55,6 +55,33 @@ describe('SpeechGate', () => {
 		expect(feed(g, 2000, 300)).toBe('speech');
 	});
 
+	it('counts syllables with short dips between them as speech', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		feed(g, 100, 300);
+		for (let i = 0; i < 4; i++) {
+			expect(feed(g, 3000, 60)).toBe(i < 2 ? 'waiting' : 'speech');
+			feed(g, 100, 40); // a dip between syllables (3 x 60 ms of voice is enough)
+		}
+		expect(g.speechStart).toBe(15); // the first loud frame
+	});
+
+	it('is not made deaf by a kid who starts talking straight away', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		feed(g, 100, 100); // a moment of room noise...
+		feed(g, 2500, 200); // ...then talking, while the room is still being measured
+		expect(feed(g, 1200, 300)).toBe('speech');
+	});
+
+	it('knows something loud was heard even when it never counted as speech', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		feed(g, 100, 300);
+		expect(g.heardSomething).toBe(false);
+		feed(g, 3000, 100);
+		feed(g, 100, 300);
+		expect(g.state).toBe('waiting');
+		expect(g.heardSomething).toBe(true);
+	});
+
 	it('does not count a steady offset as sound', () => {
 		const g = new SpeechGate({ settleMs: 0 });
 		const offset = Int16Array.from({ length: 320 }, () => -1200);

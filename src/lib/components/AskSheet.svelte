@@ -2,7 +2,8 @@
 	/**
 	 * 🎤 Ask: opened from the header or the idle screen. Listens straight away
 	 * (the mic is only on while this says "I'm listening"), shows what it
-	 * heard, then the AI helper's answer, which it reads aloud.
+	 * heard, then the AI helper's answer, which it reads aloud. "Ask more"
+	 * carries on the same conversation, so follow-ups like "why?" work.
 	 * See /api/ask: the recording stays on the Pi and is deleted right after.
 	 */
 	import { onDestroy, onMount } from 'svelte';
@@ -18,6 +19,7 @@
 	let reply = $state('');
 	let talking = $state(false);
 	let closed = false;
+	let answered = 0; // questions answered since the sheet opened
 
 	const post = (body: object) =>
 		fetch('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -32,10 +34,16 @@
 			question = (await heard.json()).question;
 			if (!question) return void (step = 'nothing');
 			step = 'thinking';
-			const res = await post({ action: 'answer', question, facts: facts ? JSON.parse(facts) : null });
+			const res = await post({
+				action: 'answer',
+				question,
+				facts: facts ? JSON.parse(facts) : null,
+				fresh: answered === 0
+			});
 			if (closed) return;
 			if (!res.ok) throw new Error();
 			reply = (await res.json()).answer;
+			answered++;
 			step = 'answer';
 			talking = true;
 			await fetch('/api/speak', {

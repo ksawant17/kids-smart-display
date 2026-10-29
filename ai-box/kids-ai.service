@@ -1,0 +1,24 @@
+[Unit]
+Description=Kids Smart Display - AI helper (llama.cpp, Qwen3 14B) on :8080
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=kids-ai
+EnvironmentFile=/etc/kids-ai/ai.env
+ExecStart=/opt/kids-ai/llama.cpp/build/bin/llama-server \
+  -m /opt/kids-ai/models/Qwen3-14B-Q4_K_M.gguf --alias qwen3-14b \
+  --host 0.0.0.0 --port 8080 --api-key ${AI_KEY} \
+  -ngl 99 -c 8192 -np 1 -fa on --no-webui
+Restart=on-failure
+RestartSec=5
+# home network only (plus this machine)
+IPAddressDeny=any
+IPAddressAllow=localhost 192.168.10.0/24
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

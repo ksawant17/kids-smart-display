@@ -22,6 +22,8 @@ export interface GateOptions {
 	maxLevel: number;
 	/** speech has to last this long to count (not a cough or a click) */
 	minSpeechMs: number;
+	/** ...allowing dips this short between syllables */
+	maxDipMs: number;
 	/** a pause this long after speech ends the question */
 	endSilenceMs: number;
 	/** give up when nobody has said anything by then */
@@ -37,7 +39,8 @@ export const GATE_DEFAULTS: GateOptions = {
 	minLevel: 300,
 	maxLevel: 1500,
 	minSpeechMs: 160,
-	endSilenceMs: 1100,
+	maxDipMs: 80,
+	endSilenceMs: 800,
 	noSpeechMs: 6000,
 	maxMs: 12000
 };
@@ -66,10 +69,20 @@ export class SpeechGate {
 	/** the loudest frame so far (for the log when nothing was heard) */
 	loudest = 0;
 	private loudRun = 0;
+	private dipRun = 0;
+	private runStart = -1;
 	private quietRun = 0;
 
 	constructor(options: Partial<GateOptions> = {}) {
 		this.o = { ...GATE_DEFAULTS, ...options };
+	}
+
+	/**
+	 * Something above the speech bar was heard, even if it never counted as
+	 * speech: worth letting speech to text decide (after "I'm done").
+	 */
+	get heardSomething() {
+		return this.loudest >= this.level;
 	}
 
 	/** one 20 ms frame in; the state after it */
@@ -83,19 +96,25 @@ export class SpeechGate {
 		if (ms <= o.settleMs + o.calibrateMs) {
 			this.noise.push(e);
 			if (ms + FRAME_MS > o.settleMs + o.calibrateMs) {
-				// the median: one click doesn't spoil it
+				// the quieter frames: a click, or a kid who starts talking straight away, doesn't spoil it
 				const sorted = [...this.noise].sort((a, b) => a - b);
-				const level = sorted[Math.floor(sorted.length / 2)] * o.ratio;
+				const level = sorted[Math.floor(sorted.length / 4)] * o.ratio;
 				this.level = Math.min(o.maxLevel, Math.max(o.minLevel, level));
 			}
 			return this.state;
 		}
 		const loud = e >= this.level;
 		if (this.state === 'waiting') {
-			this.loudRun = loud ? this.loudRun + 1 : 0;
+			if (loud) {
+				if (!this.loudRun) this.runStart = this.frames - 1;
+				this.loudRun++;
+				this.dipRun = 0;
+			} else if (this.loudRun && ++this.dipRun * FRAME_MS > o.maxDipMs) {
+				this.loudRun = this.dipRun = 0;
+			}
 			if (this.loudRun * FRAME_MS >= o.minSpeechMs) {
 				this.state = 'speech';
-				this.speechStart = this.frames - this.loudRun;
+				this.speechStart = this.runStart;
 			} else if (ms >= o.noSpeechMs) this.state = 'nothing';
 		} else {
 			// the end of a word is quieter than its middle: a lower bar to stay "speaking"

@@ -108,7 +108,7 @@ img {
 	background: var(--sky-day);
 	display: flex;
 	flex-direction: column;
-	padding: 14px 16px 0 16px;
+	padding: 14px 12px 0 16px; /* + main's 4px shadow room: 16px each side */
 	gap: 14px;
 	overflow: hidden;
 }
@@ -198,6 +198,9 @@ main {
 	gap: 14px;
 	position: relative;
 	overflow: hidden;
+	/* room for the sticker shadows (4px right and down) of the cards along
+	   the right and bottom edges, which overflow: hidden would cut off */
+	padding: 0 4px 4px 0;
 }
 
 .card {
@@ -232,11 +235,12 @@ main {
 	background: var(--card-white);
 }
 
-/* --- Bottom navigation: "flush file folders" ------------------------------ */
+/* --- Bottom navigation: slim "flush file folders" (icon and name side by
+   side, so the pages above get the height) ------------------------------- */
 nav.tabs {
 	display: flex;
 	gap: 8px;
-	height: 80px;
+	height: 56px;
 	flex: 0 0 auto;
 	margin-top: auto;
 }
@@ -248,11 +252,13 @@ nav.tabs {
 	border-bottom: none;
 	border-radius: 16px 16px 0 0;
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
+	gap: 6px;
+	min-width: 0;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
-	padding-top: 4px;
+	padding-top: 2px;
 	/* springy: the chosen tab pops up with a little overshoot */
 	transition: opacity 0.2s ease, transform 0.35s cubic-bezier(0.34, 1.8, 0.64, 1);
 	text-decoration: none;
@@ -261,7 +267,7 @@ nav.tabs {
 	--tab-color: var(--tab-gray);
 	background-color: color-mix(in srgb, var(--tab-color) 58%, #ffffff);
 	color: #1f2937;
-	transform: translateY(6px);
+	transform: translateY(4px);
 }
 .tab:not(.active) img {
 	opacity: 0.95;
@@ -277,19 +283,19 @@ nav.tabs {
 	color: inherit;
 	font-weight: 900;
 	font-size: 15px;
-	letter-spacing: 0.5px;
-	margin-top: 2px;
+	letter-spacing: 0;
+	white-space: nowrap;
 }
 
 .tab img {
-	width: 30px;
-	height: 30px;
+	width: 26px;
+	height: 26px;
 	object-fit: contain;
 }
 
 .tab:active {
 	filter: brightness(0.92);
-	transform: translateY(6px) scale(0.94);
+	transform: translateY(4px) scale(0.94);
 }
 
 /* the active tab's icon does its own little move every few seconds

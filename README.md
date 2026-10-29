@@ -403,7 +403,7 @@ missing SVG; `tests/emoji.test.ts` fails if one is missing.
 #pi-screen  — fixed 800×480 frame, edge to edge (sky background)
 ├── Header      greeting + date (left), live clock pill (right)
 ├── main        the active page
-└── nav.tabs    five flush "file-folder" tabs; active tab is coloured,
+└── nav.tabs    five slim "file-folder" tabs (icon + name side by side); the active tab is coloured,
                 the rest are dimmed grey and sit slightly lower
 ```
 

@@ -6,8 +6,10 @@
 	import { weather } from '#lib/weather';
 	import { themeFor } from '#lib/themes';
 	import { place } from '#lib/place';
+	import MicButton from '#lib/components/MicButton.svelte';
 
-	let { names }: { names: string } = $props();
+	/** ask: show the 🎤 Ask button (audio HAT + AI helper) */
+	let { names, ask = false }: { names: string; ask?: boolean } = $props();
 
 	// Sun by day, tonight's real moon phase at night; the forecast knows
 	// (is_day), the clock is the fallback.
@@ -33,6 +35,9 @@
 				<span class="decor-item" style="animation-delay:{i * 0.6}s"><Emoji {code} size={24} alt="" /></span>
 			{/each}
 		</div>
+	{/if}
+	{#if ask}
+		<MicButton look="small" />
 	{/if}
 	<div class="header-right">{clockTime($now)}</div>
 </header>

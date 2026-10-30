@@ -22,6 +22,8 @@ export interface AiFeatures {
 	stories: boolean;
 	/** new jokes, facts and words for the New Content queue */
 	content: boolean;
+	/** 🎤 Ask: answers to the kids' spoken questions (needs the audio HAT) */
+	ask: boolean;
 }
 
 export interface AiSettings {
@@ -31,6 +33,12 @@ export interface AiSettings {
 	key: string;
 	model: string;
 	features: AiFeatures;
+	/**
+	 * optional voice server (ai-box/voice-server.py) for listening and
+	 * speaking, e.g. http://192.168.1.20:8090; '' keeps it all on the Pi
+	 */
+	voiceUrl: string;
+	voiceKey: string;
 }
 
 const DEFAULTS: AiSettings = {
@@ -38,7 +46,9 @@ const DEFAULTS: AiSettings = {
 	url: '',
 	key: '',
 	model: '',
-	features: { briefing: true, stories: true, content: true }
+	features: { briefing: true, stories: true, content: true, ask: true },
+	voiceUrl: '',
+	voiceKey: ''
 };
 
 export function getAi(): AiSettings {
@@ -49,7 +59,9 @@ export function getAi(): AiSettings {
 			url: typeof s.url === 'string' ? s.url : '',
 			key: typeof s.key === 'string' ? s.key : '',
 			model: typeof s.model === 'string' ? s.model : '',
-			features: { ...DEFAULTS.features, ...s.features }
+			features: { ...DEFAULTS.features, ...s.features },
+			voiceUrl: typeof s.voiceUrl === 'string' ? s.voiceUrl : '',
+			voiceKey: typeof s.voiceKey === 'string' ? s.voiceKey : ''
 		};
 	} catch {
 		return structuredClone(DEFAULTS);
@@ -64,10 +76,12 @@ export function saveAi(patch: Partial<AiSettings>): AiSettings {
 	return s;
 }
 
-/** what the admin tab may see (no key) */
+const hint = (key: string) => (key ? `…${key.slice(-4)}` : '');
+
+/** what the admin tab may see (no keys) */
 export function publicAi() {
 	const s = getAi();
-	return { ...s, key: undefined, keyHint: s.key ? `…${s.key.slice(-4)}` : '' };
+	return { ...s, key: undefined, keyHint: hint(s.key), voiceKey: undefined, voiceKeyHint: hint(s.voiceKey) };
 }
 
 /** Is this feature switched on (and the helper set up)? */

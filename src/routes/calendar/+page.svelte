@@ -126,6 +126,9 @@
 		}
 	}
 
+	// tap the month's name: the calendar pops out to the whole screen (✕ or the name again closes it)
+	let big = $state(false);
+
 	/* ------------- day popup: what's on that day + weather + outfit ------------- */
 	let openKey = $state<string | null>(null);
 	// /calendar?day=YYYY-MM-DD (from the TODAY school banner): show that month
@@ -162,14 +165,32 @@
 
 <div class="cal-grid">
 	<!-- Left: month grid -->
-	<div class="card month-card" onpointerdown={gridDown} onpointerup={gridUp} role="group" aria-label="Month calendar">
+	<div class="card month-card" class:big onpointerdown={gridDown} onpointerup={gridUp} role="group" aria-label="Month calendar">
 		<div class="month-header">
 			<button class="nav-arrow pressable" onclick={() => shift(-1)} aria-label="Previous month">&lt;</button>
-			<div class="month-title">{monthTitle(viewYear, viewMonth)}</div>
+			<button
+				class="month-title pressable"
+				onclick={() => (big = !big)}
+				aria-label={big ? 'Make the calendar small again' : 'Make the calendar big'}
+			>
+				{monthTitle(viewYear, viewMonth)}
+				{#if !big}
+					<span class="grow" aria-hidden="true">
+						<svg width="16" height="16" viewBox="0 0 16 16"
+							><path d="M9.5 2H14v4.5M14 2 9 7M6.5 14H2V9.5M2 14l5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg
+						>
+					</span>
+				{/if}
+			</button>
 			{#if !isCurrentMonth}
 				<button class="today-btn pressable" onclick={goToday}>Today</button>
 			{/if}
 			<button class="nav-arrow pressable" onclick={() => shift(1)} aria-label="Next month">&gt;</button>
+			{#if big}
+				<button class="close-big pressable" onclick={() => (big = false)} aria-label="Close the big calendar">
+					<Emoji code="274c" size={22} alt="" shadow="none" />
+				</button>
+			{/if}
 		</div>
 		<div class="marathi-title">{marathiTitle}</div>
 
@@ -201,11 +222,11 @@
 					{#if pc}
 						{@const moon = moonCode(pc)}
 						<span class="tithi" class:vadya={pc.n > 15}>
-							{#if moon}<Emoji code={moon} size={11} alt="" shadow="none" />{:else}{tithiShort(pc)}{/if}
+							{#if moon}<Emoji code={moon} size={big ? 17 : 11} alt="" shadow="none" />{:else}{tithiShort(pc)}{/if}
 						</span>
 					{/if}
 					{#if fest}
-						<span class="fest" class:minor={!fest.major}><Emoji code={fest.emoji} size={fest.major ? 17 : 13} alt="" /></span>
+						<span class="fest" class:minor={!fest.major}><Emoji code={fest.emoji} size={(fest.major ? 17 : 13) * (big ? 1.5 : 1)} alt="" /></span>
 					{/if}
 				</button>
 			{/each}
@@ -281,7 +302,7 @@
 
 {#if popup}
 	<!-- svelte-ignore a11y_no_static_element_interactions (scrim tap = close; ✕ button is the accessible path) -->
-	<div class="overlay" onpointerdown={onScrimDown}>
+	<div class="overlay" class:over-big={big} onpointerdown={onScrimDown}>
 		<div class="card day-pop kind-{popup.status.kind}" role="dialog" aria-modal="true" aria-label="Day details" tabindex="-1">
 			<button class="close-btn pressable" onclick={() => (openKey = null)} aria-label="Close">
 				<Emoji code="274c" size={18} alt="Close" shadow="none" />
@@ -387,10 +408,91 @@
 	}
 	.month-title {
 		flex: 1;
-		text-align: center;
-		font-size: 24px;
-		font-weight: 900;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 0;
+		font: 900 24px 'Nunito', 'Baloo 2', sans-serif;
+		color: var(--text-dark);
 		white-space: nowrap;
+		background: none;
+		border: none;
+		cursor: pointer;
+	}
+	/* "tap me to make it big" */
+	.grow {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		background: var(--yellow-banner);
+		border: 2.5px solid var(--border-dark);
+		border-radius: 8px;
+	}
+
+	/* --- the big calendar: the same card over the whole screen, sized up --- */
+	.month-card.big {
+		position: fixed;
+		inset: 10px;
+		z-index: 45;
+		padding: 14px 18px;
+		animation: pop-in 0.22s ease-out both;
+	}
+	.big .month-title {
+		font-size: 34px;
+	}
+	.big .nav-arrow {
+		width: 58px;
+		height: 46px;
+		font-size: 24px;
+	}
+	.big .today-btn {
+		height: 46px;
+		font-size: 19px;
+	}
+	.close-big {
+		width: 46px;
+		height: 46px;
+		flex: 0 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--tab-red);
+		border: 3px solid var(--border-dark);
+		border-radius: 50%;
+		box-shadow: var(--sticker-shadow-sm);
+	}
+	.big .marathi-title {
+		margin: -4px 0 4px;
+		font-size: 18px;
+	}
+	.big .calendar-grid {
+		gap: 6px 10px;
+	}
+	.big .day-name {
+		font-size: 18px;
+	}
+	.big .day-cell,
+	.big .day-cell.today {
+		font-size: 28px;
+		border-radius: 12px;
+	}
+	.big .tithi {
+		height: 16px;
+		font-size: 14px;
+		line-height: 16px;
+		margin-top: 2px;
+	}
+	.big .fest {
+		top: -9px;
+		right: -8px;
+	}
+	.big .legend {
+		font-size: 17px;
+		gap: 22px;
+		margin-top: 10px;
 	}
 	/* sample-pages arrow boxes, sized up to a fat-finger target */
 	.nav-arrow,
@@ -746,11 +848,15 @@
 	.overlay {
 		position: absolute;
 		inset: 0;
-		z-index: 20;
+		z-index: 50; /* above the big calendar too */
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		background: rgba(17, 24, 39, 0.35);
+	}
+	/* over the big calendar: dim the whole screen, not just the page area */
+	.overlay.over-big {
+		position: fixed;
 	}
 	.day-pop {
 		width: 600px;

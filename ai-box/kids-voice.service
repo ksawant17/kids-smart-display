@@ -1,0 +1,31 @@
+[Unit]
+Description=Kids Smart Display - voice server (Whisper + Piper) on :8090
+After=network-online.target
+Wants=network-online.target
+# keep trying after a reboot or a crash, however long the GPU takes to show up
+StartLimitIntervalSec=0
+
+[Service]
+User=kids-ai
+# VOICE_KEY=... (chmod 640, group kids-ai)
+EnvironmentFile=/etc/kids-ai/voice.env
+# faster-whisper needs the CUDA 12 libraries installed in the venv
+Environment=LD_LIBRARY_PATH=/opt/kids-voice/venv/lib/python3.13/site-packages/nvidia/cublas/lib:/opt/kids-voice/venv/lib/python3.13/site-packages/nvidia/cudnn/lib
+Environment=STT_MODEL=/opt/kids-voice/whisper/small.en
+Environment=VOICE_DIR=/opt/kids-voice/voices
+Environment=KOKORO_DIR=/opt/kids-voice/kokoro
+ExecStart=/opt/kids-voice/venv/bin/python -I /opt/kids-voice/voice-server.py
+# wait (up to 2 minutes) for the NVIDIA card before loading the model onto it
+ExecStartPre=/bin/sh -c 'for i in $$(seq 60); do nvidia-smi -L >/dev/null 2>&1 && exit 0; sleep 2; done; echo "no GPU yet"; exit 1'
+Restart=always
+RestartSec=10
+# home network only (plus this machine)
+IPAddressDeny=any
+IPAddressAllow=localhost 192.168.10.0/24
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

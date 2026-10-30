@@ -15,6 +15,9 @@
 	import Emoji from '#lib/components/Emoji.svelte';
 	import WeatherIcon from '#lib/components/WeatherIcon.svelte';
 	import FestiveTrim from '#lib/components/FestiveTrim.svelte';
+	import ReadAloud from '#lib/components/ReadAloud.svelte';
+	import { briefing } from '#lib/briefing';
+	import MicButton from '#lib/components/MicButton.svelte';
 	import { now, todayKey } from '#lib/clock';
 	import { weather } from '#lib/weather';
 	import { messages } from '#lib/messages';
@@ -30,12 +33,18 @@
 		names,
 		schoolEvents,
 		switchToTomorrowHour,
+		readAloud,
+		ask,
 		onclose
 	}: {
 		names: string;
 		schoolEvents: SchoolEvent[];
 		/** from this hour on, school + weather talk about tomorrow (as on TODAY) */
 		switchToTomorrowHour: number;
+		/** the audio HAT is there: offer to read the day's briefing aloud */
+		readAloud: boolean;
+		/** offer the 🎤 Ask button */
+		ask: boolean;
 		onclose: () => void;
 	} = $props();
 
@@ -73,6 +82,8 @@
 	// daytime: the next wet hour today, if rain is likely
 	const rainAt = $derived(evening || !wx ? null : (wx.hourly.slice(1, 12).find((h) => h.pop >= 50) ?? null));
 	const moon = $derived(moonPhase($now));
+	// 🔊 Read me: the AI briefing, shown as a caption while it's being said
+	let talking = $state(false);
 	// tonight's real moon up in the corner (clouds drift over it; hidden in rain / snow)
 	const MOON_R = 38;
 	const CRATERS = [[0.65, 0.74, 0.2], [1.3, 1.35, 0.15], [1.22, 0.52, 0.1], [0.6, 1.43, 0.11]]; // × radius
@@ -183,6 +194,9 @@
 				<div class="date">{longDate}</div>
 				<div class="hello">{hello}</div>
 			</div>
+			<!-- the weather, with 🔊 Read me and 🎤 Ask under it: always in the same
+			     place, however many chips the row below needs -->
+			<div class="right-side">
 			{#if wx && code}
 				<div class="wx-card">
 					<WeatherIcon {code} size={110} />
@@ -195,44 +209,60 @@
 					</div>
 				</div>
 			{/if}
+			<div class="actions">
+				{#if readAloud && $briefing}
+					<ReadAloud
+						text={$briefing.text}
+						label={$briefing.when === 'tomorrow' ? 'Read tomorrow' : 'Read me'}
+						round
+						bind:talking
+					/>
+				{/if}
+				{#if ask}
+					<MicButton />
+				{/if}
+			</div>
+			</div>
 		</div>
 
 		<div class="chips">
 			<div class="chip">
-				<Emoji code={STATUS_EMOJI[school.kind]} size={28} alt="" />
+				<Emoji code={STATUS_EMOJI[school.kind]} size={24} alt="" />
 				<span>{school.title}</span>
 			</div>
 			{#if tomorrow}
 				<div class="chip">
 					<span>Tomorrow</span>
-					<Emoji code={weatherEmoji(tomorrow.code, true)} size={28} alt="" />
+					<Emoji code={weatherEmoji(tomorrow.code, true)} size={24} alt="" />
 					<span>{Math.round(tomorrow.temp_max_f)}° / {Math.round(tomorrow.temp_min_f)}°</span>
 				</div>
 			{:else if rainAt}
 				<div class="chip">
-					<Emoji code="2614" size={28} alt="" />
+					<Emoji code="2614" size={24} alt="" />
 					<span>Rain around {hourLabel(rainAt.time)}</span>
 				</div>
 			{:else if wx && Math.abs(wx.current.feels_f - wx.current.temp_f) >= 3}
 				<div class="chip">
-					<Emoji code="1f321" size={28} alt="" />
+					<Emoji code="1f321" size={24} alt="" />
 					<span>Feels like {Math.round(wx.current.feels_f)}°</span>
 				</div>
 			{/if}
 			{#if scene.night}
 				<div class="chip">
-					<Emoji code={moon.emoji} size={28} alt="" />
+					<Emoji code={moon.emoji} size={24} alt="" />
 					<span>{moon.name}</span>
 				</div>
 			{/if}
 			{#if note}
 				<div class="chip note">
-					<Emoji code={note.emoji} size={28} alt="" />
+					<Emoji code={note.emoji} size={24} alt="" />
 					<span>{note.text}</span>
 				</div>
 			{/if}
 		</div>
-		<div class="hint">Tap anywhere to start</div>
+		{#if talking && $briefing}
+			<div class="caption anim-pop">{$briefing.text}</div>
+		{/if}
 	</div>
 </div>
 
@@ -244,24 +274,34 @@
 		overflow: hidden;
 		color: #fff;
 		--ink: #1e293b;
+		/* the greeting pill takes a colour that suits the sky (and stands out on it) */
+		--hello-bg: #fde047;
+		--hello-fg: var(--text-dark);
 		/* day, clear: a deep summer blue (a pale sky washes out white letters) */
-		background: linear-gradient(180deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%);
+		background: linear-gradient(180deg, #0c4a6e 0%, #075985 50%, #0369a1 100%);
 		transition: background 2s ease;
 	}
 	.scene-cloudy {
 		background: linear-gradient(180deg, #475569 0%, #64748b 55%, #94a3b8 100%);
+		--hello-bg: #ffffff;
 	}
 	.scene-rain {
 		background: linear-gradient(180deg, #334155 0%, #475569 60%, #64748b 100%);
+		--hello-bg: #bae6fd;
 	}
 	.scene-snow {
 		background: linear-gradient(180deg, #475569 0%, #7c8ea8 55%, #cbd5e1 100%);
+		--hello-bg: #1e293b;
+		--hello-fg: #ffffff;
 	}
 	.scene-storm {
 		background: linear-gradient(180deg, #1e1b4b 0%, #312e81 55%, #475569 100%);
+		--hello-bg: #fcd34d;
 	}
 	.idle.night {
 		background: linear-gradient(180deg, #0b1d4d 0%, #1e3a8a 60%, #3b4fa0 100%);
+		--hello-bg: #fef9c3;
+		--hello-fg: var(--text-dark);
 	}
 	.idle.night.scene-cloudy,
 	.idle.night.scene-rain,
@@ -272,6 +312,7 @@
 	.idle.night.diwali.scene-clear,
 	.idle.night.diwali.scene-cloudy {
 		background: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 55%, #9a3412 100%);
+		--hello-bg: #fdba74;
 	}
 	.idle.night.scene-snow {
 		background: linear-gradient(180deg, #1e293b 0%, #334155 60%, #64748b 100%);
@@ -307,7 +348,7 @@
 		width: 420px;
 		height: 420px;
 		border-radius: 50%;
-		background: radial-gradient(circle, rgba(254, 240, 138, 0.75) 0%, rgba(254, 240, 138, 0.25) 45%, transparent 70%);
+		background: radial-gradient(circle, rgba(254, 240, 138, 0.5) 0%, rgba(254, 240, 138, 0.15) 45%, transparent 70%);
 		animation: glow 6s ease-in-out infinite;
 	}
 	.cloud {
@@ -381,7 +422,6 @@
 	   any sky — bright sun, snow or stars */
 	.clock,
 	.date,
-	.hello,
 	.banner-mr {
 		paint-order: stroke fill;
 		-webkit-text-stroke: 6px var(--ink);
@@ -437,13 +477,23 @@
 		margin-top: 6px;
 		font-size: 32px;
 		font-weight: 900;
+		-webkit-text-stroke-width: 8px;
 	}
+	/* the greeting: a sticker pill with dark letters, so it reads on any sky */
 	.hello {
-		margin-top: 4px;
+		display: inline-block;
+		max-width: 100%;
+		margin-top: 10px;
+		padding: 4px 16px;
 		font-size: 22px;
 		font-weight: 900;
-		-webkit-text-stroke-width: 5px;
-		text-shadow: 2px 3px 0 var(--ink);
+		color: var(--hello-fg);
+		text-shadow: none;
+		background: var(--hello-bg);
+		border: 3px solid var(--border-dark);
+		border-radius: 999px;
+		box-shadow: var(--sticker-shadow-sm);
+		transition: background-color 2s ease, color 2s ease;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -475,9 +525,11 @@
 		font-weight: 800;
 		color: #475569;
 	}
+	/* one row, always (a long note is cut short instead of pushing the row
+	   into the garland) */
 	.chips {
 		display: flex;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		justify-content: center;
 		gap: 10px;
 		max-width: 100%;
@@ -485,10 +537,11 @@
 	.chip {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		max-width: 100%;
-		padding: 6px 16px 6px 10px;
-		font-size: 19px;
+		flex: 0 1 auto;
+		gap: 6px;
+		min-width: 0;
+		padding: 5px 14px 5px 8px;
+		font-size: 17px;
 		font-weight: 900;
 		color: var(--text-dark);
 		text-shadow: none;
@@ -503,15 +556,42 @@
 		text-overflow: ellipsis;
 	}
 	.chip.note {
+		flex-shrink: 3;
 		background: #dcfce7;
 	}
-	.hint {
-		margin-top: 10px;
-		padding: 2px 14px;
-		font-size: 15px;
-		font-weight: 800;
-		background: rgba(15, 23, 42, 0.55);
-		border-radius: 999px;
+	.right-side {
+		flex: 0 0 auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 14px;
+	}
+	.actions {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+	.actions:empty {
+		display: none;
+	}
+	/* the briefing, while it's being read out */
+	.caption {
+		position: absolute;
+		left: 50px;
+		right: 50px;
+		bottom: 112px;
+		z-index: 2;
+		padding: 14px 22px;
+		font-size: 24px;
+		font-weight: 900;
+		line-height: 1.3;
+		text-align: center;
+		color: var(--text-dark);
+		text-shadow: none;
+		background: #fffbeb;
+		border: 3px solid var(--border-dark);
+		border-radius: 20px;
+		box-shadow: var(--sticker-shadow);
 	}
 
 	@keyframes twinkle {

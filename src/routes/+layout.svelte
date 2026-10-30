@@ -9,9 +9,11 @@
 	import ScreenControl from '#lib/components/ScreenControl.svelte';
 	import PowerMenu from '#lib/components/PowerMenu.svelte';
 	import IdleScreen from '#lib/components/IdleScreen.svelte';
+	import AskSheet from '#lib/components/AskSheet.svelte';
 	import { kidNames } from '#lib/config';
 	import {
 		READING_GRACE_MS,
+		askOpen,
 		awakeMode,
 		inBedtime,
 		modeForIdle,
@@ -19,7 +21,8 @@
 		screenPanelOpen,
 		type ScreenMode
 	} from '#lib/screen';
-	import { startMessages } from '#lib/messages';
+	import { messages, startMessages } from '#lib/messages';
+	import { briefing, briefingFacts } from '#lib/briefing';
 	import { now, todayKey } from '#lib/clock';
 	import { closeReport } from '#lib/report';
 	import { startWeather, weather } from '#lib/weather';
@@ -40,6 +43,33 @@
 	onMount(() => startWeather(data.weatherRefreshMinutes));
 	// grown-up notes for the TODAY banner
 	onMount(() => startMessages());
+
+	// The AI briefing for TODAY and the idle screen: asked for again only when
+	// the facts on screen change (the server keeps the answer for the same facts)
+	const facts = $derived(
+		data.ai.briefing
+			? briefingFacts({
+					wx: $weather.data,
+					now: $now,
+					todayKey: $todayKey,
+					wardrobe: data.wardrobe,
+					schoolEvents: data.schoolEvents,
+					messages: $messages,
+					place: data.place
+				})
+			: ''
+	);
+	$effect(() => {
+		const body = facts;
+		if (!body) return void briefing.set(null);
+		const when = JSON.parse(body).when;
+		let live = true;
+		fetch('/api/briefing', { method: 'POST', headers: { 'content-type': 'application/json' }, body })
+			.then((r) => (r.ok ? r.json() : null))
+			.then((r) => live && briefing.set(r?.text ? { text: r.text, when } : null))
+			.catch(() => {});
+		return () => (live = false);
+	});
 
 	// Every hour (and so at midnight): re-run server loads to pick up config
 	// edits and school-calendar updates. The kiosk page itself is never reloaded.
@@ -189,6 +219,28 @@
 		}, 120);
 	}
 
+	// the audio HAT's volume + mic switch (quick menu): the slider is saved,
+	// with a spoken "This loud!", when it's let go
+	let volume = $state(untrack(() => data.voice.volume));
+	let mic = $state(untrack(() => data.voice.mic));
+	function postVoice(change: { volume?: number; mic?: boolean; sample?: boolean }) {
+		fetch('/api/voice', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify(change)
+		}).catch(() => {});
+	}
+	function onVolume(value: number, done: boolean) {
+		volume = value;
+		if (done) postVoice({ volume, sample: true });
+	}
+	function onMic(on: boolean) {
+		mic = on;
+		postVoice({ mic });
+	}
+	// 🎤 Ask: the audio HAT's mic is on and the AI helper may answer
+	const canAsk = $derived(data.ai.ask && data.voice.listen && mic);
+
 	// Show the cursor only once a real mouse is moved around (touches never
 	// count). Chromium fires a synthetic mouse event when the compositor first
 	// hands it the pointer, so a single event, or a small nudge, doesn't count:
@@ -206,19 +258,30 @@
 	}
 
 	/* --- quick menu: pull down from the top of the screen (like a phone) --- */
-	const PULL_ZONE = 64; // px from the top of the frame: the header band
+	// anywhere across the width, from the top edge down to just under the
+	// header (the .pull-grab strips keep the browser from taking those swipes)
+	const PULL_ZONE = 72; // px from the top of the frame
+	const PULL_DISTANCE = 35; // px down
 	let frame: HTMLElement | undefined = $state();
-	let pullFrom: number | null = null;
+	let pullFrom: { x: number; y: number } | null = null;
 	function pullMove(e: PointerEvent) {
-		if (pullFrom !== null && e.clientY - pullFrom > 45) {
+		if (!pullFrom) return;
+		const dy = e.clientY - pullFrom.y;
+		// mostly downwards (a sideways swipe isn't a pull)
+		if (dy > PULL_DISTANCE && dy > Math.abs(e.clientX - pullFrom.x)) {
 			pullFrom = null;
 			screenPanelOpen.set(true);
 		}
 	}
+	// holding 🎤 means "talk", not "pull"
+	const startsOnMic = (e: PointerEvent) => e.target instanceof Element && !!e.target.closest(".mic");
 
 	function onTouch(e: PointerEvent) {
 		const top = frame?.getBoundingClientRect().top ?? 0;
-		pullFrom = !idleScreen && !$screenPanelOpen && screenMode === awake && e.clientY - top < PULL_ZONE ? e.clientY : null;
+		pullFrom =
+			!idleScreen && !$screenPanelOpen && screenMode === awake && e.clientY - top < PULL_ZONE && !startsOnMic(e)
+				? { x: e.clientX, y: e.clientY }
+				: null;
 		lastTouch = Date.now();
 		sentHome = false;
 		if (RANK[screenMode] > RANK[awake]) {
@@ -248,7 +311,10 @@
 />
 
 <div id="pi-screen" class="sky-{sky}" bind:this={frame}>
-	<Header {names} />
+	<!-- invisible: the bands above and below the header belong to the pull-down -->
+	<div class="pull-grab top" aria-hidden="true"></div>
+	<div class="pull-grab under" aria-hidden="true"></div>
+	<Header {names} ask={canAsk} />
 	<main>
 		{@render children()}
 	</main>
@@ -259,6 +325,9 @@
 		{brightness}
 		min={data.screenConfig.minBrightness}
 		onbrightness={onBrightness}
+		voice={data.voice.installed ? { volume, mic } : null}
+		onvolume={onVolume}
+		onmic={onMic}
 		onoff={() => setMode('off')}
 	/>
 	{#if idleScreen}
@@ -267,8 +336,13 @@
 			{names}
 			schoolEvents={data.schoolEvents}
 			switchToTomorrowHour={data.wardrobe.switchToTomorrowHour}
+			readAloud={data.voice.installed && data.voice.enabled}
+			ask={canAsk}
 			onclose={() => (idleScreen = false)}
 		/>
+	{/if}
+	{#if $askOpen && canAsk}
+		<AskSheet {facts} />
 	{/if}
 	{#if powerMenu}
 		<PowerMenu

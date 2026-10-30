@@ -1,0 +1,110 @@
+import { describe, expect, it } from 'vitest';
+import { FRAME_MS, SpeechGate } from '../src/lib/utils/vad';
+import { readQuestion } from '../src/lib/server/ask';
+
+const SAMPLES = (16000 * FRAME_MS) / 1000;
+const frame = (level: number) => Int16Array.from({ length: SAMPLES }, (_, i) => (i % 2 ? level : -level));
+const feed = (gate: SpeechGate, level: number, ms: number) => {
+	let s = gate.state;
+	for (let t = 0; t < ms; t += FRAME_MS) s = gate.push(frame(level));
+	return s;
+};
+
+describe('SpeechGate', () => {
+	it('waits for speech, then ends after a pause', () => {
+		const g = new SpeechGate();
+		expect(feed(g, 20000, 500)).toBe('waiting'); // the mic opening: ignored
+		expect(feed(g, 100, 300)).toBe('waiting'); // room noise
+		expect(feed(g, 100, 500)).toBe('waiting');
+		expect(feed(g, 3000, 800)).toBe('speech');
+		expect(g.speechStart).toBeGreaterThan(0);
+		expect(feed(g, 3000, 1000)).toBe('speech');
+		expect(feed(g, 100, 600)).toBe('speech'); // a short pause between words
+		expect(feed(g, 3000, 300)).toBe('speech');
+		expect(feed(g, 100, 1200)).toBe('done');
+	});
+
+	it('gives up when nobody talks', () => {
+		const g = new SpeechGate({ noSpeechMs: 2000 });
+		expect(feed(g, 100, 2100)).toBe('nothing');
+	});
+
+	it('ignores a click shorter than a word', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		feed(g, 100, 300);
+		expect(feed(g, 5000, 60)).toBe('waiting');
+		expect(feed(g, 100, 200)).toBe('waiting');
+	});
+
+	it('measures a noisy room and needs speech above it', () => {
+		const g = new SpeechGate({ settleMs: 0, maxLevel: 5000 });
+		feed(g, 1000, 300);
+		expect(feed(g, 2000, 500)).toBe('waiting'); // below 3x the noise
+		expect(feed(g, 4000, 300)).toBe('speech');
+	});
+
+	it('stops at the time limit', () => {
+		const g = new SpeechGate({ settleMs: 0, maxMs: 3000 });
+		feed(g, 100, 300);
+		expect(feed(g, 3000, 3000)).toBe('done');
+	});
+
+	it('never sets the bar so high it goes deaf', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		feed(g, 4000, 300); // a loud start
+		expect(feed(g, 2000, 300)).toBe('speech');
+	});
+
+	it('counts syllables with short dips between them as speech', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		feed(g, 100, 300);
+		for (let i = 0; i < 4; i++) {
+			expect(feed(g, 3000, 60)).toBe(i < 2 ? 'waiting' : 'speech');
+			feed(g, 100, 40); // a dip between syllables (3 x 60 ms of voice is enough)
+		}
+		expect(g.speechStart).toBe(15); // the first loud frame
+	});
+
+	it('is not made deaf by a kid who starts talking straight away', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		feed(g, 100, 100); // a moment of room noise...
+		feed(g, 2500, 200); // ...then talking, while the room is still being measured
+		expect(feed(g, 1200, 300)).toBe('speech');
+	});
+
+	it('knows something loud was heard even when it never counted as speech', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		feed(g, 100, 300);
+		expect(g.heardSomething).toBe(false);
+		feed(g, 3000, 100);
+		feed(g, 100, 300);
+		expect(g.state).toBe('waiting');
+		expect(g.heardSomething).toBe(true);
+	});
+
+	it('keeps listening through pauses while the button is held', () => {
+		const g = new SpeechGate({ settleMs: 0, endSilenceMs: Infinity, noSpeechMs: 8000, maxMs: 20_000 });
+		feed(g, 100, 300);
+		expect(feed(g, 3000, 500)).toBe('speech');
+		expect(feed(g, 100, 3000)).toBe('speech'); // thinking of the rest of the question
+		expect(feed(g, 100, 17_000)).toBe('done'); // the let-go never came
+	});
+
+	it('does not count a steady offset as sound', () => {
+		const g = new SpeechGate({ settleMs: 0 });
+		const offset = Int16Array.from({ length: 320 }, () => -1200);
+		for (let i = 0; i < 40; i++) g.push(offset);
+		expect(g.state).toBe('waiting');
+		expect(g.loudest).toBe(0);
+	});
+});
+
+describe('readQuestion', () => {
+	it('tidies what was heard and drops whisper noise', () => {
+		expect(readQuestion('  Why is the   sky blue? ')).toBe('Why is the sky blue?');
+		expect(readQuestion('Thank you.')).toBe('');
+		expect(readQuestion(' . ')).toBe('');
+		expect(readQuestion(42)).toBe('');
+		expect(readQuestion('a'.repeat(500))).toHaveLength(200);
+	});
+});

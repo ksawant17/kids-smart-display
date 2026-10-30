@@ -6,6 +6,7 @@
  */
 import { KID_VOICE, aiTextOk, chat } from '#lib/server/ai';
 import { getConfig } from '#lib/server/config';
+import { withoutEmoji } from '#lib/utils/speech';
 
 export interface BriefingFacts {
 	/** "today" in the morning, "tomorrow" from the evening switch on */
@@ -53,27 +54,27 @@ function prompt(f: BriefingFacts): string {
 		`Two short sentences, ${MAX_LEN} characters at most in total. ` +
 			'Lead with the most useful thing (the weather and what to wear, or a note). ' +
 			'Only use the facts above; do not invent plans or events. ' +
-			"Use only plain text: no emoji, no lists, no quotes. Don't start with the date."
+			"Use only plain words (it may be read aloud): no emoji or smileys, no lists, no quotes. Don't start with the date."
 	];
 	return lines.filter((l) => l !== null).join('\n');
 }
 
 async function write(f: BriefingFacts): Promise<string | null> {
 	for (let attempt = 0; attempt < 2; attempt++) {
-		const text = (await chat(
+		const text = withoutEmoji(await chat(
 			[
 				{ role: 'system', content: KID_VOICE },
 				{ role: 'user', content: prompt(f) }
 			],
 			{ maxTokens: 120, temperature: 0.7, timeoutMs: 30_000 }
-		))
-			.replace(/^["“]|["”]$/g, '')
-			.replace(/\s+/g, ' ')
-			.trim();
+		)).replace(/^["“]|["”]$/g, '');
 		if (text.length <= MAX_LEN + 40 && aiTextOk(text)) return text;
 	}
 	return null;
 }
+
+/** Did the briefing say exactly this? (only its own words may be read aloud) */
+export const isBriefingText = (text: string) => !!text && [...cache.values()].includes(text);
 
 /** The briefing for these facts (cached), or null if the AI couldn't write a good one. */
 export function briefing(f: BriefingFacts): Promise<string | null> {

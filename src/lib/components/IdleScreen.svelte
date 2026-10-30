@@ -194,6 +194,9 @@
 				<div class="date">{longDate}</div>
 				<div class="hello">{hello}</div>
 			</div>
+			<!-- the weather, with 🔊 Read me and 🎤 Ask under it: always in the same
+			     place, however many chips the row below needs -->
+			<div class="right-side">
 			{#if wx && code}
 				<div class="wx-card">
 					<WeatherIcon {code} size={110} />
@@ -206,39 +209,53 @@
 					</div>
 				</div>
 			{/if}
+			<div class="actions">
+				{#if readAloud && $briefing}
+					<ReadAloud
+						text={$briefing.text}
+						label={$briefing.when === 'tomorrow' ? 'Read tomorrow' : 'Read me'}
+						round
+						bind:talking
+					/>
+				{/if}
+				{#if ask}
+					<MicButton />
+				{/if}
+			</div>
+			</div>
 		</div>
 
 		<div class="chips">
 			<div class="chip">
-				<Emoji code={STATUS_EMOJI[school.kind]} size={28} alt="" />
+				<Emoji code={STATUS_EMOJI[school.kind]} size={24} alt="" />
 				<span>{school.title}</span>
 			</div>
 			{#if tomorrow}
 				<div class="chip">
 					<span>Tomorrow</span>
-					<Emoji code={weatherEmoji(tomorrow.code, true)} size={28} alt="" />
+					<Emoji code={weatherEmoji(tomorrow.code, true)} size={24} alt="" />
 					<span>{Math.round(tomorrow.temp_max_f)}° / {Math.round(tomorrow.temp_min_f)}°</span>
 				</div>
 			{:else if rainAt}
 				<div class="chip">
-					<Emoji code="2614" size={28} alt="" />
+					<Emoji code="2614" size={24} alt="" />
 					<span>Rain around {hourLabel(rainAt.time)}</span>
 				</div>
 			{:else if wx && Math.abs(wx.current.feels_f - wx.current.temp_f) >= 3}
 				<div class="chip">
-					<Emoji code="1f321" size={28} alt="" />
+					<Emoji code="1f321" size={24} alt="" />
 					<span>Feels like {Math.round(wx.current.feels_f)}°</span>
 				</div>
 			{/if}
 			{#if scene.night}
 				<div class="chip">
-					<Emoji code={moon.emoji} size={28} alt="" />
+					<Emoji code={moon.emoji} size={24} alt="" />
 					<span>{moon.name}</span>
 				</div>
 			{/if}
 			{#if note}
 				<div class="chip note">
-					<Emoji code={note.emoji} size={28} alt="" />
+					<Emoji code={note.emoji} size={24} alt="" />
 					<span>{note.text}</span>
 				</div>
 			{/if}
@@ -246,19 +263,6 @@
 		{#if talking && $briefing}
 			<div class="caption anim-pop">{$briefing.text}</div>
 		{/if}
-		<div class="foot">
-			{#if readAloud && $briefing}
-				<ReadAloud
-					text={$briefing.text}
-					label={$briefing.when === 'tomorrow' ? 'Read tomorrow' : 'Read me'}
-					round
-					bind:talking
-				/>
-			{/if}
-			{#if ask}
-				<MicButton />
-			{/if}
-		</div>
 	</div>
 </div>
 
@@ -521,9 +525,11 @@
 		font-weight: 800;
 		color: #475569;
 	}
+	/* one row, always (a long note is cut short instead of pushing the row
+	   into the garland) */
 	.chips {
 		display: flex;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		justify-content: center;
 		gap: 10px;
 		max-width: 100%;
@@ -531,10 +537,11 @@
 	.chip {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		max-width: 100%;
-		padding: 6px 16px 6px 10px;
-		font-size: 19px;
+		flex: 0 1 auto;
+		gap: 6px;
+		min-width: 0;
+		padding: 5px 14px 5px 8px;
+		font-size: 17px;
 		font-weight: 900;
 		color: var(--text-dark);
 		text-shadow: none;
@@ -549,13 +556,23 @@
 		text-overflow: ellipsis;
 	}
 	.chip.note {
+		flex-shrink: 3;
 		background: #dcfce7;
 	}
-	.foot {
+	.right-side {
+		flex: 0 0 auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 14px;
+	}
+	.actions {
 		display: flex;
 		align-items: center;
 		gap: 16px;
-		margin-top: 10px;
+	}
+	.actions:empty {
+		display: none;
 	}
 	/* the briefing, while it's being read out */
 	.caption {

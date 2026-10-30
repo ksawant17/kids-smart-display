@@ -39,6 +39,7 @@ import { getAi } from '#lib/server/ai';
 import { sentences } from '#lib/utils/sentences';
 import { forSpeech } from '#lib/utils/speech';
 import { FRAME_MS, GATE_DEFAULTS, SpeechGate } from '#lib/utils/vad';
+import { HOURLY_DEFAULTS, type HourlySettings } from '#lib/utils/announce';
 
 const run = promisify(execFile);
 
@@ -62,11 +63,21 @@ export interface VoiceSettings {
 	voice: string;
 	/** 0.7 (slower) - 1.4 (faster) */
 	speed: number;
+	/** the clock announcement on the hour (announce.ts) */
+	hourly: HourlySettings;
 }
 
 export const DEFAULT_VOICE = 'amy';
 export const SPEEDS = { min: 0.7, max: 1.4 };
-const DEFAULTS: VoiceSettings = { enabled: true, volume: 70, mic: true, voice: DEFAULT_VOICE, speed: 1 };
+const DEFAULTS: VoiceSettings = {
+	enabled: true,
+	volume: 70,
+	mic: true,
+	voice: DEFAULT_VOICE,
+	speed: 1,
+	hourly: HOURLY_DEFAULTS
+};
+const hourOk = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 23;
 export const voiceIdOk = (v: unknown): v is string => typeof v === 'string' && /^[a-z0-9_-]{1,40}$/.test(v);
 const clampSpeed = (n: number) => Math.round(Math.min(SPEEDS.max, Math.max(SPEEDS.min, n)) * 100) / 100;
 
@@ -78,7 +89,13 @@ export function getVoice(): VoiceSettings {
 			volume: Number.isFinite(s.volume) ? Math.min(100, Math.max(0, Math.round(s.volume))) : DEFAULTS.volume,
 			mic: s.mic !== false,
 			voice: voiceIdOk(s.voice) ? s.voice : DEFAULTS.voice,
-			speed: Number.isFinite(s.speed) ? clampSpeed(s.speed) : DEFAULTS.speed
+			speed: Number.isFinite(s.speed) ? clampSpeed(s.speed) : DEFAULTS.speed,
+			hourly: {
+				enabled: typeof s.hourly?.enabled === 'boolean' ? s.hourly.enabled : HOURLY_DEFAULTS.enabled,
+				from: hourOk(s.hourly?.from) ? s.hourly.from : HOURLY_DEFAULTS.from,
+				to: hourOk(s.hourly?.to) ? s.hourly.to : HOURLY_DEFAULTS.to,
+				weather: typeof s.hourly?.weather === 'boolean' ? s.hourly.weather : HOURLY_DEFAULTS.weather
+			}
 		};
 	} catch {
 		return { ...DEFAULTS };
@@ -323,7 +340,7 @@ async function wavFor(text: string): Promise<string> {
 
 function trimCache() {
 	const files = readdirSync(CACHE)
-		.filter((f) => f.endsWith('.wav') && !f.startsWith('heard-'))
+		.filter((f) => f.endsWith('.wav') && !f.startsWith('heard-') && f !== 'chime.wav')
 		.map((f) => ({ f, t: statSync(resolve(CACHE, f)).mtimeMs }))
 		.sort((a, b) => b.t - a.t);
 	for (const { f } of files.slice(MAX_CACHED)) unlinkSync(resolve(CACHE, f));
@@ -355,11 +372,55 @@ function play(wav: string) {
 	});
 }
 
+/** a soft two-note chime (made once): rings before the hourly announcement */
+function chimeWav(): string {
+	const file = resolve(CACHE, 'chime.wav');
+	if (existsSync(file)) return file;
+	const rate = 22050;
+	const notes = [
+		[659.25, 0], // E5
+		[523.25, 0.32] // C5
+	];
+	const n = Math.round(rate * 1.4);
+	const pcm = Buffer.alloc(n * 2);
+	for (let i = 0; i < n; i++) {
+		const t = i / rate;
+		let v = 0;
+		for (const [f, start] of notes) {
+			const u = t - start;
+			if (u < 0) continue;
+			// a soft bell: quick fade in, long fade out, a little overtone
+			const env = Math.min(1, u / 0.01) * Math.exp(-u * 3.2);
+			v += env * (Math.sin(2 * Math.PI * f * u) + 0.25 * Math.sin(4 * Math.PI * f * u));
+		}
+		pcm.writeInt16LE(Math.round(Math.max(-1, Math.min(1, v * 0.3)) * 32767), i * 2);
+	}
+	const h = Buffer.alloc(44);
+	h.write('RIFF', 0);
+	h.writeUInt32LE(36 + pcm.length, 4);
+	h.write('WAVEfmt ', 8);
+	h.writeUInt32LE(16, 16);
+	h.writeUInt16LE(1, 20); // PCM
+	h.writeUInt16LE(1, 22); // mono
+	h.writeUInt32LE(rate, 24);
+	h.writeUInt32LE(rate * 2, 28);
+	h.writeUInt16LE(2, 32);
+	h.writeUInt16LE(16, 34);
+	h.write('data', 36);
+	h.writeUInt32LE(pcm.length, 40);
+	mkdirSync(CACHE, { recursive: true });
+	writeFileSync(file, Buffer.concat([h, pcm]));
+	return file;
+}
+
+/** Is a kid asking something right now (the mic is open)? */
+export const listening = () => !!recorder;
+
 /**
  * Say this (one thing at a time: a new request waits for the one before).
- * Resolves when it has finished (or was stopped).
+ * Resolves when it has finished (or was stopped). `chime`: ring first.
  */
-export function say(text: string): Promise<void> {
+export function say(text: string, { chime = false } = {}): Promise<void> {
 	const job = async () => {
 		await setUpMixer();
 		// sentence by sentence, each made while the one before plays
@@ -373,7 +434,8 @@ export function say(text: string): Promise<void> {
 		try {
 			// the speakers only open once there is something to say
 			await amixer('Speaker', String(speakerLevel(getVoice().volume)));
-			await play(first);
+			if (chime) await play(chimeWav());
+			if (!stopped) await play(first);
 			for (const w of wavs.slice(1)) {
 				if (stopped) break;
 				const wav = await w;

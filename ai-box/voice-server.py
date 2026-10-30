@@ -36,7 +36,9 @@ from faster_whisper import WhisperModel
 from kokoro_onnx import Kokoro
 from piper import PiperVoice, SynthesisConfig
 
-KEY = os.environ["VOICE_KEY"]
+KEY = os.environ.get("VOICE_KEY", "")
+if len(KEY) < 16:
+    raise SystemExit("VOICE_KEY must be set (at least 16 characters)")
 PORT = int(os.environ.get("VOICE_PORT", "8090"))
 STT_MODEL = os.environ.get("STT_MODEL", "/opt/kids-voice/whisper/small.en")
 STT_DEVICE = os.environ.get("STT_DEVICE", "cuda")

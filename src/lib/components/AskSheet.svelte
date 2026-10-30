@@ -6,12 +6,15 @@
 	 * heard, then the AI helper's answer, which it reads aloud. Holding 🎤
 	 * again carries on the same conversation, so follow-ups like "why?" work.
 	 * See /api/ask: the recording stays on the Pi and is deleted right after.
+	 * "Set a timer for 10 minutes" sets one instead, with an Undo button in
+	 * case it was misheard.
 	 */
 	import { onDestroy, onMount } from 'svelte';
 	import Emoji from '#lib/components/Emoji.svelte';
 	import MicButton from '#lib/components/MicButton.svelte';
 	import ReadAloud from '#lib/components/ReadAloud.svelte';
 	import { askOpen, micHeld, reading } from '#lib/screen';
+	import { reminderAction } from '#lib/reminders';
 	import { weather } from '#lib/weather';
 	import { weatherLabel } from '#lib/utils/weatherCodes';
 
@@ -23,6 +26,8 @@
 	let step = $state<Step>('listening');
 	let question = $state('');
 	let reply = $state('');
+	/** a timer / reminder was just set: its id */
+	let undo = $state('');
 	let talking = $state(false);
 	let closed = false;
 	let answered = 0; // questions answered since the sheet opened
@@ -54,7 +59,7 @@
 
 	async function ask() {
 		step = 'listening';
-		question = reply = '';
+		question = reply = undo = '';
 		pressedAt = $micHeld || Date.now();
 		quickTap = false;
 		const id = (listenId = Math.random().toString(36).slice(2));
@@ -74,7 +79,9 @@
 			});
 			if (closed) return;
 			if (!res.ok) throw new Error();
-			reply = (await res.json()).answer;
+			const got = await res.json();
+			reply = got.answer;
+			undo = typeof got.undo === 'string' ? got.undo : '';
 			answered++;
 			step = 'answer';
 			talking = true;
@@ -87,6 +94,12 @@
 		} catch {
 			if (!closed) step = 'oops';
 		}
+	}
+
+	async function undoIt() {
+		if (talking) fetch('/api/speak', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"stop":true}' });
+		if (await reminderAction('cancel', undo)) reply = 'OK, I took it off.';
+		undo = '';
 	}
 
 	function close() {
@@ -137,7 +150,11 @@
 			<div class="asked">“{question}”</div>
 			<p class="answer">{reply}</p>
 			<div class="row">
-				<ReadAloud text={reply} label="Again" bind:talking />
+				{#if undo}
+					<button class="btn pressable" onclick={undoIt}><Emoji code="21a9" size={24} alt="" shadow="none" /> Undo</button>
+				{:else}
+					<ReadAloud text={reply} label="Again" bind:talking />
+				{/if}
 				<MicButton look="pill" label="Hold to ask more" onpress={ask} />
 				<button class="btn pressable" onclick={close}>Done</button>
 			</div>

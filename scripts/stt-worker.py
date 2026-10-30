@@ -2,7 +2,7 @@
 Speech to text for the dashboard (src/lib/server/voice.ts starts it).
 
 Loads a faster-whisper model once, then reads one JSON request per line:
-  {"wav": "/path/to/question.wav", "prompt": "Reya, Neel"}
+  {"wav": "/path/to/question.wav", "prompt": "Alex, Sam"}
 (16 kHz, mono, 16-bit) and answers one JSON line: {"ok": true, "text": "..."}.
 Everything runs on the Pi: no audio leaves the house.
 

@@ -10,6 +10,7 @@
 	import PowerMenu from '#lib/components/PowerMenu.svelte';
 	import IdleScreen from '#lib/components/IdleScreen.svelte';
 	import AskSheet from '#lib/components/AskSheet.svelte';
+	import RingBanner from '#lib/components/RingBanner.svelte';
 	import { kidNames } from '#lib/config';
 	import {
 		READING_GRACE_MS,
@@ -22,6 +23,7 @@
 		type ScreenMode
 	} from '#lib/screen';
 	import { messages, startMessages } from '#lib/messages';
+	import { loadReminders, reminders, startReminders } from '#lib/reminders';
 	import { briefing, briefingFacts } from '#lib/briefing';
 	import { now, todayKey } from '#lib/clock';
 	import { closeReport } from '#lib/report';
@@ -43,6 +45,8 @@
 	onMount(() => startWeather(data.weatherRefreshMinutes));
 	// grown-up notes for the TODAY banner
 	onMount(() => startMessages());
+	// timers and reminders (the server rings them; the screen shows them)
+	onMount(() => startReminders());
 
 	// The AI briefing for TODAY and the idle screen: asked for again only when
 	// the facts on screen change (the server keeps the answer for the same facts)
@@ -154,7 +158,8 @@
 	// idle: only ever go darker here; only a touch brings the screen back
 	$effect(() => {
 		const want = modeForIdle(idleFor($now.getTime()), data.screenConfig, bedtime);
-		if (RANK[want] > RANK[screenMode]) setMode(want);
+		// never darker while something is going off
+		if (RANK[want] > RANK[screenMode] && !$reminders.ringing.length) setMode(want);
 	});
 
 	// ...except in the morning: when bedtime ends, the screen wakes up by itself
@@ -185,6 +190,8 @@
 		if (page.url.pathname !== '/') goto('/').catch(() => {});
 	}
 	function onButton(gesture: string) {
+		// not a press: the server's timers / reminders changed
+		if (gesture === 'reminders') return void loadReminders();
 		if (gesture === 'hold') {
 			wake();
 			screenPanelOpen.set(false);
@@ -201,6 +208,23 @@
 		const events = new EventSource('/api/button');
 		events.onmessage = (e) => onButton(e.data);
 		return () => events.close();
+	});
+
+	// a timer or reminder going off wakes the screen (not at bedtime: it only
+	// shows once someone touches the screen); a wake-up alarm turns it full on,
+	// bedtime or not
+	const ringingNow = $derived($reminders.ringing[0] ?? null);
+	let rangFor = '';
+	$effect(() => {
+		const r = ringingNow;
+		const id = r?.id ?? '';
+		if (r && id !== rangFor) {
+			if (r.kind === 'alarm') {
+				wake();
+				setMode('on');
+			} else if (!bedtime) wake();
+		}
+		rangFor = id;
 	});
 
 	// A new version was installed (admin tab "Update", or a rebuild): reload
@@ -343,6 +367,9 @@
 	{/if}
 	{#if $askOpen && canAsk}
 		<AskSheet {facts} />
+	{/if}
+	{#if ringingNow}
+		<RingBanner reminder={ringingNow} />
 	{/if}
 	{#if powerMenu}
 		<PowerMenu

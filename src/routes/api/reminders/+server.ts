@@ -1,22 +1,24 @@
 import { json, error } from '@sveltejs/kit';
 import { isAdmin, isLocal } from '#lib/server/admin';
 import { addReminder, cancelReminder, reminderState, snooze, stopRinging } from '#lib/server/reminders';
+import { nextAlarm } from '#lib/server/alarms';
 import { MAX_TIMER_MINUTES, cleanLabel } from '#lib/utils/reminders';
 
 const okId = (v: unknown) => (typeof v === 'string' ? v.slice(0, 40) : '');
+const state = async () => json({ ...reminderState(), nextAlarm: await nextAlarm() });
 
 /**
  * Timers and reminders (the kiosk screen, or an unlocked Grown-ups tab):
- *   GET  -> { upcoming: Reminder[], ringing: Reminder[] }
+ *   GET  -> { upcoming: Reminder[], ringing: Reminder[], nextAlarm: { at, label } | null }
  *   POST { action: "stop", id? }     stop one going off (all with no id)
  *   POST { action: "snooze", id }    5 more minutes
  *   POST { action: "cancel", id }    take one off the list (also 🎤 Ask's Undo)
  *   POST { action: "add", kind: "timer", minutes, label? }
  *   POST { action: "add", kind: "reminder", time: "HH:MM", label? }  (grown-ups: today, or tomorrow once it has gone by)
  */
-export function GET({ cookies, getClientAddress }) {
+export async function GET({ cookies, getClientAddress }) {
 	if (!isLocal(getClientAddress()) && !isAdmin(cookies)) error(403, 'Only the dashboard screen can do that');
-	return json(reminderState());
+	return state();
 }
 
 export async function POST({ request, cookies, getClientAddress }) {
@@ -56,5 +58,5 @@ export async function POST({ request, cookies, getClientAddress }) {
 		default:
 			error(400, 'Unknown action');
 	}
-	return json(reminderState());
+	return state();
 }

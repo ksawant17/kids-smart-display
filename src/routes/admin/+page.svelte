@@ -26,12 +26,14 @@
 	import AiSection from '#lib/components/admin/AiSection.svelte';
 	import VoiceSection from '#lib/components/admin/VoiceSection.svelte';
 	import RemindersSection from '#lib/components/admin/RemindersSection.svelte';
+	import AlarmsSection from '#lib/components/admin/AlarmsSection.svelte';
 
 	const admin = new AdminSession();
 
 	const SECTIONS: { id: string; label: string; emoji: string; color: string; component: Component<{ admin: AdminSession }> }[] = [
 		{ id: 'messages', label: 'Notes', emoji: '1f4e3', color: '#dcfce7', component: MessagesSection },
-		{ id: 'reminders', label: 'Timers', emoji: '23f0', color: '#fef3c7', component: RemindersSection },
+		{ id: 'alarms', label: 'Alarms', emoji: '23f0', color: '#ffedd5', component: AlarmsSection },
+		{ id: 'reminders', label: 'Timers', emoji: '23f2', color: '#fef3c7', component: RemindersSection },
 		{ id: 'content', label: 'New Content', emoji: '1f4e5', color: '#fef3c7', component: ContentSection },
 		{ id: 'ai', label: 'AI Helper', emoji: '1f916', color: '#f3e8ff', component: AiSection },
 		{ id: 'voice', label: 'Voice', emoji: '1f5e3', color: '#cffafe', component: VoiceSection },

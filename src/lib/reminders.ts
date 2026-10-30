@@ -1,13 +1,17 @@
 /**
- * Timers and reminders on the kiosk: what's coming (the idle screen's chip)
- * and what's going off (RingBanner). Loaded again whenever the server says
+ * Timers and reminders on the kiosk: what's coming (the idle screen's chip,
+ * with the next wake-up alarm) and what's going off (RingBanner). Loaded again whenever the server says
  * they changed (the button event stream, see +layout.svelte), and every 30
  * seconds in case that was missed.
  */
 import { writable } from 'svelte/store';
 import type { Reminder } from '#lib/utils/reminders';
 
-export const reminders = writable<{ upcoming: Reminder[]; ringing: Reminder[] }>({ upcoming: [], ringing: [] });
+export const reminders = writable<{
+	upcoming: Reminder[];
+	ringing: Reminder[];
+	nextAlarm: { at: number; label: string } | null;
+}>({ upcoming: [], ringing: [], nextAlarm: null });
 
 export async function loadReminders(): Promise<void> {
 	try {

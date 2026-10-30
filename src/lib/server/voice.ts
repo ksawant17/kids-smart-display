@@ -65,6 +65,8 @@ export interface VoiceSettings {
 	speed: number;
 	/** the clock announcement on the hour (announce.ts) */
 	hourly: HourlySettings;
+	/** wake-up alarms, 0-100 (louder than everyday talking, if wanted) */
+	alarmVolume: number;
 }
 
 export const DEFAULT_VOICE = 'amy';
@@ -75,7 +77,8 @@ const DEFAULTS: VoiceSettings = {
 	mic: true,
 	voice: DEFAULT_VOICE,
 	speed: 1,
-	hourly: HOURLY_DEFAULTS
+	hourly: HOURLY_DEFAULTS,
+	alarmVolume: 85
 };
 const hourOk = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 23;
 export const voiceIdOk = (v: unknown): v is string => typeof v === 'string' && /^[a-z0-9_-]{1,40}$/.test(v);
@@ -90,6 +93,9 @@ export function getVoice(): VoiceSettings {
 			mic: s.mic !== false,
 			voice: voiceIdOk(s.voice) ? s.voice : DEFAULTS.voice,
 			speed: Number.isFinite(s.speed) ? clampSpeed(s.speed) : DEFAULTS.speed,
+			alarmVolume: Number.isFinite(s.alarmVolume)
+				? Math.min(100, Math.max(10, Math.round(s.alarmVolume)))
+				: DEFAULTS.alarmVolume,
 			hourly: {
 				enabled: typeof s.hourly?.enabled === 'boolean' ? s.hourly.enabled : HOURLY_DEFAULTS.enabled,
 				from: hourOk(s.hourly?.from) ? s.hourly.from : HOURLY_DEFAULTS.from,
@@ -381,15 +387,22 @@ const TONES = {
 		seconds: 2.4,
 		fade: 5,
 		notes: [[523.25, 0], [659.25, 0.16], [783.99, 0.32], [1046.5, 0.48], [523.25, 1.1], [659.25, 1.26], [783.99, 1.42], [1046.5, 1.58]]
+	},
+	// a slow, soft tune that swells: a wake-up alarm
+	wake: {
+		seconds: 5.2,
+		fade: 1.6,
+		swell: true,
+		notes: [[523.25, 0], [587.33, 0.4], [659.25, 0.8], [783.99, 1.2], [880, 1.6], [783.99, 2.2], [880, 2.6], [1046.5, 3]]
 	}
-};
-export type Tone = keyof typeof TONES;
+} as Record<string, { seconds: number; fade: number; swell?: boolean; notes: number[][] }>;
+export type Tone = 'chime' | 'alarm' | 'wake';
 
 /** a tone as a WAV file (made once) */
 function toneWav(name: Tone): string {
 	const file = resolve(CACHE, `tone-${name}.wav`);
 	if (existsSync(file)) return file;
-	const { seconds, fade, notes } = TONES[name];
+	const { seconds, fade, swell, notes } = TONES[name];
 	const rate = 22050;
 	const n = Math.round(rate * seconds);
 	const pcm = Buffer.alloc(n * 2);
@@ -403,6 +416,8 @@ function toneWav(name: Tone): string {
 			const env = Math.min(1, u / 0.01) * Math.exp(-u * fade);
 			v += env * (Math.sin(2 * Math.PI * f * u) + 0.25 * Math.sin(4 * Math.PI * f * u));
 		}
+		// swell: starts quiet and grows (a gentle wake-up)
+		if (swell) v *= 0.3 + (0.7 * t) / seconds;
 		pcm.writeInt16LE(Math.round(Math.max(-1, Math.min(1, v * 0.3)) * 32767), i * 2);
 	}
 	const h = Buffer.alloc(44);
@@ -428,9 +443,10 @@ export const listening = () => !!recorder;
 
 /**
  * Say this (one thing at a time: a new request waits for the one before).
- * Resolves when it has finished (or was stopped). `sound`: play that tone first.
+ * Resolves when it has finished (or was stopped). `sound`: play that tone
+ * first; `volume`: instead of the usual one (alarms have their own).
  */
-export function say(text: string, { sound }: { sound?: Tone } = {}): Promise<void> {
+export function say(text: string, { sound, volume }: { sound?: Tone; volume?: number } = {}): Promise<void> {
 	const job = async () => {
 		await setUpMixer();
 		// sentence by sentence, each made while the one before plays
@@ -443,7 +459,7 @@ export function say(text: string, { sound }: { sound?: Tone } = {}): Promise<voi
 		stopped = false;
 		try {
 			// the speakers only open once there is something to say
-			await amixer('Speaker', String(speakerLevel(getVoice().volume)));
+			await amixer('Speaker', String(speakerLevel(volume ?? getVoice().volume)));
 			if (sound) await play(toneWav(sound));
 			if (!stopped) await play(first);
 			for (const w of wavs.slice(1)) {
@@ -452,6 +468,29 @@ export function say(text: string, { sound }: { sound?: Tone } = {}): Promise<voi
 				if (stopped) break;
 				await play(wav);
 			}
+		} finally {
+			player = null;
+			current = null;
+			await quiet();
+		}
+	};
+	const next = queue.then(job, job);
+	queue = next.catch(() => {});
+	return next;
+}
+
+/**
+ * Just a tone (no words, so no voice helper needed: an alarm still rings
+ * when the AI box is down). In the same queue as say().
+ */
+export function playTone(name: Tone, volume = getVoice().volume): Promise<void> {
+	const job = async () => {
+		await setUpMixer();
+		current = `tone:${name}`;
+		stopped = false;
+		try {
+			await amixer('Speaker', String(speakerLevel(volume)));
+			await play(toneWav(name));
 		} finally {
 			player = null;
 			current = null;

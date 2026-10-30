@@ -1,7 +1,7 @@
 <script lang="ts">
 	/**
-	 * A timer or reminder going off: big and over everything, with Stop and
-	 * 5 more minutes. (The tune and the words come from the server, which
+	 * A timer, reminder or wake-up alarm going off: big and over everything,
+	 * with Stop and 5 more minutes. (The tune and the words come from the server, which
 	 * also stops them when the top button is tapped.)
 	 */
 	import Emoji from '#lib/components/Emoji.svelte';
@@ -9,14 +9,17 @@
 	import { ringText, type Reminder } from '#lib/utils/reminders';
 
 	let { reminder }: { reminder: Reminder } = $props();
+	const alarm = $derived(reminder.kind === 'alarm');
+	const icon = $derived(alarm ? '1f305' : reminder.kind === 'timer' ? '23f0' : '1f514');
 </script>
 
 <div class="scrim">
-	<div class="sheet card anim-pop" role="alertdialog" aria-modal="true" aria-label={ringText(reminder)}>
-		<div class="big ringing">
-			<Emoji code={reminder.kind === 'timer' ? '23f0' : '1f514'} size={110} alt="" />
+	<div class="sheet card anim-pop" class:alarm role="alertdialog" aria-modal="true" aria-label={ringText(reminder)}>
+		<div class="big" class:ringing={!alarm} class:rising={alarm}>
+			<Emoji code={icon} size={110} alt="" />
 		</div>
-		<div class="title">{ringText(reminder)}</div>
+		<div class="title">{alarm ? 'Good morning!' : ringText(reminder)}</div>
+		{#if alarm}<div class="sub">{reminder.label || 'Time to wake up!'}</div>{/if}
 		<div class="row">
 			<button class="btn stop pressable" onclick={() => reminderAction('stop', reminder.id)}>
 				<Emoji code="270b" size={30} alt="" shadow="none" /> Stop
@@ -54,6 +57,23 @@
 	}
 	.ringing {
 		animation: ring 0.9s ease-in-out infinite;
+	}
+	.sheet.alarm {
+		background: linear-gradient(#fde68a, #fdba74);
+	}
+	.rising {
+		animation: rise 2.4s ease-in-out infinite;
+	}
+	@keyframes rise {
+		50% {
+			transform: translateY(-8px) scale(1.06);
+		}
+	}
+	.sub {
+		margin-top: -6px;
+		font-size: 24px;
+		font-weight: 800;
+		color: #7c2d12;
 	}
 	@keyframes ring {
 		0%,

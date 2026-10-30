@@ -17,8 +17,11 @@ import type { BriefingFacts } from '#lib/server/briefing';
 import { hasBlockedWords } from '#lib/utils/content';
 import { withoutEmoji } from '#lib/utils/speech';
 import { addReminder, cancelReminder, reminderState } from '#lib/server/reminders';
+import { nextAlarm } from '#lib/server/alarms';
+import { dayWord } from '#lib/utils/alarms';
 import {
 	aboutReminders,
+	clockTime,
 	confirmation,
 	intentPrompt,
 	listText,
@@ -161,7 +164,14 @@ async function askIntent(question: string, now: Date): Promise<unknown> {
  */
 export async function reminderAnswer(question: string): Promise<{ answer: string; undo?: string } | null> {
 	if (!aboutReminders(question)) return null;
-	if (/\b(alarms?|wake (me|us) up)\b/i.test(question)) return { answer: WAKE_UP };
+	if (/\b(alarms?|wake (me|us) up)\b/i.test(question)) {
+		// "when is my alarm?" is fine to answer; setting one is for grown-ups
+		if (!/\b(when|what time|is there|do (i|we) have|is my)\b/i.test(question)) return { answer: WAKE_UP };
+		const next = await nextAlarm();
+		if (!next) return { answer: "There's no wake-up alarm set." };
+		const day = dayWord(new Date(next.at), new Date());
+		return { answer: `The next wake-up alarm is at ${clockTime(next.at)} ${/^(today|tomorrow)$/.test(day) ? day : `on ${day}`}.` };
+	}
 	const now = new Date();
 	const quick = quickTimer(question);
 	const intent: Intent = quick ? { action: 'timer', ...quick } : readIntent(await askIntent(question, now), now);

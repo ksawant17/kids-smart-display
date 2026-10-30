@@ -48,9 +48,19 @@ export function announcement(
 	wx: WeatherData | null,
 	o: { weather: boolean; first: boolean; tomorrowFrom: number }
 ): string {
+	const parts = [clock(now.getHours())];
+	if (o.weather) parts.push(...weatherNews(now, wx, o));
+	return parts.join(' ');
+}
+
+/**
+ * The weather in a few short sentences (none when there's no fresh forecast):
+ * the hourly announcement and the wake-up alarm's good morning.
+ */
+export function weatherNews(now: Date, wx: WeatherData | null, o: { first: boolean; tomorrowFrom: number }): string[] {
+	if (!wx || wx.stale) return [];
 	const h = now.getHours();
-	const parts = [clock(h)];
-	if (!o.weather || !wx || wx.stale) return parts[0];
+	const parts: string[] = [];
 
 	const label = weatherLabel(wx.current.weather_code, wx.current.is_day === 1).toLowerCase();
 	parts.push(`It's ${Math.round(wx.current.temp_f)} degrees and ${label}.`);
@@ -76,5 +86,5 @@ export function announcement(
 	} else if (o.first && today) {
 		parts.push(`Today's high is ${Math.round(today.temp_max_f)}.`);
 	}
-	return parts.join(' ');
+	return parts;
 }

@@ -13,6 +13,7 @@ vi.mock('#lib/server/ai', async (real) => ({
 }));
 vi.mock('#lib/server/config', () => ({ getConfig: () => ({ kids: [{ name: 'Alex' }, { name: 'Sam' }] }) }));
 const added: { kind: string; at: number; label: string }[] = [];
+vi.mock('#lib/server/alarms', () => ({ nextAlarm: async () => null }));
 vi.mock('#lib/server/reminders', () => ({
 	addReminder: (kind: 'timer' | 'reminder', at: number, label: string) => {
 		added.push({ kind, at, label });

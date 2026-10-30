@@ -1,6 +1,7 @@
 /**
  * Server start: watch the top push button (GPIO), get the voice ready, start
- * the clock announcement on the hour and the timers / reminders.
+ * the clock announcement on the hour, the timers / reminders and the
+ * wake-up alarms.
  * Every response: basic security headers (the dashboard is also reachable
  * from the home network). Admin API replies (IP address, Wi-Fi name...) are
  * never cached.
@@ -11,12 +12,14 @@ import { startButton } from '#lib/server/button';
 import { startVoice } from '#lib/server/voice';
 import { startHourly } from '#lib/server/announce';
 import { startReminders } from '#lib/server/reminders';
+import { startAlarms } from '#lib/server/alarms';
 
 if (!building) {
 	startButton();
 	startVoice();
 	startHourly();
 	startReminders();
+	startAlarms();
 }
 
 export const handle: Handle = async ({ event, resolve }) => {

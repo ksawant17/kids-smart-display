@@ -7,7 +7,8 @@
  */
 import { hasBlockedWords } from '#lib/utils/content';
 
-export type ReminderKind = 'timer' | 'reminder';
+/** alarm: a wake-up alarm going off (or snoozed), see utils/alarms.ts */
+export type ReminderKind = 'timer' | 'reminder' | 'alarm';
 
 export interface Reminder {
 	id: string;
@@ -142,6 +143,7 @@ export function duration(seconds: number): string {
 
 /** "the teeth brushing timer", "the timer", "the reminder to feed the fish" */
 export function nameOf(r: Pick<Reminder, 'kind' | 'label'>): string {
+	if (r.kind === 'alarm') return r.label ? `the ${r.label} alarm` : 'the alarm';
 	if (r.kind === 'timer') return r.label ? `the ${r.label} timer` : 'the timer';
 	return r.label ? `the reminder to ${r.label}` : 'the reminder';
 }
@@ -157,6 +159,7 @@ export function confirmation(r: Reminder, now: number): string {
 
 /** what's said when it goes off */
 export function ringText(r: Pick<Reminder, 'kind' | 'label'>): string {
+	if (r.kind === 'alarm') return 'Time to wake up!';
 	if (r.kind === 'timer') return r.label ? `Time's up for ${r.label}!` : "Time's up!";
 	return r.label ? `Reminder: time to ${r.label}!` : "It's reminder time!";
 }

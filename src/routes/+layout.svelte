@@ -158,7 +158,8 @@
 	// idle: only ever go darker here; only a touch brings the screen back
 	$effect(() => {
 		const want = modeForIdle(idleFor($now.getTime()), data.screenConfig, bedtime);
-		if (RANK[want] > RANK[screenMode]) setMode(want);
+		// never darker while something is going off
+		if (RANK[want] > RANK[screenMode] && !$reminders.ringing.length) setMode(want);
 	});
 
 	// ...except in the morning: when bedtime ends, the screen wakes up by itself
@@ -210,12 +211,19 @@
 	});
 
 	// a timer or reminder going off wakes the screen (not at bedtime: it only
-	// shows once someone touches the screen)
+	// shows once someone touches the screen); a wake-up alarm turns it full on,
+	// bedtime or not
 	const ringingNow = $derived($reminders.ringing[0] ?? null);
 	let rangFor = '';
 	$effect(() => {
-		const id = ringingNow?.id ?? '';
-		if (id && id !== rangFor && !bedtime) wake();
+		const r = ringingNow;
+		const id = r?.id ?? '';
+		if (r && id !== rangFor) {
+			if (r.kind === 'alarm') {
+				wake();
+				setMode('on');
+			} else if (!bedtime) wake();
+		}
 		rangFor = id;
 	});
 

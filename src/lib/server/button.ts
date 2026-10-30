@@ -8,6 +8,8 @@
  *   hold  -> the page opens the power menu
  *   reset -> this server restarts the kiosk browser (escape hatch)
  * With no kiosk page listening, a tap switches the backlight here instead.
+ * While a timer or reminder is going off, a tap stops it (interceptTap).
+ * The same stream tells the kiosk when something else changed (notifyKiosk).
  * The button needs no PIN: pressing it means being at the screen. Restart /
  * power off from the menu are allowed for a minute after a hold.
  *
@@ -22,7 +24,8 @@ import { ButtonGestures, type Gesture } from '#lib/utils/button';
 
 const RETRY_MS = 60_000;
 const POWER_WINDOW_MS = 60_000;
-const listeners = new Set<(g: Gesture) => void>();
+const listeners = new Set<(event: string) => void>();
+const taps: (() => boolean)[] = [];
 const closers = new Set<() => void>();
 
 let child: ChildProcess | null = null;
@@ -39,12 +42,23 @@ function emit(g: Gesture) {
 		restartKiosk();
 		return;
 	}
+	if (g === 'tap' && taps.some((fn) => fn())) return;
 	if (listeners.size) listeners.forEach((fn) => fn(g));
 	else if (g === 'tap') setScreen({ mode: getScreen().mode === 'on' ? 'off' : 'on' });
 }
 
-/** Listen for gestures; `close` ends the listener's stream when the server stops. */
-export function onButton(fn: (g: Gesture) => void, close: () => void): () => void {
+/** Something else for the kiosk page ("reminders": the timers changed). */
+export function notifyKiosk(event: string) {
+	listeners.forEach((fn) => fn(event));
+}
+
+/** A tap goes here first; returning true means it was used up (not passed on). */
+export function interceptTap(fn: () => boolean) {
+	taps.push(fn);
+}
+
+/** Listen for gestures (and notifyKiosk events); `close` ends the listener's stream when the server stops. */
+export function onButton(fn: (event: string) => void, close: () => void): () => void {
 	listeners.add(fn);
 	closers.add(close);
 	return () => {

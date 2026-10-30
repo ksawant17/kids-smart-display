@@ -21,6 +21,8 @@
 	import { now, todayKey } from '#lib/clock';
 	import { weather } from '#lib/weather';
 	import { messages } from '#lib/messages';
+	import { reminders } from '#lib/reminders';
+	import { clockTime } from '#lib/utils/reminders';
 	import { messagesOn } from '#lib/utils/messages';
 	import { festivalBanner, themeFor } from '#lib/themes';
 	import { place } from '#lib/place';
@@ -76,6 +78,15 @@
 	});
 	const school = $derived(
 		evening ? tomorrowStatus(schoolEvents, tomorrowKey) : todayStatus(schoolEvents, $todayKey)
+	);
+	// the next timer or reminder ("12 min left", "4:30 PM feed the fish")
+	const next = $derived($reminders.upcoming[0] ?? null);
+	const nextText = $derived(
+		!next
+			? ''
+			: next.kind === 'timer'
+				? `${next.label ? `${next.label}: ` : ''}${Math.max(1, Math.ceil((next.at - $now.getTime()) / 60_000))} min left`
+				: `${clockTime(next.at)}${next.label ? ` ${next.label}` : ''}`
 	);
 	const note = $derived(messagesOn($messages, evening ? tomorrowKey : $todayKey)[0] ?? null);
 	const tomorrow = $derived(evening ? (wx?.days[1] ?? null) : null);
@@ -226,6 +237,12 @@
 		</div>
 
 		<div class="chips">
+			{#if next}
+				<div class="chip">
+					<Emoji code={next.kind === 'timer' ? '23f2' : '1f514'} size={24} alt="" />
+					<span>{nextText}</span>
+				</div>
+			{/if}
 			<div class="chip">
 				<Emoji code={STATUS_EMOJI[school.kind]} size={24} alt="" />
 				<span>{school.title}</span>

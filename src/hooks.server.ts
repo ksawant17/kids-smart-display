@@ -1,6 +1,6 @@
 /**
  * Server start: watch the top push button (GPIO), get the voice ready, start
- * the clock announcement on the hour.
+ * the clock announcement on the hour and the timers / reminders.
  * Every response: basic security headers (the dashboard is also reachable
  * from the home network). Admin API replies (IP address, Wi-Fi name...) are
  * never cached.
@@ -10,11 +10,13 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { startButton } from '#lib/server/button';
 import { startVoice } from '#lib/server/voice';
 import { startHourly } from '#lib/server/announce';
+import { startReminders } from '#lib/server/reminders';
 
 if (!building) {
 	startButton();
 	startVoice();
 	startHourly();
+	startReminders();
 }
 
 export const handle: Handle = async ({ event, resolve }) => {

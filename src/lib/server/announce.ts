@@ -27,7 +27,7 @@ export async function hourlyText(now = new Date()): Promise<string> {
 /** Say it now (the admin tab's test button skips the hour and quiet checks). */
 export async function announceNow(): Promise<string> {
 	const text = await hourlyText();
-	await say(text, { chime: true });
+	await say(text, { sound: 'chime' });
 	return text;
 }
 

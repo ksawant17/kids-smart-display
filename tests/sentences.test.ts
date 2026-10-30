@@ -9,8 +9,8 @@ describe('sentences', () => {
 		]);
 	});
 	it('keeps short pieces with the next sentence', () => {
-		expect(sentences('Hi! Good morning Reya and Neel, it is sunny today.')).toEqual([
-			'Hi! Good morning Reya and Neel, it is sunny today.'
+		expect(sentences('Hi! Good morning Alex and Sam, it is sunny today.')).toEqual([
+			'Hi! Good morning Alex and Sam, it is sunny today.'
 		]);
 	});
 	it('keeps decimals and closing quotes together', () => {
